@@ -71,6 +71,7 @@ h1,h2,h3{margin:0}
 .bat.roll .die{animation:sp .25s linear infinite}
 @keyframes sp{50%{transform:rotate(90deg) scale(.9)}}
 .bat .res{font-weight:900;font-size:13px;margin-top:2px}
+.bat .hpct{font-weight:900;font-size:12px;color:#b38512;margin-top:2px}
 .call{margin-top:10px;background:#16251c;color:#f8f3dc;border-radius:10px;padding:8px 10px;font-size:13px;line-height:1.7;min-height:64px}
 .call div:first-child{font-weight:700;color:var(--gold)}
 .read{border:3px solid var(--gold);border-radius:12px;padding:12px;background:#fffbe9;margin-top:10px}
@@ -90,7 +91,7 @@ details summary{cursor:pointer;font-weight:700}
 <body>
 <div id="app"></div>
 <script>
-// ===== ペナント・オーナーズ v0.4（いちばんシンプル版） =====
+// ===== ペナント・オーナーズ v0.5（いちばんシンプル版） =====
 // アナログ版の内容物：選手カード10枚（打者7・投手3）、直球・変化球カード2枚×2人、サイコロ1個、スコア表
 const rnd=n=>Math.floor(Math.random()*n);
 const d6=()=>1+rnd(6);
@@ -100,6 +101,8 @@ const $app=document.getElementById('app');
 const BAT_VALS=[3,3,2,2,2,1,1], PIT_VALS=[8,7,6];   // 投手の数字＝ヒットに必要な「出目＋打力」
 const NEED_B=3, NEED_P=1, GAMES=3, LAST=3, SAFE_INN=9;
 const PT={c:'直球',h:'変化球'};
+// ヒット率（％）：出目(1〜6)＋打力v が投手の数字need以上になる確率を、判定式そのままに計算
+const hitPct=(v,need)=>{const k=need-v;return k<=1?100:k>=7?0:Math.round((7-k)/6*100);};
 const NAMES=['浅倉','石動','宇佐美','江口','大槻','柏木','桐生','久住','小野寺','榊','篠原','白石','須藤','瀬川','高峰','千早','津田','遠野','長嶺','西園','野々村','橋爪','日向','藤堂','真柴','三雲','村瀬','望月','矢吹','結城'];
 let S=null, uid=0, SPEED=600;
 
@@ -162,7 +165,7 @@ function choose(c){
 function runHalf(bmod){
   const G=S.G, atk=atkOf(), P=pitcher(1-atk), need=P.val;
   G.runs[atk][G.inning-1]=0;
-  G.bats=bats(atk).map(p=>({p,v:p.val+bmod,d:null,state:''}));
+  G.bats=bats(atk).map(p=>({p,v:p.val+bmod,d:null,state:'',need}));
   const head=`${halfName()}　${T(atk).name}の攻撃`;
   G.call=[head,`投手 ${P.name} → 出目＋打力が${need}以上でヒット`];
   render();
@@ -218,7 +221,7 @@ function board(){
     return `<td class="${now?'now':''}">${v===undefined?(skip?'x':''):v}</td>`;}).join('')}<td class="tot">${tot(i)}</td></tr>`;
   return `<div class="board"><table><tr><th></th>${cols.map(c=>`<th>${c}</th>`).join('')}<th>計</th></tr>${row(G.away)}${row(G.home)}</table></div>`;
 }
-const BACK='<p class="back"><a href="../">← 試作ゲームラボに戻る</a> ・ ペナント・オーナーズ v0.4</p>';
+const BACK='<p class="back"><a href="../">← 試作ゲームラボに戻る</a> ・ ペナント・オーナーズ v0.5</p>';
 function rules(open){
   return `<details class="panel" ${open?'open':''}><summary>ルール</summary><div class="rules">
   <ul>
@@ -226,6 +229,7 @@ function rules(open){
   <li><b>打つ</b>：打者が1人ずつサイコロを振る。<b>出目＋打力が相手投手の数字以上</b>ならヒットで1点。</li>
   <li><b>3回まで</b>。最終回は攻める側が「直球／変化球」を狙い、守る側が投げる球を選んで同時に出す。<b>読みが当たれば打者全員＋2</b>。</li>
   <li>同点なら延長（読み合いつき）。後攻が逆転したらその場でサヨナラ。</li>
+  <li><b>ヒット率</b>：対決中は各打者のヒット率（％）を表示。最終回の読み合いでは、読みが当たった場合の率もあわせて表示。</li>
   <li><b>3試合して2勝した方の優勝</b>。</li>
   </ul>
   <p class="mute">アナログ版の内容物：選手カード10枚、直球・変化球カード2枚×2人、サイコロ1個、スコア表。</p>
@@ -264,6 +268,7 @@ function render(){
       h+=`<div class="situ">${halfName()}${G.inning>LAST?'（延長）':'（最終回）'}　${T(G.away).name.slice(0,3)} ${tot(G.away)} − ${tot(G.home)} ${T(G.home).name.slice(0,3)}</div>
       <div class="read"><h3>${me?'どっちを狙う？':'どっちで勝負する？'}</h3>
       <div class="mute" style="margin-top:4px">${me?'当たれば、あなたの打者全員が打力＋2。':'読まれたら、相手の打者全員が打力＋2。'}</div>
+      <div class="mute" style="margin-top:4px">この回の打者のヒット率：${bats(atkOf()).map(p=>hitPct(p.val,pitcher(1-atkOf()).val)+'%').join(' ／ ')} → 読みが当たれば ${bats(atkOf()).map(p=>hitPct(p.val+2,pitcher(1-atkOf()).val)+'%').join(' ／ ')}</div>
       <div class="two"><button class="btn" onclick="choose('c')">${me?'直球を狙う':'直球で勝負'}</button><button class="btn blue" onclick="choose('h')">${me?'変化球を狙う':'変化球で勝負'}</button></div></div>`;
     }else{
       if(G.read&&G.inning>=LAST){
@@ -271,7 +276,7 @@ function render(){
         h+=`<div class="reveal"><div class="c"><div class="mute">${r.atk===0?'あなた':'相手'}の狙い</div>${PT[r.aim]}</div><div style="font-size:20px">${r.hit?'⭕':'❌'}</div><div class="c"><div class="mute">${r.atk===0?'相手':'あなた'}の球</div>${PT[r.pitch]}</div></div>`;
       }
       if(G.bats.length){
-        h+=`<div class="bats">${G.bats.map(b=>`<div class="bat ${b.state}"><div style="font-weight:700">${b.p.name}</div><div class="mute">打力${b.v}</div><div class="die">${b.state==='roll'?'?':(b.d??'')}</div><div class="res">${b.state==='hit'?'ヒット':b.state==='out'?'凡退':''}</div></div>`).join('')}</div>`;
+        h+=`<div class="bats">${G.bats.map(b=>`<div class="bat ${b.state}"><div style="font-weight:700">${b.p.name}</div><div class="mute">打力${b.v}</div><div class="hpct">ヒット率 ${hitPct(b.v,b.need)}%</div><div class="die">${b.state==='roll'?'?':(b.d??'')}</div><div class="res">${b.state==='hit'?'ヒット':b.state==='out'?'凡退':''}</div></div>`).join('')}</div>`;
       }
       h+=`<div class="call">${G.call.map(x=>`<div>${x}</div>`).join('')}</div>`;
     }

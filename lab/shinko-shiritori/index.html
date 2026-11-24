@@ -59,6 +59,8 @@ select{padding:4px 6px;border-radius:8px;border:1px solid var(--line);background
 .card.sel{transform:translateY(-10px);box-shadow:0 8px 16px rgba(0,0,0,.18)}
 .card.strong::after,.card.ok::after{content:'';position:absolute;inset:-6px;border-radius:14px;border:2px solid var(--c)}
 .card.ok::after{border-style:dashed;opacity:.7}
+.card.can{box-shadow:0 0 0 2px #f0b429,0 0 12px rgba(240,180,41,.8)}
+.card .tag{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);background:#f0b429;color:#4a3200;font-size:10px;font-weight:700;line-height:1.4;padding:0 6px;border-radius:8px;white-space:nowrap}
 .T{--c:var(--T)}.SD{--c:var(--SD)}.D{--c:var(--D)}
 .hand{display:flex;flex-wrap:wrap;gap:10px;padding:16px 4px 6px;min-height:120px}
 .prompt{font-weight:700;margin:8px 0}
@@ -118,6 +120,7 @@ td,th{border:1px solid var(--line);padding:4px 6px;text-align:left}
       <span><b style="background:var(--SD)"></b>SD サブドミナント</span>
       <span><b style="background:var(--D)"></b>D ドミナント</span>
       <span>実線＝強いつながり／点線＝OK</span>
+      <span>金の「出せる」タグ＝今出せるカード（ヒントON時）</span>
     </div>
     <div class="log" id="log"></div>
   </div>
@@ -131,6 +134,7 @@ td,th{border:1px solid var(--line);padding:4px 6px;text-align:left}
     <p>1. 全員に6枚ずつ配り、場には最初に I を置きます。場のカードは重ねずに、楽譜のように左から右へ並べます（4枚で1小節、5枚目から次の行）。</p>
     <p>2. 自分の番には、最後に置かれたコードにつながるカードを1枚出します。出せないときは山札から1枚引きます。<b>引いたカードがつながるなら、そのまま出してかまいません</b>。つながらなければパスです（山札がなければそのままパス）。</p>
     <p>2b. <b>小節の頭はリセット：</b>新しい小節の1枚目（5枚目・9枚目・13枚目）は、どのカードを出してもかまいません。</p>
+    <p style="font-size:13px;color:var(--muted)">※「ヒント」をONにすると、自分の番に今出せるカードへ金の「出せる」タグが付きます。タグのないカードも、はったりとしてそのまま出せます。</p>
     <p>3. つながらないカードを出して「はったり」をかけてもOKです。ただし、ダウトされてバレたらカードを戻して2枚引きます。正しいのにダウトした人は1枚引きます。<b>ダウトできるのは、次の人がカードを出す前まで</b>です。つながりの早見表は、ダウトが宣言されたときだけ見て答え合わせします（アプリでは自動で判定します）。</p>
     <p>4. 場の流れで<b>有名なコード進行</b>が完成すると、完成させた人がチップを2枚もらえます。</p>
     <p>5. <b>終止ボーナス：</b>小節の4枚目に I を置いて締めた人は、チップを1枚もらえます。</p>
@@ -371,7 +375,7 @@ function nextTurn(){
 function flash(t){const el=document.getElementById('combo');el.textContent='🎉 '+t;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),1800)}
 
 // ---------- render ----------
-function cardHTML(d,cls='',attrs=''){return `<div class="card ${FUNC[d]} ${cls}" ${attrs}><span class="fn">${FUNC[d]}</span><span class="rn">${ROMAN[d]}</span><span class="cn">${cname(d)}</span></div>`}
+function cardHTML(d,cls='',attrs='',extra=''){return `<div class="card ${FUNC[d]} ${cls}" ${attrs}><span class="fn">${FUNC[d]}</span><span class="rn">${ROMAN[d]}</span><span class="cn">${cname(d)}</span>${extra}</div>`}
 function render(promptText){
   const hint=document.getElementById('hint').checked;
   document.getElementById('opps').innerHTML=S.players.slice(1).map((p,i)=>`<div class="opp ${S.cur===i+1?'cur':''}"><div>${p.name}</div><div class="cnt">${p.hand.length}<span style="font-size:12px;font-weight:400"> 枚</span></div><div style="font-size:12px">🪙 ${p.chips}</div></div>`).join('');
@@ -388,9 +392,9 @@ function render(promptText){
   document.getElementById('hist').innerHTML=sh;
   const prev=fieldTop();
   document.getElementById('hand').innerHTML=S.players[0].hand.map((d,i)=>{
-    let c='';if(hint&&S.phase==='human'){const r=legal(prev,d);if(r)c=(r==='free'?'strong':r)}
+    let c='',tag='';if(hint&&S.phase==='human'){const r=legal(prev,d);if(r){c=(r==='free'?'strong':r)+' can';tag='<span class="tag">出せる</span>'}}
     if(S.phase==='drawn'&&d===S.drawn&&i===S.players[0].hand.indexOf(S.drawn))c+=' sel';
-    if(S.sel===i)c+=' sel';return cardHTML(d,c,`data-i="${i}"`)}).join('');
+    if(S.sel===i)c+=' sel';return cardHTML(d,c,`data-i="${i}"`,tag)}).join('');
   let pr=promptText;const A=[];
   if(S.phase==='human'){
     pr=pr||(S.sel===null?(barHead()?'あなたの番：小節の頭なので、どのカードを出してもOK':`あなたの番：${ROMAN[prev]} につながるカードを選んでください${S.field.length%4===3?'（I で小節を締めるとチップ）':''}`):`${ROMAN[prev]}→${ROMAN[S.players[0].hand[S.sel]]} を出しますか？`);

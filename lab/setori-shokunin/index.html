@@ -156,6 +156,7 @@
         <li><b>ドラフト：</b>全8ラウンド。毎回3枚が場に出て、<b>あなたとCPU店長が1枚ずつ取り合います</b>（残りの1枚は捨て札）。先に取る番はラウンドごとに交代します（奇数ラウンドはあなたが先）。</li>
         <li><b>置き方：</b>取った曲はすぐに1〜8曲目の空いている枠に置きます。<b>置いた曲は動かせません。</b>8曲目はアンコールです。CPU店長のセトリは表向きで見えています。</li>
         <li><b>CPU店長の強さ：</b>最初の1枚を取る前に「はじめて」「ふつう」から選べます。</li>
+        <li><b>モード：</b>最初の画面で「通常（1公演）」「ツアー（3公演）」を選べます。ツアーは公演を3回くり返し（公演ごとに新しいドラフトから）、<b>3公演の累計点</b>で勝敗を決めます。</li>
         <li><b>リハーサル：</b>8曲そろったら、自分のセトリの2曲を<b>1回だけ</b>入れ替えられます（入れ替えずに開演してもOK）。</li>
         <li><b>得点の目安：</b>ドラフトで曲を選ぶと、各空き枠に最終得点の目安（残りを標準的な流れで埋めた場合）が出て、一番高い枠に★が付きます。リハーサルでは、1曲目を選ぶと入れ替え候補ごとに点数が何点変わるか出ます。</li>
       </ul>
@@ -185,6 +186,10 @@
       <button type="button" data-level="easy">はじめて</button>
       <button type="button" data-level="normal">ふつう</button>
     </div>
+    <div class="levelrow" id="mode-row">モード：
+      <button type="button" data-mode="single">通常（1公演）</button>
+      <button type="button" data-mode="tour">ツアー（3公演）</button>
+    </div>
     <span class="turnbadge" id="turn-badge"></span>
     <div class="cards" id="draft-cards"></div>
     <p class="muted" style="margin:14px 0 6px">あなたのセトリ（<span id="placed-count">0</span> / 8曲）</p>
@@ -209,10 +214,23 @@
     <div class="cpuboard" id="cpu-board2"></div>
   </section>
 
+  <!-- ツアー：公演と公演の間の中間結果 -->
+  <section id="phase-tour-mid" class="panel hidden">
+    <h2 id="tour-mid-title">第1公演 終了</h2>
+    <table class="scoretable">
+      <thead><tr><th>公演</th><th>あなた</th><th>CPU店長</th></tr></thead>
+      <tbody id="tour-mid-body"></tbody>
+    </table>
+    <p class="muted" id="tour-mid-note" style="margin:10px 0 0"></p>
+    <div class="btnrow">
+      <button class="btn primary" id="btn-next-leg" type="button">次の公演へ</button>
+    </div>
+  </section>
+
   <!-- フェーズ3：結果 -->
   <section id="phase-result" class="hidden">
     <div class="panel verdict">
-      <div class="muted">ライブ終了！</div>
+      <div class="muted" id="verdict-head">ライブ終了！</div>
       <div class="big" id="verdict-text">—</div>
       <div class="muted" id="verdict-sub"></div>
     </div>
@@ -220,6 +238,14 @@
     <div class="panel">
       <h2>ライブレポ</h2>
       <div class="report" id="report-player"></div>
+    </div>
+
+    <div class="panel hidden" id="tour-final-panel">
+      <h2>ツアー結果（公演ごとの内訳）</h2>
+      <table class="scoretable">
+        <thead><tr><th>公演</th><th>あなた</th><th>CPU店長</th></tr></thead>
+        <tbody id="tour-final-body"></tbody>
+      </table>
     </div>
 
     <div class="panel">
@@ -361,28 +387,46 @@ function setLevel(lv){
 Array.prototype.forEach.call(document.querySelectorAll("#level-row button"), function(b){
   b.addEventListener("click", function(){ setLevel(b.getAttribute("data-level")); });
 });
+var mode = "single"; // "single"=通常（1公演） / "tour"=ツアー（3公演）
+var TOUR_LEGS = 3;
+try { var sm = localStorage.getItem("setori-mode"); if (sm === "single" || sm === "tour") mode = sm; } catch (e) {}
+function setMode(m){
+  mode = m;
+  try { localStorage.setItem("setori-mode", m); } catch (e) {}
+  newGame(); // モードを変えたら最初から（公演開始前にだけ選べる）
+}
+Array.prototype.forEach.call(document.querySelectorAll("#mode-row button"), function(b){
+  b.addEventListener("click", function(){ setMode(b.getAttribute("data-mode")); });
+});
 function newGame(){
   state = {
-    deck: buildDeck(),      // 48枚のうち、8ラウンド × 3枚 = 24枚を使う
-    round: 1,
-    slots: new Array(N).fill(null),
-    cpuSlots: new Array(N).fill(null),
-    choices: [],
-    playerFirst: true,
-    cpuLog: [],
-    sel: -1,
-    swapSel: -1,
-    swapped: null,
-    cpuSwap: null
+    leg: 1,          // ツアー：今が第何公演か（通常モードでは常に1）
+    tourResults: []  // ツアー：公演ごとの {player, cpu}
   };
+  startShow();
+}
+function startShow(){
+  state.deck = buildDeck();      // 48枚のうち、8ラウンド × 3枚 = 24枚を使う（公演ごとに作り直す）
+  state.round = 1;
+  state.slots = new Array(N).fill(null);
+  state.cpuSlots = new Array(N).fill(null);
+  state.choices = [];
+  state.playerFirst = true;
+  state.cpuLog = [];
+  state.sel = -1;
+  state.swapSel = -1;
+  state.swapped = null;
+  state.cpuSwap = null;
   document.getElementById("cpu-msg").innerHTML = "";
   showPhase(1);
   startRound();
 }
 function showPhase(n){
-  [1,2,3].forEach(function(i){ document.getElementById("pb"+i).classList.toggle("on", i === n); });
+  var pb = (n === 4) ? 3 : n; // 4=ツアー中間結果（フェーズバーは③扱い）
+  [1,2,3].forEach(function(i){ document.getElementById("pb"+i).classList.toggle("on", i === pb); });
   document.getElementById("phase-draft").classList.toggle("hidden", n !== 1);
   document.getElementById("phase-rehearsal").classList.toggle("hidden", n !== 2);
+  document.getElementById("phase-tour-mid").classList.toggle("hidden", n !== 4);
   document.getElementById("phase-result").classList.toggle("hidden", n !== 3);
 }
 function emptyCount(slots){ return slots.filter(function(c){ return !c; }).length; }
@@ -465,7 +509,8 @@ function cpuTurn(when){
   });
 }
 function renderDraft(){
-  document.getElementById("round-label").textContent = "ラウンド " + state.round + " / " + N;
+  document.getElementById("round-label").textContent =
+    (mode === "tour" ? "第" + state.leg + "公演（全" + TOUR_LEGS + "公演）　" : "") + "ラウンド " + state.round + " / " + N;
   var last = emptyCount(state.slots) === 1;
   var nc = state.choices.length;
   document.getElementById("draft-hint").textContent =
@@ -476,6 +521,11 @@ function renderDraft(){
   lr.classList.toggle("hidden", !fresh);
   Array.prototype.forEach.call(lr.querySelectorAll("button"), function(b){
     b.classList.toggle("on", b.getAttribute("data-level") === level);
+  });
+  var mr = document.getElementById("mode-row");
+  mr.classList.toggle("hidden", !fresh);
+  Array.prototype.forEach.call(mr.querySelectorAll("button"), function(b){
+    b.classList.toggle("on", b.getAttribute("data-mode") === mode);
   });
   document.getElementById("turn-badge").textContent = state.playerFirst
     ? "あなたが先に取る番（残り2枚からCPU店長が取ります）"
@@ -684,6 +734,39 @@ function liveReport(list, sc){
   return "<p class='rhead'>" + head + "（" + t + "点）</p>" + lines.map(function(x){ return "<p>" + x + "</p>"; }).join("");
 }
 
+/* ============ ツアー：中間結果 ============ */
+function tourTotals(){
+  var tp = 0, tc = 0;
+  state.tourResults.forEach(function(r){ tp += r.player; tc += r.cpu; });
+  return { player: tp, cpu: tc };
+}
+function tourRowsHTML(){
+  var html = "";
+  state.tourResults.forEach(function(r, i){
+    html += "<tr><td>第" + (i+1) + "公演</td><td>" + r.player + "点</td><td>" + r.cpu + "点</td></tr>";
+  });
+  var t = tourTotals();
+  html += "<tr class='tot'><td>累計</td><td>" + t.player + "点</td><td>" + t.cpu + "点</td></tr>";
+  return html;
+}
+function showTourMid(){
+  document.getElementById("tour-mid-title").textContent = "第" + state.leg + "公演 終了（全" + TOUR_LEGS + "公演）";
+  document.getElementById("tour-mid-body").innerHTML = tourRowsHTML();
+  var t = tourTotals(), left = TOUR_LEGS - state.leg;
+  document.getElementById("tour-mid-note").textContent =
+    t.player > t.cpu ? "現在、あなたが " + (t.player - t.cpu) + "点リード。残り" + left + "公演です。"
+    : t.player < t.cpu ? "現在、CPU店長が " + (t.cpu - t.player) + "点リード。残り" + left + "公演で巻き返そう。"
+    : "現在、同点。残り" + left + "公演です。";
+  document.getElementById("btn-next-leg").textContent = "第" + (state.leg + 1) + "公演へ";
+  showPhase(4);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+document.getElementById("btn-next-leg").addEventListener("click", function(){
+  state.leg++;
+  startShow();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
 /* ============ フェーズ3：結果 ============ */
 function fmt(n){ return (n > 0 ? "+" + n : "" + n); }
 function listHTML(list, sc){
@@ -704,11 +787,25 @@ function showResult(){
   }
   var ps = scoreSetlist(state.slots);
   var cs = scoreSetlist(state.cpuSlots);
+  if (mode === "tour"){
+    state.tourResults.push({ player: ps.total, cpu: cs.total });
+    if (state.leg < TOUR_LEGS){ showTourMid(); return; } // 最終公演以外は中間結果へ
+  }
   showPhase(3);
+  document.getElementById("verdict-head").textContent = mode === "tour" ? "ツアー全" + TOUR_LEGS + "公演 終了！" : "ライブ終了！";
+  var tfp = document.getElementById("tour-final-panel");
+  tfp.classList.toggle("hidden", mode !== "tour");
+  if (mode === "tour") document.getElementById("tour-final-body").innerHTML = tourRowsHTML();
 
   var v = document.getElementById("verdict-text");
   var sub = document.getElementById("verdict-sub");
-  if (ps.total > cs.total){ v.textContent = "あなたの勝ち！"; sub.textContent = "会場が一番沸いたのは、あなたのセトリでした。"; }
+  if (mode === "tour"){
+    var tt = tourTotals();
+    if (tt.player > tt.cpu){ v.textContent = "あなたの勝ち！"; sub.textContent = "3公演の累計 あなた " + tt.player + "点 ／ CPU店長 " + tt.cpu + "点。ツアーを制しました！"; }
+    else if (tt.player < tt.cpu){ v.textContent = "CPU店長の勝ち"; sub.textContent = "3公演の累計 あなた " + tt.player + "点 ／ CPU店長 " + tt.cpu + "点。あと少し。公演ごとの内訳を見直してみよう。"; }
+    else { v.textContent = "引き分け"; sub.textContent = "3公演の累計 あなた " + tt.player + "点 ／ CPU店長 " + tt.cpu + "点。互角のツアーでした。"; }
+  }
+  else if (ps.total > cs.total){ v.textContent = "あなたの勝ち！"; sub.textContent = "会場が一番沸いたのは、あなたのセトリでした。"; }
   else if (ps.total < cs.total){ v.textContent = "CPU店長の勝ち"; sub.textContent = "あと少し。聴かせどころの位置と、アンコール用の曲の取っておき方を見直してみよう。"; }
   else { v.textContent = "引き分け"; sub.textContent = "互角の名勝負。もう一回やれば決着がつくかも。"; }
 

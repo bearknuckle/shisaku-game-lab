@@ -148,7 +148,7 @@ const GAMES=[
   {
     id:'bodoge-ichi', name:'ボドゲ市の争奪戦', icon:'🎪', color:'#d2452f',
     desc:'ボドゲの即売会で新作を取り合う。全員いっせいに行くブースを選び、在庫より人が多ければ行列で買えない人が出る。買えなかった人は整理券をもらって、次は先頭に並べる。ひみつのお目当てカード2枚を達成すると+3点ずつ、タイトルを一番に買えば初回特典で⭐+1。在庫1つの🔥話題作をめぐる読み合いと、4ジャンルそろえるコンプボーナス。15時は閉場前セール。6つの時間帯で勝負。',
-    players:'1人（CPU 1〜3人）', time:'5〜10分', genre:'ボドゲ', added:'2026-11-20', version:'0.2', updated:'2026-11-20', isNew:true
+    players:'1人（CPU 1〜3人）', time:'5〜10分', genre:'ボドゲ', added:'2026-11-20', version:'0.3', updated:'2026-11-23', isNew:true
   },
   {
     id:'bpm-relay', name:'BPMリレー', icon:'🎧', color:'#7a2cff',
@@ -188,7 +188,7 @@ const GAMES=[
   {
     id:'pennant-owners', name:'ペナント・オーナーズ', icon:'⚾', color:'#1d5a37',
     desc:'選手を取り合って、打者3人と投手1人で3試合のシリーズ。サイコロ＋打力が投手の数字以上ならヒット。最終回は「直球か変化球か」の読み合い。ルールは5行だけ。',
-    players:'1人（CPU 1人）', time:'10分', genre:'スポーツ', added:'2026-11-19', version:'0.4', updated:'2026-11-20', isNew:true
+    players:'1人（CPU 1人）', time:'10分', genre:'スポーツ', added:'2026-11-19', version:'0.5', updated:'2026-11-24', isNew:true
   },
   {
     id:'kanpai', name:'カンパイ！', icon:'🍻', color:'#b8322a',
@@ -204,7 +204,7 @@ const GAMES=[
   {
     id:'shinko-shiritori', name:'進行しりとり', icon:'🎹', color:'#2f8f5f',
     desc:'場のコードに「自然につながる」コードをつないでいく、しりとり型カードゲーム。はったりとダウトあり。遊びながらコード進行の流れが身につく。',
-    players:'1人（CPU 1〜3人）', time:'5〜10分', genre:'音楽', added:'2026-11-18', version:'0.5', updated:'2026-11-20', isNew:true
+    players:'1人（CPU 1〜3人）', time:'5〜10分', genre:'音楽', added:'2026-11-18', version:'0.6', updated:'2026-11-24', isNew:true
   },
   {
     id:'onechord', name:'ワンコード', icon:'🎵', color:'#4f8cff',
@@ -214,7 +214,7 @@ const GAMES=[
   {
     id:'setori-shokunin', name:'セトリ職人', icon:'🎤', color:'#e07b39',
     desc:'ライブのセットリストを組むカードゲーム。取った曲はすぐ1〜8曲目の枠に置き、あとからは動かせない。中盤で一度落とす聴かせどころから、アンコールまで上げきってCPU店長と勝負。',
-    players:'1人（CPU 1人）', time:'5分', genre:'音楽', added:'2026-11-18', version:'0.7', updated:'2026-11-24', isNew:true
+    players:'1人（CPU 1人）', time:'5分', genre:'音楽', added:'2026-11-18', version:'0.8', updated:'2026-11-24', isNew:true
   },
   {
     id:'doubutsu-kabu', name:'せーの株 どうぶつ版', icon:'🦦', color:'#3f8f5a',
@@ -234,6 +234,9 @@ const GAMES=[
 ];
 // 最近の更新（新しい順）。ゲームを更新したら先頭に1件足し、GAMES の version / updated も上げる
 const UPDATES=[
+  {date:'2026-11-24', id:'setori-shokunin',  version:'0.8', text:'「ツアー制（3公演）」モードを追加。公演ごとに新しいドラフトから始めて、3公演の累計スコアで勝敗が決まるように'},
+  {date:'2026-11-24', id:'pennant-owners',   version:'0.5', text:'打者カードに「ヒット率 ○○%」を表示。最終回の読み合い画面では、読みが当たった場合の率も見られるように'},
+  {date:'2026-11-24', id:'shinko-shiritori', version:'0.6', text:'ヒントONのとき、出せるカードに金の「出せる」タグと光る枠を表示（タグのないカードも、はったりとしてそのまま出せます）'},
   {date:'2026-11-24', id:'yutai-collection', version:'0.1', text:'新しく登場（株のゲーム・同じ会社の株を3枚集めて優待カードをゲット）'},
   {date:'2026-11-24', id:'setori-shokunin',  version:'0.7', text:'結果画面に「ライブレポ」を追加。幕開けから聴かせどころ、アンコールまで、自分とCPU店長のライブの様子を短い文章で振り返れるように'},
   {date:'2026-11-24', id:'bpm-relay',       version:'0.4', text:'かかっている曲がずっとループで流れるように。次の曲を出すと1小節かけてテンポを寄せてつなぐ（ジャンルごとにビートが変わる）。音は「ずっと流す／出したときだけ／音なし」から選べる'},
@@ -267,6 +270,7 @@ const UPDATES=[
   {date:'2026-11-23', id:'ipo-rush', version:'0.2', text:'CPUの売買を見えるように：銘柄ごとにCPUの持ち株と買い集中が分かる表示を追加'},
   {date:'2026-11-23', id:'bodoge-shop-story', version:'0.5', text:'イベントに担当役職制を導入：担当役職と共通カードのパワーはそのまま、担当外の役職パワーは半分で代用。CPU仲間も自分の担当イベントを優先して助けるように'},
   {date:'2026-11-23', id:'dnup', version:'0.1', text:'新しく登場：dnup（ダウン・アップ）のファン製ルール確認アプリ（遊び方・クイズ・CPU対戦）'},
+  {date:'2026-11-23', id:'bodoge-ichi',      version:'0.3', text:'最初の時間帯（10時）だけ、おすすめブースに「⭐おすすめ」表示を追加'},
   {date:'2026-11-22', id:'ipo-rush', version:'0.1', text:'新しく登場：上場したての株を買って、成長にかけるゲーム'},
   {date:'2026-11-22', id:'bodoge-shop-story', version:'0.4', text:'大量の自動テストプレイでバランスを最適化：山札40枚・評判の目標32、イベントの必要パワーを引き上げ、CPUをゆっくりに。仕入れ役の詰みを救う「引き直し」も追加'},
   {date:'2026-11-22', id:'hit-chart',        version:'0.3', text:'最初の1か月だけ遊べる「おためしモード」を追加。まず流れをつかんでから通常モード（6か月）へ'},
