@@ -94,6 +94,9 @@ button{font-family:inherit;font-weight:700;cursor:pointer;border:none;border-rad
 .brands .dsc{display:block;opacity:.85;font-size:11.5px;margin-top:2px}
 .brands div.taken{opacity:.55}
 .brands div.taken b{color:var(--paper)}
+.brands .star{color:var(--amber);font-weight:900}
+.zukan-prog{font-size:13px;font-weight:700;margin:2px 0 8px}
+.zukan-prog b{color:var(--amber2)}
 /* modal */
 .modal{position:fixed;inset:0;background:rgba(10,10,20,.72);display:flex;align-items:center;justify-content:center;padding:16px;z-index:10}
 .modal[hidden]{display:none}
@@ -134,6 +137,7 @@ button{font-family:inherit;font-weight:700;cursor:pointer;border:none;border-rad
       <li>各自6手番ずつで終わり。得点が高い人の勝ち（同点なら、獲得した銘柄が多いほう）。</li>
     </ul>
     <div class="lbl">銘柄図鑑（すべて実在の日本酒です）</div>
+    <div class="zukan-prog" id="zukanProg"></div>
     <div class="brands" id="zukanSetup"></div>
     <p class="note">🔞 このゲームはお酒を飲まなくても遊べます。飲みながら遊ぶときは<b>20歳以上</b>で、飲みすぎや一気飲みはやめましょう。ソフトドリンクでも楽しめます。</p>
     <button class="btn red big" id="startBtn">勝負をはじめる</button>
@@ -156,7 +160,7 @@ button{font-family:inherit;font-weight:700;cursor:pointer;border:none;border-rad
     </div>
     <div class="choices" id="choices"></div>
     <div class="card" style="margin-top:6px">
-      <div class="lbl" style="margin-top:0">銘柄ボード（早い者勝ち）</div>
+      <div class="lbl" style="margin-top:0">銘柄ボード（早い者勝ち） <span id="boardProg" style="color:var(--amber2)"></span></div>
       <div class="brands" id="brandBoard" style="margin:0"></div>
     </div>
     <div class="card log" id="log"></div>
@@ -165,7 +169,7 @@ button{font-family:inherit;font-weight:700;cursor:pointer;border:none;border-rad
     </div>
   </div>
 
-  <div class="foot"><a href="../" style="color:inherit">← 試作ゲームラボに戻る</a> ・ 銘柄サイコロ v0.5</div>
+  <div class="foot"><a href="../" style="color:inherit">← 試作ゲームラボに戻る</a> ・ 銘柄サイコロ v0.6</div>
 </div>
 
 <div class="modal" id="endModal" hidden>
@@ -248,6 +252,27 @@ function keepMaskFor(brand, faces){
 }
 window.__game = {DICE, BRANDS, formableBrands, progressOf, missingOf, bestTarget, keepMaskFor};
 
+// ---- 銘柄図鑑コレクション（プレイヤーが獲得した銘柄をlocalStorageに記録） ----
+const ZUKAN_KEY = 'sakagura-zukan';
+function loadZukan(){
+  try{
+    const arr = JSON.parse(localStorage.getItem(ZUKAN_KEY) || '[]');
+    return new Set(arr.filter(n => BRANDS.some(b=>b.name===n)));
+  }catch(e){ return new Set(); }
+}
+let zukan = loadZukan();
+function saveZukan(){
+  try{ localStorage.setItem(ZUKAN_KEY, JSON.stringify([...zukan])); }catch(e){}
+}
+function recordZukan(brand){
+  if(zukan.has(brand.name)) return false;
+  zukan.add(brand.name);
+  saveZukan();
+  return true;
+}
+window.__game.zukan = zukan;
+window.__game.recordZukan = recordZukan;
+
 let G = null;
 let humanWait = null;
 const $ = id => document.getElementById(id);
@@ -269,14 +294,18 @@ document.querySelectorAll('.opt').forEach(o=>{
 // ---- 画面 ----
 function brandCell(b, takenBy){
   const who = takenBy ? ` <span>（${takenBy}）</span>` : '';
-  return `<div class="${takenBy ? 'taken' : ''}"><b>${b.name}</b>（${b.reading}） <span class="pts">${b.pts}点</span>${who}` +
+  const star = zukan.has(b.name) ? ' <span class="star" title="図鑑に記録済み">★</span>' : '';
+  return `<div class="${takenBy ? 'taken' : ''}"><b>${b.name}</b>${star}（${b.reading}） <span class="pts">${b.pts}点</span>${who}` +
     `<span class="dsc">${b.kanji.join('＋')} ／ ${b.desc}</span></div>`;
 }
 function renderZukan(){
   $('zukanSetup').innerHTML = BRANDS.map(b => brandCell(b, null)).join('');
+  $('zukanProg').innerHTML = `図鑑コレクション：★ <b>${zukan.size}</b> / ${BRANDS.length} 銘柄` +
+    (zukan.size >= BRANDS.length ? ' 🎉 コンプリート！' : '（ゲームで銘柄を獲得すると★がつきます）');
 }
 function renderBoard(){
   $('brandBoard').innerHTML = BRANDS.map(b => brandCell(b, G.taken.get(b.name) || null)).join('');
+  $('boardProg').textContent = `・図鑑 ★${zukan.size}/${BRANDS.length}`;
 }
 function addLog(html){
   G.log.push(html);
@@ -471,6 +500,9 @@ async function takeTurn(p){
     p.score += brand.pts;
     showBig(brand, p.name);
     addLog(`🍶 <b>${p.name}</b>は銘柄「<b>${brand.name}</b>」（${brand.reading}）をそろえた！ ＋${brand.pts}点 ―― ${brand.desc}`);
+    if(p.isHuman && recordZukan(brand)){
+      addLog(`📖 図鑑に「<b>${brand.name}</b>」を新しく記録！（★ ${zukan.size}/${BRANDS.length} 銘柄）`);
+    }
     const line = CPU_POOL.find(c=>c.name===p.name);
     if(line && !p.isHuman) addLog(`${p.av} ${p.name}「${line.lines[rand(line.lines.length)]}」`);
   } else {
@@ -562,6 +594,7 @@ $('menuBtn').addEventListener('click', ()=>{
   $('endModal').hidden = true;
   $('gameCard').hidden = true;
   $('setupCard').hidden = false;
+  renderZukan();
 });
 $('quitBtn').addEventListener('click', ()=>{
   G = null;
@@ -569,6 +602,7 @@ $('quitBtn').addEventListener('click', ()=>{
   hideButtons();
   $('gameCard').hidden = true;
   $('setupCard').hidden = false;
+  renderZukan();
 });
 </script>
 </body>

@@ -72,6 +72,8 @@ button{font-family:inherit;cursor:pointer;border:none}
 .sh-n small{color:var(--sub);font-weight:700}
 .sh-c{font-size:13px;color:var(--sub)}
 .sh-c b{color:var(--ink);font-size:18px}
+.sh-c .rest{color:var(--accent);font-weight:800}
+.sh-c .rest2{color:var(--sub);font-weight:700}
 .sh button{padding:8px 12px;border-radius:10px;font-size:14px;font-weight:800;background:var(--accent);color:#fff}
 .sh button:disabled{background:#c9d2c9}
 
@@ -229,25 +231,26 @@ function resolveKantei(){
   S.players.forEach(p=>{
     COMPANIES.forEach(c=>{
       if((p.shares[c.id]||0)>=3&&S.yutaiDeck.length>0){
-        const y=S.yutaiDeck.pop();
-        p.yutai.push(y);
+        const y=drawYutai(p,c.id);
         addLog(`${p.icon}${p.name}が${coName(c.id)}の優待「${y.name}」（${y.pts}点）をゲット！`);
       }
     });
   });
 }
 
-function drawYutai(p){
+function drawYutai(p,coId){
   if(S.yutaiDeck.length===0)return null;
   const y=S.yutaiDeck.pop();
-  p.yutai.push(y);
-  return y;
+  // 内訳表示用に「どの会社の優待か」をコピーして記録する（元の優待カード定義は書き換えない）
+  const rec={pts:y.pts,name:y.name,co:coId||null};
+  p.yutai.push(rec);
+  return rec;
 }
 
 function claimYutai(p,coId){
   if((p.shares[coId]||0)<3)return false;
   p.shares[coId]-=3;
-  const y=drawYutai(p);
+  const y=drawYutai(p,coId);
   if(y)addLog(`${p.icon}${p.name}が${coName(coId)}の株3枚で優待「${y.name}」（${y.pts}点）をゲット！`);
   return true;
 }
@@ -355,15 +358,26 @@ function settle(){
   const msg=myRank===1?'🏆 優勝！優待コレクターの頂点！':(rank.filter(r=>r.tot===top).length>1&&rank[0].p.me?'🏆 優勝！（同点）':(myRank===2?'🥈 2位！あと少し！':`🏁 ${myRank}位でフィニッシュ`));
   document.getElementById('endMsg').textContent=msg;
   document.getElementById('rank').innerHTML=rank.map((r,i)=>`<div class="rk ${r.p.me?'me':''}"><div class="no">${i+1}</div><div class="nm">${r.p.icon} ${r.p.name}</div><div class="v">${r.tot}<small style="font-size:12px">点</small></div></div>`).join('');
-  document.getElementById('endStats').innerHTML='<h3>優待の内訳</h3><table class="stats"><tr><th>プレイヤー</th><th>優待カード</th><th>合計</th></tr>'+
-    S.players.map(p=>`<tr><td>${p.icon} ${p.name}</td><td>${p.yutai.map(y=>y.name+'('+y.pts+')').join(' ')||'なし'}</td><td>${yutaiPts(p)}点</td></tr>`).join('')+'</table>'+
+  document.getElementById('endStats').innerHTML='<h3>優待の内訳（会社別）</h3><table class="stats"><tr><th>プレイヤー</th><th>会社別の内訳</th><th>合計</th></tr>'+
+    S.players.map(p=>{
+      const parts=COMPANIES.map(c=>{
+        const ys=p.yutai.filter(y=>y.co===c.id);
+        if(!ys.length)return '';
+        const sum=ys.reduce((t,y)=>t+y.pts,0);
+        return `${c.emo}${c.name} ${sum}点（${ys.map(y=>y.name+y.pts).join('・')}）`;
+      }).filter(Boolean);
+      const others=p.yutai.filter(y=>!y.co);
+      if(others.length)parts.push(`その他 ${others.reduce((t,y)=>t+y.pts,0)}点（${others.map(y=>y.name+y.pts).join('・')}）`);
+      return `<tr><td>${p.icon} ${p.name}</td><td style="text-align:left">${parts.join('<br>')||'なし'}</td><td>${yutaiPts(p)}点</td></tr>`;
+    }).join('')+'</table>'+
     `<p style="font-size:13px;color:var(--sub);margin-top:8px">実物版：会社カード36枚＋権利確定日3枚＋優待カード24枚の63枚で遊べます</p>`;
   show('end');
 }
 
 function render(){
   const me=S.players[0];
-  document.getElementById('deckInfo').textContent=`山札 ${S.deck.length}枚・優待 ${S.yutaiDeck.length}枚`;
+  const kanteiLeft=S.deck.filter(c=>c.type==='kantei').length;
+  document.getElementById('deckInfo').textContent=`山札 ${S.deck.length}枚（📅権利確定日 あと${kanteiLeft}枚）・優待 ${S.yutaiDeck.length}枚`;
   document.getElementById('field').innerHTML=Array.from({length:FIELD_N},(_,i)=>{
     const card=S.field[i];
     if(!card)return `<div class="fcard empty"><div class="emo">－</div><div class="nm">なし</div></div>`;
@@ -375,15 +389,16 @@ function render(){
   document.getElementById('myShares').innerHTML=COMPANIES.map(c=>{
     const n=me.shares[c.id]||0;
     const can=n>=3&&!S.busy&&S.turn===0;
+    const rest=n===2?` <span class="rest">あと1枚で優待！</span>`:(n===1?` <span class="rest2">あと2枚</span>`:'');
     return `<div class="sh ${n>=3?'can':''}">
-      <div><div class="sh-n">${c.emo} ${c.name} <small>（${c.sector}）</small></div><div class="sh-c">持ち株 <b>${n}</b>枚</div></div>
+      <div><div class="sh-n">${c.emo} ${c.name} <small>（${c.sector}）</small></div><div class="sh-c">持ち株 <b>${n}</b>枚${rest}</div></div>
       <button ${can?'':'disabled'} onclick="claimMine('${c.id}')">優待をもらう</button>
     </div>`;
   }).join('');
   const cur=S.players[S.turn];
   document.getElementById('phase').textContent=S.over?'':(S.turn===0?'あなたの番：場のカードを取るか、優待をもらおう':`${cur.icon}${cur.name}の番…`);
   document.getElementById('players').innerHTML=S.players.map((p,i)=>{
-    const hold=COMPANIES.filter(c=>p.shares[c.id]).map(c=>c.emo+'×'+p.shares[c.id]).join(' ')||'株なし';
+    const hold=COMPANIES.filter(c=>p.shares[c.id]).map(c=>{const n=p.shares[c.id];return c.emo+'×'+n+(n===2?'（あと1枚）':n>=3?'（優待可）':'')}).join(' ')||'株なし';
     return `<div class="pl ${p.me?'me':''} ${i===S.turn&&!S.over?'turn':''}"><div class="nm"><span>${p.icon} ${p.name}</span></div><div class="tot">${yutaiPts(p)}<small style="font-size:11px">点・優待${p.yutai.length}枚</small></div><div class="detail">${hold}</div></div>`;
   }).join('');
   document.getElementById('log').innerHTML=S.log.map(l=>`<div>${l}</div>`).join('');

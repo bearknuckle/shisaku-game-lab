@@ -101,7 +101,7 @@ const GAMES=[
   {
     id:'yutai-collection', name:'株主優待コレクション', icon:'🎁', color:'#2e7d32',
     desc:'同じ会社の株を3枚集めたら優待カードをゲット。場の会社カードを取るか、山札から引くか、優待をもらうか。場に権利確定日が出たら、3枚そろっている会社ごとに全員が優待をもらえる。優待の点数合計で勝負。',
-    players:'1人（CPU 1〜3人）', time:'5〜10分', genre:'株', added:'2026-11-24', version:'0.1', updated:'2026-11-24', isNew:true
+    players:'1人（CPU 1〜3人）', time:'5〜10分', genre:'株', added:'2026-11-24', version:'0.2', updated:'2026-11-24', isNew:true
   },
   {
     id:'oyatsu-wakekko', name:'おやつわけっこ', icon:'🍪', color:'#e8743b',
@@ -111,7 +111,7 @@ const GAMES=[
   {
     id:'pk-shootout', name:'PKシュート対決', icon:'⚽', color:'#1a6b2e',
     desc:'5本ずつ蹴り合うPK戦。蹴るコースとGKの飛ぶコースを同時に選ぶ読み合い。コース重視は枠を外さない代わりに読まれると止められ、パワーシュートは枠を外す危険と引き換えにGKの手を弾く。CPUキッカーの「クセ」を読んで守ろう。同点ならサドンデス。',
-    players:'1人（CPU 1人）', time:'5〜10分', genre:'スポーツ', added:'2026-11-23', version:'0.1', updated:'2026-11-23', isNew:true
+    players:'1人（CPU 1人）', time:'5〜10分', genre:'スポーツ', added:'2026-11-23', version:'0.2', updated:'2026-11-24', isNew:true
   },
   {
     id:'kakusu-dice', name:'画数ダイス', icon:'🎲', color:'#2f5d8a',
@@ -121,7 +121,7 @@ const GAMES=[
   {
     id:'sakagura-sugoroku', name:'銘柄サイコロ', icon:'🍶', color:'#1c2b4a',
     desc:'漢字だけのサイコロ4つを振って、実在の変わった名前の日本酒銘柄をそろえるゲーム。残すサイコロを選んで振り直し、「死神」「川口納豆」「国士無双」などを完成させよう。銘柄は全員で早い者勝ち。全10銘柄に、蔵元や名前の由来の説明つき。',
-    players:'1人（CPU 1〜3人）', time:'5〜10分', genre:'お酒', added:'2026-11-23', version:'0.5', updated:'2026-11-23', isNew:true,
+    players:'1人（CPU 1〜3人）', time:'5〜10分', genre:'お酒', added:'2026-11-23', version:'0.6', updated:'2026-11-24', isNew:true,
     note:'お酒を飲まなくても遊べます。飲むときは20歳以上で、ほどほどに'
   },
   {
@@ -158,7 +158,7 @@ const GAMES=[
   {
     id:'hit-chart', name:'ヒットチャート・ジェネレーター', icon:'🎧', color:'#6a3fd8',
     desc:'素材カード（ジャンル・ムード・楽器・ボーカル）を組み合わせてAIで曲を作り、毎月のチャートでファンを集める。流行のジャンルは点が伸びるけれど、同じジャンルがかぶると飽和して共倒れ。来月の流行を読みながら、乗るか裏をかくか。取ったジャンルカードは表向きなので、誰が何を狙っているかも読みどころ。初めて出すジャンルならファン＋1。出した曲はロングテールでしばらくファンを運んでくる。全6か月勝負。最初の1か月だけ遊べる「おためしモード」も選べる。',
-    players:'1人（CPU 1〜3人）', time:'10分', genre:'音楽', added:'2026-11-20', version:'0.3', updated:'2026-11-22', isNew:true
+    players:'1人（CPU 1〜3人）', time:'10分', genre:'音楽', added:'2026-11-20', version:'0.4', updated:'2026-11-24', isNew:true
   },
   {
     id:'tana-puzzle', name:'ボドゲカフェの棚パズル', icon:'🗄️', color:'#8a5a34',
@@ -234,6 +234,10 @@ const GAMES=[
 ];
 // 最近の更新（新しい順）。ゲームを更新したら先頭に1件足し、GAMES の version / updated も上げる
 const UPDATES=[
+  {date:'2026-11-24', id:'yutai-collection', version:'0.2', text:'会社ごとの「あと○枚」表示、山札と権利確定日の残り表示、結果画面に会社別の優待内訳を追加'},
+  {date:'2026-11-24', id:'sakagura-sugoroku', version:'0.6', text:'集めた銘柄を図鑑に記録（★表示・保存つき）。図鑑コレクション ○/10銘柄の進み具合が見えるように'},
+  {date:'2026-11-24', id:'pk-shootout',       version:'0.2', text:'キックの記録に「あなたのキック傾向」（コース別の回数）を表示。CPUのGKはよく蹴るコースを読んでくるので、偏りに気づけるように'},
+  {date:'2026-11-24', id:'hit-chart',        version:'0.4', text:'最終結果に「作った曲の一覧」を追加。月・ジャンル・獲得ファン数つきで振り返れるように'},
   {date:'2026-11-24', id:'setori-shokunin',  version:'0.8', text:'「ツアー制（3公演）」モードを追加。公演ごとに新しいドラフトから始めて、3公演の累計スコアで勝敗が決まるように'},
   {date:'2026-11-24', id:'pennant-owners',   version:'0.5', text:'打者カードに「ヒット率 ○○%」を表示。最終回の読み合い画面では、読みが当たった場合の率も見られるように'},
   {date:'2026-11-24', id:'shinko-shiritori', version:'0.6', text:'ヒントONのとき、出せるカードに金の「出せる」タグと光る枠を表示（タグのないカードも、はったりとしてそのまま出せます）'},

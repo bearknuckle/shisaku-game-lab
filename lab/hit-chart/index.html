@@ -179,6 +179,7 @@
       <h2>最終結果</h2>
       <div class="win" id="winTxt"></div>
       <table class="final" style="width:100%" id="finalTbl"></table>
+      <div id="songList"></div>
       <div class="btnrow"><button class="btn primary" id="againBtn">もう一度</button></div>
     </div>
   </div>
@@ -548,7 +549,7 @@ function reveal(){
   // ロングテール（先月までの曲）
   var tail = {};
   S.players.forEach(function(p, i){
-    var n = 0; p.songs.forEach(function(s){ if (s.tail > 0){ s.tail--; n++; } });
+    var n = 0; p.songs.forEach(function(s){ if (s.tail > 0){ s.tail--; s.fans = (s.fans || 0) + 1; n++; } });
     tail[i] = n; p.fans += n;
   });
   // 反映
@@ -558,7 +559,7 @@ function reveal(){
     if (!r.out){
       r.first = !p.genresOut[r.song.genre.g];
       if (r.first) r.fans = (r.fans || 0) + 1;
-      p.songs.push({genre:r.song.genre.g, month:S.month, tail:TAIL}); p.genresOut[r.song.genre.g] = true; p.fans += r.fans || 0;
+      p.songs.push({genre:r.song.genre.g, month:S.month, tail:TAIL, fans:r.fans || 0}); p.genresOut[r.song.genre.g] = true; p.fans += r.fans || 0;
     }
   });
   // 表示
@@ -608,6 +609,18 @@ function endGame(){
     res.map(function(r, i){
       return '<tr' + (r.p.cpu ? '' : ' style="font-weight:800"') + '><td>' + (i + 1) + '. ' + r.p.name + '</td><td>' + r.p.fans + '</td><td>' + r.kinds + '種' + (r.bonus ? '（+' + r.bonus + '）' : '') + '</td><td><b>' + r.total + '</b></td></tr>';
     }).join("");
+  // あなたの作った曲の一覧（月・ジャンル・獲得ファン）
+  var me = S.players[0];
+  if (me.songs.length){
+    $("songList").innerHTML = '<h3 style="font-size:15px;margin:12px 0 4px">🎵 あなたの作った曲（' + me.songs.length + '曲）</h3>' +
+      '<table class="final" style="width:100%">' +
+      me.songs.map(function(s){
+        return '<tr><td>' + (s.month + 1) + 'か月目</td><td><span class="chip" style="background:' + gcolor(s.genre) + '">' + GNAME[s.genre] + '</span></td><td style="text-align:right">⭐ ' + (s.fans || 0) + 'ファン</td></tr>';
+      }).join("") + '</table>' +
+      '<p class="muted" style="margin:4px 0 0">ファンはチャート＋ロングテールの合計です（取り下げになった曲は含みません）。</p>';
+  } else {
+    $("songList").innerHTML = '<p class="muted" style="margin:10px 0 0">この期間にリリースした曲はありませんでした。</p>';
+  }
   show("endPanel"); renderPlayers();
 }
 $("againBtn").onclick = function(){ $("game").classList.add("hidden"); $("start").classList.remove("hidden"); window.scrollTo(0, 0); };

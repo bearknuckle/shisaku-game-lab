@@ -55,6 +55,8 @@
   .btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;justify-content:center}
   .big{font-size:22px;font-weight:bold;text-align:center;margin:6px 0}
   .sub{font-size:14px;color:var(--sub);text-align:center}
+  .trend{font-size:13px;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin:0 0 8px}
+  .trend b{color:var(--gold)}
   .log{font-size:13px;color:var(--sub);margin:0;padding-left:18px}
   .log li{margin:2px 0}
   .hint{font-size:13px;color:var(--gold);text-align:center;margin-bottom:8px}
@@ -88,7 +90,7 @@
     </details>
   </div>
   <div class="foot">紙のカードとじゃんけんだけで遊べるルールにしています</div>
-  <p class="back"><a href="../">← 試作ゲームラボに戻る</a> ・ PKシュート対決 v0.1</p>
+  <p class="back"><a href="../">← 試作ゲームラボに戻る</a> ・ PKシュート対決 v0.2</p>
 </div>
 <script>
 const ZONES=[
@@ -208,6 +210,13 @@ function ballsHTML(kicks, isMyTurn){
   }
   return `<div class="balls">${cells.join('')}</div>`;
 }
+function myZoneTrendHTML(){
+  // あなたのキック傾向（コース別回数）。GKは多いコースほど読みに来るので、偏りに気づけるように表示する
+  if(!S.myZones.length) return '';
+  const counts={}; S.myZones.forEach(z=>counts[z]=(counts[z]||0)+1);
+  const parts=ZONES.filter(z=>counts[z.id]).map(z=>`${z.name}×${counts[z.id]}`);
+  return `<p class="trend">🎯 あなたのキック傾向：<b>${parts.join('、')}</b>（全${S.myZones.length}本）<br><span style="color:var(--sub)">CPUのGKは、よく蹴るコースほど読んで飛んできます。偏りすぎに注意。</span></p>`;
+}
 function goalHTML(){
   const cells=ZONES.map(z=>{
     const sel=S.selZone===z.id;
@@ -255,7 +264,7 @@ function render(){
       <div class="btns"><button class="primary" onclick="newGame()">もう一度</button></div></div>`;
   }
   if(S.log.length){
-    h+=`<div class="panel"><h2>キックの記録</h2><ul class="log">${S.log.map(l=>`<li>${l}</li>`).join('')}</ul></div>`;
+    h+=`<div class="panel"><h2>キックの記録</h2>${myZoneTrendHTML()}<ul class="log">${S.log.map(l=>`<li>${l}</li>`).join('')}</ul></div>`;
   }
   document.getElementById('main').innerHTML=h;
 }
