@@ -82,6 +82,7 @@ button{font-family:inherit;font-weight:700;cursor:pointer;border:none;border-rad
 .namaTime.on{opacity:1}
 .namaTime i{position:absolute;left:0;bottom:0;height:3px;background:var(--red);width:100%}
 .namaTime.on i{animation:shrink 2s linear forwards}
+.namaTime.slow i{animation:none}
 @keyframes shrink{to{width:0}}
 
 /* cards */
@@ -305,7 +306,7 @@ body.practicemode .explain{display:block}
 
   <div class="handhead"><h2>あなたの手札</h2><span class="c" id="myCount"></span></div>
   <div class="hand" id="hand"></div>
-  <div class="foot"><a href="../" style="color:inherit">← 試作ゲームラボに戻る</a> ・ カンパイ！ v0.6</div>
+  <div class="foot"><a href="../" style="color:inherit">← 試作ゲームラボに戻る</a> ・ カンパイ！ v0.7</div>
 </div>
 
 <!-- ================= PARTY ================= -->
@@ -349,6 +350,9 @@ body.practicemode .explain{display:block}
     <div class="lbl">イベントおつまみ</div>
     <div class="opt" id="optEvents"><button data-v="1" class="on">あり</button><button data-v="0">なし</button></div>
     <p class="note">🍻ハッピーアワー（次にカンパイした人はもう1枚捨てられる）・🔔ラストオーダー（あと3品で閉店。手札が一番少ない人の勝ち）・🧊お冷やどうぞ（手札が一番多い人が1枚捨てる）がときどき出ます。</p>
+    <div class="lbl">速さ</div>
+    <div class="opt" id="optSlow"><button data-v="0" class="on">ふつう（2秒）</button><button data-v="1">🐢 ゆっくり（制限なし）</button></div>
+    <p class="note">ゆっくりでは「とりあえず生」と「はしご酒」の2秒制限がなくなります。はしご酒は「つぎのおつまみへ」ボタンで終わらせます。初めての人におすすめです。</p>
     <div class="statline" id="bestLine" hidden></div>
     <div class="lbl">あそびかた</div>
     <div class="opt" id="optMode"><button data-v="practice">🔰 れんしゅう</button><button data-v="solo" class="on">🤖 CPUと対戦</button><button data-v="party">🍻 みんなで1台</button></div>
@@ -440,8 +444,13 @@ const LV = {
 const NAMA_MS = 2000;
 const CHAIN_MS = 2000;
 const PARTY_WAIT = 15000;
+// ゆっくりモード（2秒制限なし）の保存キーと、窓の長さを返すヘルパー。通常モードでは従来の値をそのまま返す
+const SLOWKEY='kanpai-slow';
+const slowMode = () => !!settings.slow;
+const namaMs = () => settings.slow ? Infinity : NAMA_MS;
+const chainMs = () => settings.slow ? Infinity : CHAIN_MS;
 
-let settings = {mode:'solo', cpu:3, lv:'normal', pn:2, rounds:3, events:1};
+let settings = {mode:'solo', cpu:3, lv:'normal', pn:2, rounds:3, events:1, slow:0};
 let G = null, M = null, uid = 0;
 
 const $ = id => document.getElementById(id);
@@ -463,7 +472,7 @@ function buildSnacks(){
   return shuffle(s);
 }
 const phaseOpen = () => G && (G.phase==='snack' || G.phase==='chain');
-const namaOpen = () => G && G.phase==='snack' && (now()-G.flipT) < NAMA_MS;
+const namaOpen = () => G && G.phase==='snack' && (now()-G.flipT) < namaMs();
 const shareMark = (a,b) => a.marks.some(m=>b.marks.includes(m));
 function canPlay(c){
   if(G.phase==='snack') return c.wild ? namaOpen() : shareMark(c,G.snack);
@@ -591,10 +600,12 @@ function flipNext(){
   const step=G.step;
   sFlip();
   hideBadge('chain'); showBadge('nama');
-  later(()=>hideBadge('nama'), NAMA_MS);
+  if(!slowMode()){
+    later(()=>hideBadge('nama'), NAMA_MS);
+    later(()=>{ if(G.step===step) renderHands(); }, NAMA_MS+30);
+  }
   renderTable(true); renderHands(); renderOpps();
   setMsg('合うお酒を出して「カンパイ！」'+(G.happy?'　🍻ハッピーアワー中':'')+(G.lastOrder!==null?`　🔔${G.lastOrder===0?'これが最後の一品':'閉店まであと'+G.lastOrder+'品'}`:''));
-  later(()=>{ if(G.step===step) renderHands(); }, NAMA_MS+30);
 
   if(isParty()){
     G.waitMs=PARTY_WAIT; G.startT=now();
@@ -608,7 +619,7 @@ function flipNext(){
     let d = rand(lv.min,lv.max)*p.speed*crowd();
     if(choice){
       if(Math.random()<lv.miss) return;            // 見落とし
-      if(choice.wild && (Math.random()>=lv.nama || d > NAMA_MS-150)) return;
+      if(choice.wild && (Math.random()>=lv.nama || d > namaMs()-150)) return;
       if(teppan(choice,G.snack)) d += 250;
       later(()=>{ if(G.step===step) tryPlay(i,choice); }, d);
     } else if(Math.random()<p.goof && p.hand.length){
@@ -630,7 +641,7 @@ function flipNext(){
 }
 function showBadge(kind){
   (kind==='nama'?['namaTime','namaTimeP']:['chainTime','chainTimeP']).forEach(id=>{
-    const el=$(id); el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
+    const el=$(id); el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); el.classList.toggle('slow', slowMode());
   });
 }
 function hideBadge(kind){ (kind==='nama'?['namaTime','namaTimeP']:['chainTime','chainTimeP']).forEach(id=>$(id).classList.remove('on')); }
@@ -726,12 +737,14 @@ function openChain(){
   const step=G.step;
   showBadge('chain');
   renderTable(); renderHands();
-  setMsg(`🏮 はしご酒！ ${G.played.em}${G.played.name}と味マークが合うお酒を続けて出せる`);
-  later(()=>{
-    if(G.step!==step) return;
-    setPhase('closed'); hideBadge('chain'); renderTable(); renderHands();
-    later(flipNext,700);
-  }, CHAIN_MS);
+  setMsg(`🏮 はしご酒！ ${G.played.em}${G.played.name}と味マークが合うお酒を続けて出せる`+(slowMode()?'（出す人がいなければ「つぎのおつまみへ」）':''));
+  if(!slowMode()){
+    later(()=>{
+      if(G.step!==step) return;
+      setPhase('closed'); hideBadge('chain'); renderTable(); renderHands();
+      later(flipNext,700);
+    }, CHAIN_MS);
+  }
   if(isParty()) return;
   const lv=LV[settings.lv];
   G.players.forEach((p,i)=>{
@@ -739,7 +752,7 @@ function openChain(){
     const c=p.hand.find(c=>!c.wild && shareMark(c,G.played));
     if(!c || Math.random()<lv.miss) return;
     const d=rand(lv.min,lv.max)*p.speed*lv.chain*crowd();
-    if(d > CHAIN_MS-120) return;
+    if(d > chainMs()-120) return;
     later(()=>{ if(G.step===step) tryPlay(i,c); }, d);
   });
 }
@@ -819,6 +832,12 @@ function sumimasen(who){
   setMsg(`${who}「すいませーん！」 次のおつまみを頼みます`);
   renderHands(); renderTable();
   later(flipNext,900);
+}
+// ゆっくりモードのはしご酒は時間で閉じないので、ボタンで次のおつまみへ進める
+function chainSkip(){
+  if(!G || G.phase!=='chain') return;
+  setPhase('closed'); hideBadge('chain'); renderTable(); renderHands();
+  later(flipNext,700);
 }
 function checkWin(p){
   if(p.hand.length) return false;
@@ -901,7 +920,9 @@ function renderTable(flip,slam){
   const chain = G.phase==='chain';
   sEl.innerHTML = G.snack ? cardHTML(G.snack, size+' '+(flip?'flipin':''), G.litSnack) : `<div class="card empty ${party?'mid':''}">準備中</div>`;
   dEl.innerHTML = G.played ? cardHTML(G.played, (party?'mid ':'')+(slam?'slam ':'')+(chain?'target':''), G.litDrink) : `<div class="card empty ${party?'mid':''}">？</div>`;
-  (party ? $('pSumimasen') : $('sumimasenBtn')).disabled = G.phase!=='snack';
+  const sb = party ? $('pSumimasen') : $('sumimasenBtn');
+  if(slowMode() && G.phase==='chain'){ sb.disabled=false; sb.textContent='▶ つぎのおつまみへ'; }
+  else { sb.disabled = G.phase!=='snack'; sb.textContent='すいませーん！'; }
 }
 function renderOpps(){
   if(isParty()) return;
@@ -1161,6 +1182,8 @@ function optGroup(id,key,num,cb){
 }
 optGroup('optMode','mode',false,()=>{ $('soloOpts').hidden = settings.mode!=='solo'; $('partyOpts').hidden = settings.mode!=='party'; $('practiceOpts').hidden = settings.mode!=='practice'; });
 optGroup('optEvents','events',true); optGroup('optCpu','cpu',true); optGroup('optLv','lv',false); optGroup('optPn','pn',true); optGroup('optRounds','rounds',true);
+optGroup('optSlow','slow',true,()=>{ try{ localStorage.setItem(SLOWKEY, settings.slow?'1':'0'); }catch(e){} });
+try{ if(localStorage.getItem(SLOWKEY)==='1'){ settings.slow=1; $('optSlow').querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.v==='1')); } }catch(e){}
 function openMenu(){ showBestLine(); if(G){G.over=true;clearTimers();} $('endModal').hidden=true; $('startModal').hidden=false; }
 $('startBtn').onclick=()=>{audio(); $('startModal').hidden=true; startMatch();};
 $('againBtn').onclick=()=>{audio(); $('endModal').hidden=true; if(M.final) startMatch(); else nextRound();};
@@ -1168,11 +1191,11 @@ $('settingsBtn').onclick=openMenu;
 $('rulesBtn').onclick=openMenu;
 $('pMenu').onclick=openMenu;
 $('restartBtn').onclick=()=>{audio(); $('endModal').hidden=true; $('startModal').hidden=true; startMatch();};
-$('sumimasenBtn').onclick=()=>{audio(); if(G && G.phase==='snack') sumimasen('あなた');};
+$('sumimasenBtn').onclick=()=>{audio(); if(!G) return; if(G.phase==='snack') sumimasen('あなた'); else if(slowMode() && G.phase==='chain') chainSkip();};
 $('pHint').onclick=()=>{audio();prHint();};
 $('pNone').onclick=()=>{audio();prNone();};
 $('pNext').onclick=()=>{audio(); if(G&&G.mode==='practice') prFlip();};
-$('pSumimasen').addEventListener('pointerdown',e=>{e.preventDefault(); audio(); if(G && G.phase==='snack') sumimasen('だれか');});
+$('pSumimasen').addEventListener('pointerdown',e=>{e.preventDefault(); audio(); if(!G) return; if(G.phase==='snack') sumimasen('だれか'); else if(slowMode() && G.phase==='chain') chainSkip();});
 
 showBestLine();
 $('snackSlot').innerHTML=`<div class="card empty">準備中</div>`;

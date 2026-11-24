@@ -48,6 +48,10 @@
   .tray span{width:17px;height:17px;border-radius:5px;background:#eef2e8;font-size:11px;line-height:17px;filter:grayscale(1);opacity:.35}
   .tray span.ok{filter:none;opacity:1;background:#fff3c9}
   .sc .done{font-size:10px;color:#a35a12;font-weight:bold;min-height:13px}
+  .usedlb{font-size:9px;color:var(--sub);margin-top:3px}
+  .used{display:flex;justify-content:center;gap:1px;flex-wrap:wrap}
+  .used span{font-size:10px;min-width:13px;padding:0 1px;border-radius:3px;background:#eef2e8}
+  .used span.u{background:transparent;color:#b9c4ae;text-decoration:line-through}
 
   .food{display:flex;justify-content:center}
   .fcard{width:110px;height:132px;border-radius:14px;border:3px solid var(--gold);background:#fffbe9;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px}
@@ -101,7 +105,7 @@
 <body>
 <div class="wrap">
   <h1>おかわり！給食じゃんけんバトル</h1>
-  <span class="tag">v0.2</span>
+  <span class="tag">v0.3</span>
 
   <section id="title">
     <div class="panel rules">
@@ -113,6 +117,7 @@
         <li>同じ数でならんだら<b>じゃんけん</b>で決着！にがてカードはじゃんけんで負けた人が引き取る</li>
         <li>出したはらぺこカードはもう使えない。10回やって合計点が高い人の勝ち</li>
         <li>📋<b>献立表</b>：次に出てくる3枚が見えている。大きい数をどこで使うか考えよう</li>
+        <li>📊スコアの下の数字で、みんなが<b>出した数</b>（打ち消し）と残りの数がいつでも見える</li>
       </ul>
       <div><b>完食ボーナス</b></div>
       <ul>
@@ -266,6 +271,8 @@ function render(){
       <div class="pt">${total(p)}<span style="font-size:12px">点</span></div>
       <div class="tray">${trayHtml(p)}</div>
       <div class="done">${bonus(p)?bonusName(p)+" +"+bonus(p):""}</div>
+      <div class="usedlb">はらぺこカード（打ち消し＝出した数）</div>
+      <div class="used">${HAND.map(n=>`<span class="${p.hand.includes(n)?"":"u"}">${n}</span>`).join("")}</div>
     </div>`).join("");
   $("roundInfo").textContent=`${G.round} / ${ROUNDS} 回目　（山札のこり ${G.deck.length}枚）`;
   const f=G.cur, bad=f.k==="bad";
