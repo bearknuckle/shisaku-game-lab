@@ -101,7 +101,7 @@ const GAMES=[
   {
     id:'yutai-collection', name:'株主優待コレクション', icon:'🎁', color:'#2e7d32',
     desc:'同じ会社の株を3枚集めたら優待カードをゲット。場の会社カードを取るか、山札から引くか、優待をもらうか。場に権利確定日が出たら、3枚そろっている会社ごとに全員が優待をもらえる。優待の点数合計で勝負。',
-    players:'1人（CPU 1〜3人）', time:'5〜10分', genre:'株', added:'2026-11-24', version:'0.2', updated:'2026-11-24', isNew:true
+    players:'1人（CPU 1〜3人）', time:'5〜10分', genre:'株', added:'2026-11-24', version:'0.3', updated:'2026-11-25', isNew:true
   },
   {
     id:'oyatsu-wakekko', name:'おやつわけっこ', icon:'🍪', color:'#e8743b',
@@ -234,6 +234,7 @@ const GAMES=[
 ];
 // 最近の更新（新しい順）。ゲームを更新したら先頭に1件足し、GAMES の version / updated も上げる
 const UPDATES=[
+  {date:'2026-11-25', id:'yutai-collection', version:'0.3', text:'権利確定日の「見込み」表示、短縮モード（会社カード4枚ずつ）、優待カードの残り内訳（点数ごと）を追加'},
   {date:'2026-11-25', id:'kanpai',         version:'0.7', text:'「🐢ゆっくりモード」を追加。とりあえず生とはしご酒の2秒制限がなくなり、初めてでも追われずに遊べるように'},
   {date:'2026-11-25', id:'okawari',        version:'0.3', text:'スコアの下に「出した数の履歴」を追加。全員のはらぺこカード1〜10の使用済みと残りがいつでも見えるように'},
   {date:'2026-11-25', id:'oyatsu-wakekko', version:'0.2', text:'「🏆はかせレース」を追加。種類ごとの枚数と、どちらが はかせ に近いかが見えるように'},

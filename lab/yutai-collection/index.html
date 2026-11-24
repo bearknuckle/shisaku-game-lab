@@ -123,12 +123,17 @@ table.stats th:first-child,table.stats td:first-child{text-align:left}
       <li>場に <b>📅権利確定日</b> が出たら、全員3枚そろっている会社ごとに優待を1枚もらえる（株は減らない）</li>
       <li>会社カードがなくなったら終了。優待の点数合計がいちばん多い人の勝ち</li>
     </ol>
-    <p style="font-size:13px;color:var(--sub);margin-top:8px">会社カード36枚（6社×6枚）＋権利確定日3枚、優待カード24枚。実物ならカード63枚だけで遊べます。</p>
+    <p id="deckNote" style="font-size:13px;color:var(--sub);margin-top:8px">会社カード36枚（6社×6枚）＋権利確定日3枚、優待カード24枚。実物ならカード63枚だけで遊べます。</p>
   </div>
   <div class="panel">
     <h3>対戦するCPUの人数</h3>
     <div class="cnt" id="cnt"></div>
     <div class="cpu-intro" id="cpuIntro"></div>
+  </div>
+  <div class="panel">
+    <h3>モード</h3>
+    <div class="cnt" id="modeCnt"></div>
+    <p style="font-size:13px;color:var(--sub)">短縮は会社カードが6社×4枚（24枚）で、さくっと終わります。権利確定日は3枚のままです。</p>
   </div>
   <button class="big" onclick="newGame()">はじめる</button>
   <p style="text-align:center;margin-top:14px"><a href="../" style="color:var(--sub);font-size:13px">← 試作ゲームラボに戻る</a></p>
@@ -148,7 +153,9 @@ table.stats th:first-child,table.stats td:first-child{text-align:left}
   <div class="panel" style="margin-bottom:12px">
     <h3>あなたの持ち株と優待</h3>
     <div class="yutai-row" id="myYutai"></div>
+    <div id="yutaiDeckInfo" style="font-size:13px;color:var(--sub);font-weight:700;margin-bottom:8px"></div>
     <div class="shares" id="myShares"></div>
+    <div id="myProspect" style="font-size:14px;font-weight:800;color:var(--accent);margin-top:4px"></div>
   </div>
 
   <div class="phase" id="phase"></div>
@@ -193,6 +200,12 @@ const CPUS=[
 ];
 const FIELD_N=5, KANTEI_N=3;
 let numCpu=3, S=null;
+let deckMode='normal';
+try{deckMode=localStorage.getItem('yutai-deck-mode')||'normal'}catch(e){}
+function perCompany(){return deckMode==='short'?4:6}
+function setDeckMode(m){deckMode=m;try{localStorage.setItem('yutai-deck-mode',m)}catch(e){}renderSetup()}
+// 権利確定日が来たらもらえる優待の見込み（3枚以上そろっている会社の数）
+function prospect(p){return COMPANIES.filter(c=>(p.shares[c.id]||0)>=3).length}
 
 function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=a[i];a[i]=a[j];a[j]=t}return a}
 function show(id){['start','game','end'].forEach(s=>document.getElementById(s).classList.toggle('hidden',s!==id))}
@@ -203,15 +216,19 @@ function coName(id){const c=COMPANIES.find(x=>x.id===id);return c?c.emo+c.name:i
 function renderSetup(){
   document.getElementById('cnt').innerHTML=[1,2,3].map(n=>`<button class="${n===numCpu?'on':''}" onclick="numCpu=${n};renderSetup()">${n}人</button>`).join('');
   document.getElementById('cpuIntro').innerHTML=CPUS.map((c,i)=>`<div class="${i<numCpu?'':'off'}"><span class="av">${c.icon}</span><span><b>${c.name}</b><small>${c.desc}</small></span></div>`).join('');
+  document.getElementById('modeCnt').innerHTML=[['normal','通常（6枚ずつ）'],['short','短縮（4枚ずつ）']].map(([m,label])=>`<button class="${m===deckMode?'on':''}" onclick="setDeckMode('${m}')">${label}</button>`).join('');
+  const per=perCompany();
+  document.getElementById('deckNote').textContent=`会社カード${per*6}枚（6社×${per}枚）＋権利確定日3枚、優待カード24枚。実物ならカード${per*6+KANTEI_N+24}枚だけで遊べます。`;
 }
 
 function newGame(){
+  const per=perCompany();
   const deck=[];
-  COMPANIES.forEach(c=>{for(let i=0;i<6;i++)deck.push({type:'co',id:c.id})});
+  COMPANIES.forEach(c=>{for(let i=0;i<per;i++)deck.push({type:'co',id:c.id})});
   for(let i=0;i<KANTEI_N;i++)deck.push({type:'kantei'});
   const players=[{name:'あなた',icon:'🙂',me:true,shares:{},yutai:[]}];
   CPUS.slice(0,numCpu).forEach(c=>players.push({name:c.name,icon:c.icon,ai:c.ai,shares:{},yutai:[]}));
-  S={deck:shuffle(deck),field:[],yutaiDeck:shuffle(YUTAI),players,turn:0,log:['会社カード36枚＋権利確定日3枚の山札から、場に5枚並べました。あなたの番からスタート！'],over:false,busy:false};
+  S={deck:shuffle(deck),field:[],yutaiDeck:shuffle(YUTAI),players,turn:0,log:[`会社カード${per*6}枚＋権利確定日3枚の山札から、場に5枚並べました。あなたの番からスタート！`],over:false,busy:false,perCo:per};
   for(let i=0;i<FIELD_N;i++)refillField();
   show('game');
   render();
@@ -370,7 +387,7 @@ function settle(){
       if(others.length)parts.push(`その他 ${others.reduce((t,y)=>t+y.pts,0)}点（${others.map(y=>y.name+y.pts).join('・')}）`);
       return `<tr><td>${p.icon} ${p.name}</td><td style="text-align:left">${parts.join('<br>')||'なし'}</td><td>${yutaiPts(p)}点</td></tr>`;
     }).join('')+'</table>'+
-    `<p style="font-size:13px;color:var(--sub);margin-top:8px">実物版：会社カード36枚＋権利確定日3枚＋優待カード24枚の63枚で遊べます</p>`;
+    `<p style="font-size:13px;color:var(--sub);margin-top:8px">実物版：会社カード${S.perCo*6}枚＋権利確定日3枚＋優待カード24枚の${S.perCo*6+KANTEI_N+24}枚で遊べます</p>`;
   show('end');
 }
 
@@ -386,6 +403,11 @@ function render(){
   }).join('');
   document.getElementById('drawBtn').disabled=S.busy||S.turn!==0||S.deck.length===0;
   document.getElementById('myYutai').innerHTML=me.yutai.length?me.yutai.map(y=>`<span class="yu">${y.name} <small>${y.pts}点</small></span>`).join(''):'<span style="font-size:13px;color:var(--sub)">まだ優待なし</span>';
+  const yd=[1,2,3].map(pt=>S.yutaiDeck.filter(y=>y.pts===pt).length);
+  document.getElementById('yutaiDeckInfo').textContent=`優待の山札：残り${S.yutaiDeck.length}枚（1点×${yd[0]}・2点×${yd[1]}・3点×${yd[2]}）`;
+  const myPr=prospect(me);
+  document.getElementById('myProspect').textContent=myPr>0?`📅 権利確定日が来たら、優待${myPr}枚もらえる見込み！`:'';
+
   document.getElementById('myShares').innerHTML=COMPANIES.map(c=>{
     const n=me.shares[c.id]||0;
     const can=n>=3&&!S.busy&&S.turn===0;
@@ -399,7 +421,9 @@ function render(){
   document.getElementById('phase').textContent=S.over?'':(S.turn===0?'あなたの番：場のカードを取るか、優待をもらおう':`${cur.icon}${cur.name}の番…`);
   document.getElementById('players').innerHTML=S.players.map((p,i)=>{
     const hold=COMPANIES.filter(c=>p.shares[c.id]).map(c=>{const n=p.shares[c.id];return c.emo+'×'+n+(n===2?'（あと1枚）':n>=3?'（優待可）':'')}).join(' ')||'株なし';
-    return `<div class="pl ${p.me?'me':''} ${i===S.turn&&!S.over?'turn':''}"><div class="nm"><span>${p.icon} ${p.name}</span></div><div class="tot">${yutaiPts(p)}<small style="font-size:11px">点・優待${p.yutai.length}枚</small></div><div class="detail">${hold}</div></div>`;
+    const pr=prospect(p);
+    const prTxt=pr>0?` ／ 📅優待${pr}枚見込み`:'';
+    return `<div class="pl ${p.me?'me':''} ${i===S.turn&&!S.over?'turn':''}"><div class="nm"><span>${p.icon} ${p.name}</span></div><div class="tot">${yutaiPts(p)}<small style="font-size:11px">点・優待${p.yutai.length}枚</small></div><div class="detail">${hold}${prTxt}</div></div>`;
   }).join('');
   document.getElementById('log').innerHTML=S.log.map(l=>`<div>${l}</div>`).join('');
 }
