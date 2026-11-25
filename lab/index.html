@@ -124,7 +124,7 @@ const GAMES=[
   {
     id:'animal-baseball', name:'アニマルベースボール', icon:'🐻', color:'#1b4a30',
     desc:'動物チームのカード野球。選手カードを裏向きで出し合い、攻撃力−守備力の差で打者ごとのバッティング表を引いて結果が決まる。強打・好投・盗塁の作戦カードでCPUと1試合。',
-    players:'1人（CPU 1人）', time:'10〜20分', genre:'スポーツ', added:'2026-11-25', version:'0.1', updated:'2026-11-25', isNew:true
+    players:'1人（CPU 1人）', time:'10〜20分', genre:'スポーツ', added:'2026-11-25', version:'0.2', updated:'2026-11-26', isNew:true
   },
   {
     id:'michi-tsunagi', name:'みちつなぎ', icon:'🛤️', color:'#2e7d6b',
@@ -268,6 +268,7 @@ const GAMES=[
 ];
 // 最近の更新（新しい順）。ゲームを更新したら先頭に1件足し、GAMES の version / updated も上げる
 const UPDATES=[
+  {date:'2026-11-26', id:'animal-baseball', version:'0.2', text:'投手のスタミナと投手交代、打者1人ずつの特殊能力（チャンスに強い・快足・選球眼など）、試合中いつでも見られる打順表を追加'},
   {date:'2026-11-26', id:'kakusu-dice',     version:'1.5', text:'自己ベスト（最高得点・最多獲得枚数・勝利回数）を保存して開始画面に表示するように'},
   {date:'2026-11-26', id:'yutai-collection',version:'0.5', text:'「みんなの優待カード」パネルを追加。全員が取った優待（会社・点数）をいつでも比べられるように'},
   {date:'2026-11-26', id:'seeno-kabu',      version:'0.7', text:'公開時の株価変動に「買い○人・売り○人」の内訳を併記。ラウンドログにも需給を残すように'},
