@@ -148,11 +148,11 @@ h2.cat{scroll-margin-top:70px}
     <div class="movies">
       <div class="mv">
         <h3>🎬 MV</h3>
-        <div class="movie"><iframe src="https://www.youtube-nocookie.com/embed/vLygKV_YQ8o" title="試作ゲームラボ MV" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe></div>
+        <div class="movie"><iframe src="https://www.youtube-nocookie.com/embed/vLygKV_YQ8o?cc_load_policy=0&amp;enablejsapi=1" title="試作ゲームラボ MV" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe></div>
       </div>
       <div class="mv">
         <h3>🎵 テーマソング</h3>
-        <div class="movie"><iframe src="https://www.youtube-nocookie.com/embed/lgTnmh8T2oc?loop=1&amp;playlist=lgTnmh8T2oc" title="試作ゲームラボ｜試作ゲームラボ公式テーマソング" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe></div>
+        <div class="movie"><iframe src="https://www.youtube-nocookie.com/embed/lgTnmh8T2oc?loop=1&amp;playlist=lgTnmh8T2oc&amp;cc_load_policy=0&amp;enablejsapi=1" title="試作ゲームラボ｜試作ゲームラボ公式テーマソング" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe></div>
       </div>
     </div>
   </section>
@@ -588,6 +588,16 @@ loadGlobal();
 (function(){const f=document.getElementById('filters');if(!('IntersectionObserver' in window))return;
   const s=document.createElement('div');s.style.height='1px';f.parentNode.insertBefore(s,f);
   new IntersectionObserver(([e])=>f.classList.toggle('stuck',!e.isIntersecting)).observe(s);})();
+</script>
+<script>
+// YouTube の字幕は常にオフ（字幕の設定を読み込ませず、再生のたびに字幕を外す）
+(function(){
+  var frames=[].slice.call(document.querySelectorAll('iframe[src*="youtube"]'));if(!frames.length)return;
+  function off(e){try{e.target.unloadModule('captions');e.target.unloadModule('cc');}catch(x){}}
+  var prev=window.onYouTubeIframeAPIReady;
+  window.onYouTubeIframeAPIReady=function(){if(prev)prev();frames.forEach(function(f){new YT.Player(f,{events:{onReady:off,onStateChange:off}});});};
+  var s=document.createElement('script');s.src='https://www.youtube.com/iframe_api';document.head.appendChild(s);
+})();
 </script>
 </body>
 </html>

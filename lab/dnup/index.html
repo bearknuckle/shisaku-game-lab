@@ -273,7 +273,7 @@
     <section class="panel">
       <div class="fansong">
         <div class="fansong-embed">
-          <iframe src="https://www.youtube-nocookie.com/embed/S2RKOxmPr7I" title="【Revolve!ファンソング】「すべてをひっくり返せ」（YouTube）" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+          <iframe src="https://www.youtube-nocookie.com/embed/S2RKOxmPr7I?cc_load_policy=0&amp;enablejsapi=1" title="【Revolve!ファンソング】「すべてをひっくり返せ」（YouTube）" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
         </div>
         <div class="fansong-body">
           <h2>🎵 ファンソング</h2>
@@ -822,6 +822,16 @@ $("btnNewGame").onclick=function(){
   $("setupRow").classList.remove("hidden");
   $("gameLog").innerHTML="<div>「ゲーム開始」を押すと対戦が始まります。</div>";
 };
+</script>
+<script>
+// YouTube の字幕は常にオフ（字幕の設定を読み込ませず、再生のたびに字幕を外す）
+(function(){
+  var frames=[].slice.call(document.querySelectorAll('iframe[src*="youtube"]'));if(!frames.length)return;
+  function off(e){try{e.target.unloadModule('captions');e.target.unloadModule('cc');}catch(x){}}
+  var prev=window.onYouTubeIframeAPIReady;
+  window.onYouTubeIframeAPIReady=function(){if(prev)prev();frames.forEach(function(f){new YT.Player(f,{events:{onReady:off,onStateChange:off}});});};
+  var s=document.createElement('script');s.src='https://www.youtube.com/iframe_api';document.head.appendChild(s);
+})();
 </script>
 </body>
 </html>

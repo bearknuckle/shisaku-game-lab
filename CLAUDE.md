@@ -25,6 +25,7 @@
 - `icon.svg` / `apple-touch-icon.png` を読む `<link rel="icon">` `<link rel="apple-touch-icon">`
 - 「← 試作ゲームラボに戻る」（または ⌂）など `href="../"` のリンク
 - カンパイ！の 20歳以上・飲みすぎ注意の一文
+- YouTube の埋め込み動画は常に字幕なし：URL の `cc_load_policy=0&enablejsapi=1` と、`</body>` の前の「YouTube の字幕は常にオフ」のスクリプト（新しく動画を埋め込むときも同じものを入れる）
 
 ## ゲームを更新したとき（必須）
 - `lab/index.html` の `GAMES` で、そのゲームの `version` を 0.1 上げ、`updated` を今日の日付（日本時間, YYYY-MM-DD）にする
