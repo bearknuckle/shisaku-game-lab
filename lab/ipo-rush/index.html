@@ -88,6 +88,7 @@ button{font-family:inherit;cursor:pointer;border:none}
 .price{font-size:28px;font-weight:800;line-height:1}
 .price small{font-size:11px;color:var(--sub);font-weight:700;margin-left:2px}
 .delta{display:block;font-size:13px;font-weight:800;margin-top:2px}
+.preview{display:block;font-size:11px;color:var(--sub);font-weight:700;margin-top:3px;line-height:1.4}
 .up{color:var(--up)}.down{color:var(--down)}
 .co-b{grid-area:b;display:grid;grid-template-columns:1fr;gap:8px}
 .co-b button{padding:9px 0;border-radius:10px;font-size:15px;font-weight:800}
@@ -140,6 +141,7 @@ table.stats th:first-child,table.stats td:first-child{text-align:left}
       <li>会社の成長度★はヒミツ。5ラウンド終わったら決算！</li>
     </ol>
     <p style="font-size:13px;color:var(--sub);margin-top:8px">決算の株価 ＝ 公募価格 ＋ イベントの動き ＋ 成長度★×2。全株を売って、所持金がいちばん多い人の勝ち。</p>
+    <p style="font-size:13px;color:var(--sub);margin-top:4px">市場の一覧には、各社の「いま決算なら○コイン（成長度★ぶん除く）」も出ます。見えている分の見込みは分かるけれど、★は最後までヒミツです。</p>
   </div>
   <div class="panel">
     <h3>対戦するCPUの人数</h3>
@@ -382,7 +384,7 @@ function render(){
     return `<div class="co ${l.co.id===co.id?'is-new':''}">
       <div class="co-n"><div class="co-name">${l.co.emo} ${l.co.name}</div><div class="own">あなたの持ち株 <b>${n}株</b>・公募${l.co.ipo}</div><div class="cpu-hold">CPUの持ち株 <b>${cpuTot}株</b>${cpuHolds?' '+cpuHolds:'（まだ買っていない）'}${cpuTot>=4?' <span class="hot">🔥買い集中</span>':''}</div></div>
       <div class="co-s">${l.co.sector}<br>成長 ${S.phase==='done'?'★'.repeat(l.co.growth):'？'}</div>
-      <div class="co-p"><span class="price">${curPrice(l)}<small>コイン</small></span>${d?`<span class="delta ${d>0?'up':'down'}">${d>0?'▲+':'▼'}${d}</span>`:''}</div>
+      <div class="co-p"><span class="price">${curPrice(l)}<small>コイン</small></span>${d?`<span class="delta ${d>0?'up':'down'}">${d>0?'▲+':'▼'}${d}</span>`:''}<span class="preview">いま決算なら ${curPrice(l)}コイン<br>（成長度★ぶん除く）</span></div>
       <div class="co-b"><button class="sell" ${S.phase==='buy'&&n>0?'':'disabled'} onclick="sellOne('${l.co.id}')">売る（1株 ${curPrice(l)}コイン）</button></div>
     </div>`;
   }).join('');

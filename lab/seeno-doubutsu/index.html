@@ -47,6 +47,14 @@
   .sc .pt{font-size:20px;font-weight:bold}
   .sc .used{font-size:11px;color:var(--sub);min-height:14px;letter-spacing:-1px}
 
+  /* history */
+  .histrow{display:flex;align-items:center;gap:4px;padding:3px 0;border-bottom:1px dashed var(--line);font-size:12px;flex-wrap:wrap}
+  .histrow:last-child{border:none}
+  .histrow .hn{width:64px;flex:none;color:var(--sub)}
+  .histrow.me .hn{color:var(--accent);font-weight:bold}
+  .hchip{display:inline-block;border:1px solid var(--line);border-radius:8px;padding:1px 4px;background:#fff}
+  .hchip.u{opacity:.3;text-decoration:line-through}
+
   /* food */
   .food{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
   .fcard{width:84px;height:104px;border-radius:12px;border:3px solid var(--gold);background:#fffbe9;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px}
@@ -96,7 +104,7 @@
 <body>
 <div class="wrap">
   <h1>せーの！最強どうぶつ</h1>
-  <span class="tag">v0.2</span>
+  <span class="tag">v0.3</span>
 
   <!-- タイトル -->
   <section id="title">
@@ -108,6 +116,7 @@
         <li><b>一番強い</b>どうぶつがえさをゲット</li>
         <li>🟤どろだんご（−2点）は<b>一番弱い</b>どうぶつが引き取る</li>
         <li>出したどうぶつはもう使えない。9回やって合計点が高い人の勝ち</li>
+        <li>📊出したどうぶつは「出したどうぶつ」一覧でいつでも見える（残りも分かる）</li>
       </ul>
       <div><b>とくべつルール</b></div>
       <ul>
@@ -142,6 +151,11 @@
     <div class="panel">
       <div class="table" id="table"></div>
       <div class="msg" id="msg"></div>
+    </div>
+
+    <div class="panel">
+      <div style="font-size:13px;color:var(--sub);margin-bottom:6px">出したどうぶつ（打ち消し＝もう出した・残りは明るく表示）</div>
+      <div id="history"></div>
     </div>
 
     <div class="panel">
@@ -233,6 +247,12 @@ function render(){
       <div>${p.name}</div>
       <div class="pt">${p.score}<span style="font-size:12px">点</span></div>
       <div class="used">${p.used.map(s=>animal(s).e).join("")}</div>
+    </div>`).join("");
+  // history（出したどうぶつ：p.used は確定した回ぶんだけが入るので、進行中の選択は出ない）
+  $("history").innerHTML=G.players.map((p,i)=>`
+    <div class="histrow ${i===0?"me":""}">
+      <span class="hn">${p.name}</span>
+      ${ANIMALS.map(a=>`<span class="hchip ${p.used.includes(a.s)?"u":""}">${a.e}${a.s}</span>`).join("")}
     </div>`).join("");
   $("roundInfo").textContent=`${G.round} / ${ROUNDS} 回目`;
   const shown = (G.phase==="reveal" && G.lastPot) ? G.lastPot : G.pot;

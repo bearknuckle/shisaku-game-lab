@@ -306,7 +306,7 @@ body.practicemode .explain{display:block}
 
   <div class="handhead"><h2>あなたの手札</h2><span class="c" id="myCount"></span></div>
   <div class="hand" id="hand"></div>
-  <div class="foot"><a href="../" style="color:inherit">← 試作ゲームラボに戻る</a> ・ カンパイ！ v0.7</div>
+  <div class="foot"><a href="../" style="color:inherit">← 試作ゲームラボに戻る</a> ・ カンパイ！ v0.8</div>
 </div>
 
 <!-- ================= PARTY ================= -->
@@ -540,6 +540,7 @@ function newGame(){
     players=PARTY_DEFS.slice(0,settings.pn).map(d=>({...d,cpu:false,hand:[]}));
   }
   if(!M.scores) M.scores=players.map(()=>0);
+  if(!M.stats) M.stats=players.map(()=>({chain:0,foul:0,win:0}));
   document.body.classList.toggle('partymode', mode==='party');
   document.body.classList.toggle('practicemode', mode==='practice');
   G={mode,players,drawPile:buildDrinks(),discard:[],snackPile:buildSnacks(),usedSnacks:[],
@@ -668,6 +669,7 @@ function cpuChoose(p){
 
 function penalty(pi,card){
   const p=G.players[pi];
+  if(M.stats&&M.stats[pi]) M.stats[pi].foul++;
   sBad();
   draw(p,2);
   const why = G.phase==='chain'
@@ -860,6 +862,7 @@ function endRound(w,reason){
     if(tops.length===1){ pts[tops[0]]+=1; why[tops[0]].push('はしご王+1'); }
   }
   P.forEach((_,i)=>M.scores[i]+=pts[i]);
+  if(M.stats){ P.forEach((_,i)=>{ M.stats[i].chain+=G.chainCount[i]; }); M.stats[wi].win++; }
   M.final = M.round>=M.total;
   const best=Math.max(...M.scores);
   const champs=P.filter((_,i)=>M.scores[i]===best);
@@ -885,7 +888,12 @@ function endRound(w,reason){
     const r=G.rts[0], st=loadStats();
     stat = r.length ? `<div class="statline">⚡ このラウンドのカンパイ速度：平均 <b>${(r.reduce((a,b)=>a+b,0)/r.length).toFixed(2)}秒</b> ／ 最速 <b>${Math.min(...r).toFixed(2)}秒</b><br>自己ベスト ${st.best.toFixed(2)}秒（通算 ${st.n}回・平均 ${(st.sum/st.n).toFixed(2)}秒）</div>` : '';
   }
-  const body=`<p>${lead}</p><table class="score"><tr><th></th><th>残り</th><th>はしご</th><th>最速</th><th>得点</th>${M.total>1?'<th>合計</th>':''}</tr>${rows}</table>${stat}`;
+  let statsTable='';
+  if(M.final && M.stats){
+    const srows=order.map(i=>`<tr><td>${P[i].av} ${P[i].name}</td><td>${M.stats[i].chain}回</td><td>${M.stats[i].foul}回</td><td>${M.stats[i].win}回</td></tr>`).join('');
+    statsTable=`<p style="margin:12px 0 0"><b>📊 成績表</b>${M.total>1?`（全${M.total}ラウンド累計）`:''}</p><table class="score"><tr><th></th><th>はしご酒</th><th>お手つき</th><th>上がり</th></tr>${srows}</table>`;
+  }
+  const body=`<p>${lead}</p><table class="score"><tr><th></th><th>残り</th><th>はしご</th><th>最速</th><th>得点</th>${M.total>1?'<th>合計</th>':''}</tr>${rows}</table>${stat}${statsTable}`;
   $('endTitle').textContent=title;
   $('endBody').innerHTML=body;
   $('endFlip').innerHTML=`<h2>${title}</h2><div class="result">${body}</div>`;
