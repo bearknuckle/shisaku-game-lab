@@ -127,7 +127,7 @@
   <div class="headwrap">
     <div class="brand">試作ゲームラボ</div>
     <h1>🎲 画数ダイス</h1>
-    <p>場の3枚の漢字カードから1枚を選んでサイコロを振り、合計がその漢字の画数とぴったり合えば獲得（外れたらそのカードは捨てられます）。得点は取ったカードの画数の合計。カードを取るとコインが1枚もらえ、リフレッシュやダイスの購入に使えます。11画以上のカードへの挑戦では「振り直し」ができ、取ると特典ダイスも付きます。激レアのネタ枠『鬱』『龘』を取れば即勝利。2〜6人（あなた＋CPU）で遊べます。</p>
+    <p>場の3枚の漢字カードから1枚を選んでサイコロを振り、合計がその漢字の画数とぴったり合えば獲得（外れたらそのカードは捨てられますが、1違いなら「おしい！」でコイン1枚）。得点は取ったカードの画数の合計。カードを取るとコインが1枚もらえ、リフレッシュやダイスの購入に使えます。11画以上のカードへの挑戦では「振り直し」ができ、取ると特典ダイスも付きます。激レアのネタ枠『鬱』『龘』を取れば即勝利。2〜6人（あなた＋CPU）で遊べます。</p>
     <div class="badges">
       <span class="badge">人数 <strong>2〜6人（あなた＋CPU）</strong></span>
       <span class="badge">時間 <strong>5〜10分</strong></span>
@@ -223,12 +223,13 @@
     <h2>遊び方</h2>
     <ul>
       <li>場の3枚の漢字カードから挑戦する1枚を選び、持っているサイコロから振る組み合わせを選んで振ります。合計が画数とぴったり合えば獲得、外れたらそのカードは捨てられます（画数はヒントだけ表示。字をよく見て数えるのがコツ）。振るダイスは全部でなくても大丈夫です。</li>
+      <li>😣 <strong>おしい！ボーナス</strong>：外れても、合計が画数と1だけ違っていたら（例：7画に6か8）コインを1枚もらえます。振り直したときは、振り直した後の合計で判定します。</li>
       <li>得点は、獲得したカードの画数の合計です。カードを取るとコインが1枚もらえます。取ったカードは自分の前に置いて、得点の記録になります。</li>
       <li>🔁マークの付いたカード（11画以上）に挑戦するときは、外れても、振ったダイスの一部（全部でも可）を1回だけ振り直せます。</li>
       <li>11画以上のカードを取ると特典ダイスが付きます（11〜16画→12面、17〜20画→20面）。所持ダイスが上限（5個）のときは、いちばん小さいダイスと入れ替わります。</li>
       <li>リフレッシュ（場の3枚を全入れ替え）と6面ダイスの購入はボタンで、どちらも1コイン。支払いはコインだけです。ダイスの所持は5個までです。</li>
       <li>✨ネタ枠『鬱』（29画）『龘』（48画）：ネタ枠ルールONでサイコロで取れば即勝利（人間が取るときは「家に6面ダイスはありますか？」の確認つき）。</li>
-      <li>🔀 ヴァリアント「振ってから選ぶ」：先にダイスを振ってから、合計と画数が合うカードを選んで獲得します。🔁マークのカードを選んで合わなかったときは、そのカードに対して1回だけ振り直せます。合わないカードを選ぶとそのカードは捨てられ、選ばずにパスもできます。</li>
+      <li>🔀 ヴァリアント「振ってから選ぶ」：先にダイスを振ってから、合計と画数が合うカードを選んで獲得します。🔁マークのカードを選んで合わなかったときは、そのカードに対して1回だけ振り直せます。合わないカードを選ぶとそのカードは捨てられ（1違いなら「おしい！」でコイン1枚）、選ばずにパスもできます。</li>
       <li>手番の順番はラウンドごとに1つずつずれます。スタートは6面ダイス2個とコイン2枚（所持カードは0枚）。ラウンド数は人数で変わり（2人10／3人8／4人7／5人6／6人5）、山札が尽きたらそのラウンドで終了。得点が一番多い人の勝ちです。</li>
     </ul>
   </section>
@@ -409,6 +410,17 @@ function revokeAcquire(player, card){
   player.score -= card.strokes;
   player.coins -= 1;
 }
+/* おしい！ボーナス：選んだカードに外れても、合計が画数と1だけ違えばコインを1枚もらえる */
+const NEAR_MISS_COINS = 1;
+function isNearMiss(card, sum){
+  return !!card && Math.abs(sum - card.strokes) === 1;
+}
+/* 外れたときに呼ぶ。おしいならコインを渡して枚数を返す（おしくなければ 0） */
+function nearMissBonus(player, card, sum){
+  if(!isNearMiss(card, sum)) return 0;
+  player.coins += NEAR_MISS_COINS;
+  return NEAR_MISS_COINS;
+}
 /* 振り直しの適用：選んだインデックスのダイスを振り直す。
    戻り値 {rolls, sum}（使えなければ null） */
 function applyReroll(combo, rolls, indices, rng){
@@ -442,14 +454,15 @@ function resolveChallenge(player, card, combo, rng){
       rolls = rr.rolls; sum = rr.sum; hit = rr.hit;
     }
   }
-  let bonusDie = 0;
+  let bonusDie = 0, nearMiss = 0;
   if(hit){
     bonusDie = acquireCard(player, card).bonusDie;
     player.missStreak = 0;
   }else{
+    nearMiss = nearMissBonus(player, card, sum);
     player.missStreak += 1;
   }
-  return {firstRolls, firstSum, rolls, sum, hit, rerollUsed, rerollIndices, bonusDie};
+  return {firstRolls, firstSum, rolls, sum, hit, rerollUsed, rerollIndices, bonusDie, nearMiss};
 }
 /* ダイス購入（コイン払い）。成功したら価格、失敗したら null */
 function buyDie(player, faces){
@@ -530,6 +543,16 @@ function strategyMaybeBuy(player, state){
   }
   return null;
 }
+/* CPUのリフレッシュ判断：場のどのカードも当たりにくい（最善でも13%未満）とき、
+   コインがあれば1回だけリフレッシュする。リフレッシュしたら true */
+const CPU_REFRESH_BELOW = 0.13;
+function strategyMaybeRefresh(player, state){
+  if(state.field.length < FIELD_SIZE || !state.deck.length) return false;
+  if(coinsOf(player) < REFRESH_COST) return false;
+  const choice = bestFieldChoice(player, state.field);
+  if(choice && choice.prob >= CPU_REFRESH_BELOW) return false;
+  return refreshField(player, state) !== null;
+}
 /* ===== ヴァリアント「振ってから選ぶ」用の判断 ===== */
 /* 組み合わせのカバー率：場の（異なる）画数のいずれかに一致する確率 */
 function coverageOf(combo, field){
@@ -557,6 +580,15 @@ function variantMaybeBuy(player, state){
   if(bestCoverageCombo(trial, state.field).cov <= 0) return null;
   const paid = buyDie(player, MARKET[0].faces);
   return paid ? {faces: MARKET[0].faces, paid} : null;
+}
+/* ヴァリアント：合うカードも振り直し先もないとき、合計と1違いのカードがあれば選んでコインをもらう。
+   場のインデックスを返す（なければ -1）。いちばん画数の小さい（＝価値の低い）カードを捨てる */
+function variantNearMissPick(field, sum){
+  let best = -1;
+  field.forEach((c, i)=>{
+    if(isNearMiss(c, sum) && (best < 0 || c.strokes < field[best].strokes)) best = i;
+  });
+  return best;
 }
 /* ラウンドごとの手番順：開始プレイヤーがラウンドごとに1つずつずれる */
 function turnOrder(round, numPlayers){
@@ -641,10 +673,18 @@ function simulateGame(rng, opts){
                 pl.missStreak = 0;
               }else{
                 state.discard.push(card);
+                if(applied) nearMissBonus(pl, card, applied.sum);
                 pl.missStreak += 1;
               }
               refillField(state);
             }else{
+              const nm = variantNearMissPick(state.field, sum);
+              if(nm >= 0){
+                const card = state.field.splice(nm, 1)[0];
+                nearMissBonus(pl, card, sum);
+                state.discard.push(card);
+                refillField(state);
+              }
               pl.missStreak += 1;
             }
           }
@@ -654,6 +694,7 @@ function simulateGame(rng, opts){
         continue;
       }
       /* 通常ルール */
+      if(strategyMaybeRefresh(pl, state)) refreshes++;
       if(strategyMaybeBuy(pl, state)) purchases++;
       if(state.field.length){
         const choice = bestFieldChoice(pl, state.field);
@@ -1072,9 +1113,16 @@ function finishHumanHit(){
 /* 人間の外れ（通常ルール）。S.pending の {idx, card, sum} を使う */
 function finishHumanMiss(){
   const {idx, card, sum} = S.pending;
-  $('msg').textContent = '💦 合計'+sum+'、'+cardLabel(card)+'でした';
-  $('msg').className = 'msg bad';
-  log('❌ あなた：'+cardLabel(card)+'に合計'+sum+'で外れ');
+  const nm = nearMissBonus(S.players[0], card, sum);
+  if(nm){
+    $('msg').textContent = '😣 おしい！ 合計'+sum+'、'+cardLabel(card)+'でした。1違いなのでコイン+'+nm;
+    $('msg').className = 'msg bad';
+    log('😣 あなた：'+cardLabel(card)+'に合計'+sum+'で外れ。おしい！（1違い）でコイン+'+nm+'（コイン '+coinsOf(S.players[0])+'枚）');
+  }else{
+    $('msg').textContent = '💦 合計'+sum+'、'+cardLabel(card)+'でした';
+    $('msg').className = 'msg bad';
+    log('❌ あなた：'+cardLabel(card)+'に合計'+sum+'で外れ');
+  }
   S.pending = null;
   renderAll();
   setTimeout(()=>{
@@ -1128,9 +1176,15 @@ function variantPickCard(i){
     renderAll();
     showRerollBox();
   }else{
-    $('msg').textContent = '💦 それは'+cardLabel(card)+'でした（合計'+sum+'ではない）';
+    const nm = nearMissBonus(S.players[0], card, sum);
+    if(nm){
+      $('msg').textContent = '😣 おしい！ それは'+cardLabel(card)+'でした。合計'+sum+'と1違いなのでコイン+'+nm;
+      log('😣 あなた：合計'+sum+'で'+cardLabel(card)+'を選んだが合わず捨てられた。おしい！（1違い）でコイン+'+nm+'（コイン '+coinsOf(S.players[0])+'枚）');
+    }else{
+      $('msg').textContent = '💦 それは'+cardLabel(card)+'でした（合計'+sum+'ではない）';
+      log('❌ あなた：合計'+sum+'で'+cardLabel(card)+'を選んだが合わず、そのカードは捨てられた');
+    }
     $('msg').className = 'msg bad';
-    log('❌ あなた：合計'+sum+'で'+cardLabel(card)+'を選んだが合わず、そのカードは捨てられた');
     S.pending = null;
     renderAll();
     setTimeout(()=>{
@@ -1152,6 +1206,10 @@ function cpuTurn(seat){
   if(S.over) return;
   const pl = S.players[seat];
   const name = playerName(seat);
+  if(strategyMaybeRefresh(pl, S.state)){
+    log('🔄 '+name+'はリフレッシュした（1コイン／残り '+coinsOf(pl)+'コイン）');
+    renderAll();
+  }
   const bought = strategyMaybeBuy(pl, S.state);
   if(bought){
     log('🛒 '+name+'は '+bought.faces+'面ダイスを買った（'+bought.paid+'コイン／残り '+coinsOf(pl)+'コイン・所持：'+pl.dice.map(diceLabel).join('・')+'）');
@@ -1182,9 +1240,9 @@ function cpuTurn(seat){
         log('✅ '+name+'：'+cardLabel(card)+'に合計'+res.sum+'で的中。獲得（+'+card.strokes+'点）');
         if(res.bonusDie) log('🎲 '+name+'は特典ダイス（'+res.bonusDie+'面）を手に入れた！');
       }else{
-        $('msg').textContent = name+'は合計'+res.sum+'で外れ（'+cardLabel(card)+'）';
+        $('msg').textContent = name+'は合計'+res.sum+'で外れ（'+cardLabel(card)+'）'+(res.nearMiss?'。おしい！でコイン+'+res.nearMiss:'');
         $('msg').className = 'msg good';
-        log('❌ '+name+'：'+cardLabel(card)+'に合計'+res.sum+'で外れ');
+        log((res.nearMiss?'😣 ':'❌ ')+name+'：'+cardLabel(card)+'に合計'+res.sum+'で外れ'+(res.nearMiss?'。おしい！（1違い）でコイン+'+res.nearMiss:''));
       }
       renderAll();
       setTimeout(()=>{
@@ -1278,9 +1336,10 @@ function cpuTurnVariant(seat){
             log('✅ '+name+'：振り直して'+cardLabel(card)+'に合計'+applied.sum+'で的中。獲得（+'+card.strokes+'点）');
             if(acq.bonusDie) log('🎲 '+name+'は特典ダイス（'+acq.bonusDie+'面）を手に入れた！');
           }else{
-            $('msg').textContent = name+'は振り直しても合計'+applied.sum+'で外れ（'+cardLabel(card)+'）';
+            const nm = nearMissBonus(pl, card, applied.sum);
+            $('msg').textContent = name+'は振り直しても合計'+applied.sum+'で外れ（'+cardLabel(card)+'）'+(nm?'。おしい！でコイン+'+nm:'');
             $('msg').className = 'msg good';
-            log('❌ '+name+'：振り直しても'+cardLabel(card)+'に合計'+applied.sum+'で外れ');
+            log((nm?'😣 ':'❌ ')+name+'：振り直しても'+cardLabel(card)+'に合計'+applied.sum+'で外れ'+(nm?'。おしい！（1違い）でコイン+'+nm:''));
           }
           renderAll();
           setTimeout(()=>{
@@ -1289,6 +1348,21 @@ function cpuTurnVariant(seat){
             afterTurn();
           }, 1300);
         }, 1000);
+      }else if(variantNearMissPick(S.state.field, sum) >= 0){
+        const idx = variantNearMissPick(S.state.field, sum);
+        const card = S.state.field[idx];
+        S.selCard = idx;
+        S.revealIdx = idx;
+        const nm = nearMissBonus(pl, card, sum);
+        $('msg').textContent = name+'は合計'+sum+'で'+cardLabel(card)+'を選んだ。おしい！でコイン+'+nm;
+        $('msg').className = 'msg good';
+        log('😣 '+name+'：合計'+sum+'で'+cardLabel(card)+'を選んで捨てた。おしい！（1違い）でコイン+'+nm);
+        renderAll();
+        setTimeout(()=>{
+          commitField(idx, false, card);
+          renderAll();
+          afterTurn();
+        }, 1300);
       }else{
         $('msg').textContent = name+'は合計'+sum+'、合うカードがなくパス';
         $('msg').className = 'msg good';
