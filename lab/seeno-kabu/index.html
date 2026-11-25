@@ -389,8 +389,8 @@ const actLabel=(o,i)=>o.act==='pass'?'<span class="chip" style="background:var(-
 
 function go(){
   const orders=S.players.map((p,i)=>i===0?{stock:S.act==='pass'?null:S.pick,act:S.act}:cpuOrder(p,i-1));
-  const net={A:0,B:0,C:0};
-  orders.forEach(o=>{if(o.act==='buy')net[o.stock]++;if(o.act==='sell')net[o.stock]--});
+  const net={A:0,B:0,C:0},buys={A:0,B:0,C:0},sells={A:0,B:0,C:0};
+  orders.forEach(o=>{if(o.act==='buy'){net[o.stock]++;buys[o.stock]++}if(o.act==='sell'){net[o.stock]--;sells[o.stock]++}});
   const before={...S.price};
   NAMES.forEach(n=>S.price[n]=clamp(S.price[n]+net[n],1,maxP()));
   NAMES.forEach(n=>{S.prev[n]=S.price[n]-before[n]; if(S.hist)S.hist[n].push(S.price[n])});
@@ -408,8 +408,8 @@ function go(){
   const rows=[...document.querySelectorAll('.rv')];
   rows.forEach((r,i)=>setTimeout(()=>r.classList.add('show'),250*i+100));
   setTimeout(()=>{
-    $('moveTxt').innerHTML=NAMES.map(n=>`${n}社 ${before[n]}→<b>${S.price[n]}</b>`).join('　');
-    S.log.push(`R${S.round}：`+orders.map((o,i)=>`${S.players[i].name} ${o.act==='pass'?'見送り':o.act==='peek'?'調べもの':o.stock+(o.act==='buy'?'買':'売')}`).join('、')+` ／ `+NAMES.map(n=>`${n}${S.price[n]}`).join(' '));
+    $('moveTxt').innerHTML=NAMES.map(n=>`${n}社 ${before[n]}→<b>${S.price[n]}</b> <small style="color:var(--sub)">（買い${buys[n]}人・売り${sells[n]}人 → ${sgn(net[n])}）</small>`).join('　');
+    S.log.push(`R${S.round}：`+orders.map((o,i)=>`${S.players[i].name} ${o.act==='pass'?'見送り':o.act==='peek'?'調べもの':o.stock+(o.act==='buy'?'買':'売')}`).join('、')+` ／ `+NAMES.map(n=>`${n}${S.price[n]}(買${buys[n]}売${sells[n]})`).join(' '));
     S.round++;
     save('round');
     render();

@@ -87,6 +87,11 @@ button{font-family:inherit;cursor:pointer;border:none}
 .yutai-row{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 12px}
 .yu{background:#fff8e1;border:2px solid #d9b84a;border-radius:10px;padding:6px 10px;font-size:13px;font-weight:800}
 .yu small{color:var(--gold)}
+.ayu-row{padding:6px 0;border-bottom:1px dashed var(--line)}
+.ayu-row:last-child{border-bottom:none;padding-bottom:0}
+.ayu-row:first-child{padding-top:0}
+.ayu-nm{font-weight:800;font-size:13px}
+.ayu-nm small{color:var(--sub);font-weight:700}
 
 /* players */
 .players{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0 10px}
@@ -172,6 +177,12 @@ table.stats th:first-child,table.stats td:first-child{text-align:left}
   <div class="phase" id="phase"></div>
 
   <div class="players" id="players"></div>
+
+  <div class="panel" style="margin-bottom:12px">
+    <h3>みんなの優待カード</h3>
+    <div id="allYutai"></div>
+  </div>
+
   <div class="log" id="log"></div>
 </section>
 
@@ -489,6 +500,10 @@ function render(){
   document.getElementById('players').innerHTML=S.players.map((p,i)=>{
     const hold=COMPANIES.filter(c=>sh(p,c.id)).map(c=>{const n=sh(p,c.id);return c.emo+'×'+n+(sd(p,c.id)?'⟲':'')+(n===2?'（あと1枚）':n>=3?'（優待可）':'')}).join(' ')||'株なし';
     return `<div class="pl ${p.me?'me':''} ${i===S.turn&&!S.over?'turn':''}"><div class="nm"><span>${p.icon} ${p.name}</span></div><div class="tot">${total(p)}<small style="font-size:11px">点（優待${yutaiPts(p)}＋${coKinds(p)}社ボーナス${bonusOf(p)}）</small></div><div class="detail">${hold}</div></div>`;
+  }).join('');
+  document.getElementById('allYutai').innerHTML=S.players.map(p=>{
+    const chips=p.yutai.length?p.yutai.map(y=>`<span class="yu">${co(y.co).emo}${y.name} <small>${y.pts}点${y.long?'⟲':''}</small></span>`).join(''):'<span style="font-size:13px;color:var(--sub)">まだ優待なし</span>';
+    return `<div class="ayu-row"><div class="ayu-nm">${p.icon} ${p.name} <small>（優待${p.yutai.length}枚・${yutaiPts(p)}点）</small></div><div class="yutai-row" style="margin:2px 0 0">${chips}</div></div>`;
   }).join('');
   document.getElementById('log').innerHTML=S.log.map(l=>`<div>${l}</div>`).join('');
 }

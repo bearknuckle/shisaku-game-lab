@@ -73,6 +73,7 @@
   .settings select{font-size:14px;padding:4px 8px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
   .settings label{cursor:pointer}
   .settings .note{font-size:12px;color:var(--muted)}
+  .settings .bestline{flex-basis:100%;font-size:13.5px;font-weight:700;color:var(--gold,#b8860b)}
   .fieldarea{display:flex;gap:12px;align-items:stretch;justify-content:center;flex-wrap:wrap;padding:8px 0}
   .fcard{position:relative;width:118px;min-height:158px;border-radius:12px;background:linear-gradient(160deg,#fffdf6,#fdf3d3);border:2px solid #d8c39a;color:#4a3a22;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(90,55,10,.15);padding:8px 4px;text-align:center}
   .fcard .corner{position:absolute;top:5px;right:8px;font-size:11px;font-weight:700;color:#a68a54}
@@ -159,6 +160,7 @@
       <label><input type="checkbox" id="variantChk"> 🔀 <strong>ヴァリアント「振ってから選ぶ」</strong>：先に振って、合計に合うカードを取る</label>
       <button class="btn sub" id="startBtn">この設定で対戦開始</button>
       <span class="note">設定は対戦開始時に反映されます</span>
+      <div class="bestline" id="bestLine" style="display:none"></div>
     </div>
   </section>
 
@@ -1373,6 +1375,39 @@ function cpuTurnVariant(seat){
     }
   }, 900);
 }
+/* ===== 自己ベスト記録（localStorage・表示と記録のみ。ルールには影響しない） ===== */
+const BEST_KEY = 'kakusu-best';
+function loadBest(){
+  try{
+    const b = JSON.parse(localStorage.getItem(BEST_KEY));
+    if(b && typeof b.plays === 'number') return b;
+  }catch(e){}
+  return null;
+}
+function renderBest(){
+  const el = $('bestLine');
+  if(!el) return;
+  const b = loadBest();
+  if(!b || b.plays < 1){ el.style.display = 'none'; el.textContent = ''; return; }
+  el.style.display = '';
+  el.textContent = '🏆 自己ベスト：得点' + b.bestScore + '点／獲得' + b.bestCards + '枚／' + b.wins + '勝（全' + b.plays + '戦）';
+}
+/* 勝利判定は endGame の既存ロジック（topSeats／ネタ枠）に従う。同点トップは引き分け扱いで勝ちに数えない */
+function recordBest(topSeats, isJoke, jokeSeat){
+  if(S.recorded) return;
+  S.recorded = true;
+  const me = S.players[0];
+  const win = isJoke ? (jokeSeat === 0) : (topSeats.length === 1 && topSeats[0] === 0);
+  const prev = loadBest() || {bestScore: 0, bestCards: 0, wins: 0, plays: 0};
+  const next = {
+    bestScore: Math.max(prev.bestScore, scoreOf(me)),
+    bestCards: Math.max(prev.bestCards, me.won.length),
+    wins: prev.wins + (win ? 1 : 0),
+    plays: prev.plays + 1
+  };
+  try{ localStorage.setItem(BEST_KEY, JSON.stringify(next)); }catch(e){}
+  renderBest();
+}
 function endGame(reason, jokeCard, jokeSeat){
   S.over = true;
   S.endReason = reason;
@@ -1406,6 +1441,7 @@ function endGame(reason, jokeCard, jokeSeat){
     return '<p><strong>'+playerName(i)+'の所持カード：</strong>'+list+'</p>';
   }).join('');
   log('🏁 対戦終了：'+S.players.map((pl,i)=>playerName(i)+' '+scores[i]+'点').join('／')+'（'+(isJoke?'ネタ枠で即勝利':(reason==='deck'?'山札切れ':'全ラウンド終了'))+'）');
+  recordBest(topSeats, isJoke, jokeSeat);
   renderAll();
 }
 function init(){
@@ -1436,6 +1472,7 @@ $('rerollSkipBtn').addEventListener('click', playerRerollSkip);
 $('againBtn').addEventListener('click', init);
 $('startBtn').addEventListener('click', init);
 init();
+renderBest();
 </script>
 </body>
 </html>
