@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>アニマルベースボール</title>
+<!-- 試作ゲームラボ: 下のOGタグ・アイコン・「試作ゲームラボに戻る」リンクは消さないこと（作業ルールはリポジトリ直下の CLAUDE.md） -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="試作ゲームラボ">
+<meta property="og:title" content="アニマルベースボール｜試作ゲームラボ">
+<meta property="og:description" content="動物チームのカード野球。選手カードを裏向きで出し合い、攻撃力−守備力の差で打者ごとのバッティング表を引いて打席の結果が決まる。作戦カードで逆転も。">
+<meta property="og:url" content="https://game-lab-oj9t.onrender.com/animal-baseball/">
+<meta property="og:image" content="https://game-lab-oj9t.onrender.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE: 草野球のナイター、木の看板の手書きスコアボード。にぎやかだが読みやすい
+   IDEA: 球場そのもの。上がスコアボード、まん中がグラウンド、手前がベンチ（手札）
+   PICTURE: ダイヤモンドと、打者・投手の動物カード（顔はSVG）
+   COLOUR and TYPE: 芝の緑・スコアボードの深緑・白線・ボールの赤。Dela Gothic One＋M PLUS Rounded
+   LAYOUT: 1カラム。スコア→グラウンド→フェーズ操作→作戦ゾーン→手札→記録 */
+:root{color-scheme:light dark;--bg:light-dark(#eef3e6,#0f1a12);--ink:light-dark(#1c2a1f,#e8f0e4);--muted:light-dark(#5c6e5f,#9fb3a2);--board:#123522;--board2:#1b4a30;--turf:light-dark(#4f9a4a,#2f6b33);--turf2:light-dark(#5aa954,#357639);--dirt:light-dark(#c9955d,#8f6438);--chalk:#f7f4ea;--red:#d8423a;--gold:#f2c14e;--card:light-dark(#fffdf6,#1a2a1e);--line:light-dark(#d4dccb,#2c4231)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "M PLUS Rounded 1c",system-ui,sans-serif;overflow-x:clip}
+h1,h2,.big{font-family:"Dela Gothic One","M PLUS Rounded 1c",sans-serif;font-weight:400;line-height:1.05;margin:0}
+header{background:var(--board);color:var(--chalk);padding:14px max(4vw,14px) 12px;border-bottom:4px solid var(--gold)}
+header h1{font-size:clamp(24px,6vw,34px)}
+.tabs{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.tab{border:0;border-radius:999px;padding:8px 16px;min-height:40px;font:700 14px inherit;font-family:inherit;background:var(--board2);color:#cfe3d2;cursor:pointer}
+.tab[aria-selected=true]{background:var(--gold);color:var(--board)}
+main{max-width:760px;margin:0 auto;padding:12px 12px 48px}
+.note{font-size:13px;color:var(--muted);margin:6px 2px 12px}.note a{color:inherit;font-weight:800}
+.sb{background:var(--board);color:var(--chalk);border-radius:12px;padding:10px;overflow-x:auto}
+.sb table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:14px}
+.sb td,.sb th{padding:3px 5px;text-align:center;white-space:nowrap}.sb th{color:#9fc6a8;font-weight:700}
+.sb td:first-child{text-align:left;font-weight:800}.sb .r{color:var(--gold);font-weight:800;font-size:16px}
+.sb .cur{background:#2b6a44;border-radius:4px}
+.status{display:flex;justify-content:space-between;align-items:center;margin-top:6px;font-weight:800;gap:8px;flex-wrap:wrap}
+.outs i{display:inline-block;width:13px;height:13px;border-radius:50%;border:2px solid var(--red);margin-left:4px;vertical-align:-1px}.outs i.on{background:var(--red)}
+.field{margin-top:10px;background:repeating-linear-gradient(90deg,var(--turf) 0 34px,var(--turf2) 34px 68px);border-radius:14px;padding:10px;display:grid;grid-template-columns:minmax(0,1fr) 120px minmax(0,1fr);gap:8px;align-items:center}
+.dia{width:120px;height:110px}
+.pc{background:var(--card);border-radius:12px;padding:8px;box-shadow:0 2px 0 rgba(0,0,0,.18)}
+.pc .who{display:flex;gap:6px;align-items:center}.pc svg.face{width:42px;height:42px;flex:none}
+.pc .nm{font-weight:800;font-size:15px;line-height:1.2}.pc .sub{font-size:13px;color:var(--muted)}
+.pc .stat{font-family:"Dela Gothic One",sans-serif;font-size:22px;color:var(--red)}
+.bt{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:2px;margin-top:6px;font-size:13px;text-align:center}
+.bt div{background:light-dark(#eef1e8,#243629);border-radius:4px;padding:2px 0;line-height:1.25}.bt b{display:block;font-size:11px;color:var(--muted);font-weight:700}
+.bt .hit{background:light-dark(#ffe9a8,#5a4a18)}.bt .on{outline:3px solid var(--red);outline-offset:-1px;font-weight:800}
+.phase{margin-top:10px;background:var(--card);border:2px solid var(--line);border-radius:14px;padding:12px}
+.phase h2{font-size:20px}.steps{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap}
+.steps span{font-size:13px;padding:2px 9px;border-radius:999px;background:light-dark(#e6ece0,#22352a);color:var(--muted)}.steps .now{background:var(--board);color:var(--chalk)}
+.msg{margin:6px 0 10px}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+button.a{min-height:46px;border:0;border-radius:12px;padding:0 18px;font:800 16px inherit;font-family:inherit;background:var(--red);color:#fff;cursor:pointer}
+button.a.s{background:light-dark(#e3e9dc,#2a3f30);color:var(--ink)}button.a:disabled{opacity:.4;cursor:default}
+button:focus-visible,.cd:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.res{margin:8px 0;padding:10px;border-radius:12px;background:light-dark(#f4f7ef,#16251a)}
+.res .big{font-size:clamp(30px,8vw,44px);color:var(--red)}
+.calc{font-size:14px;font-variant-numeric:tabular-nums}
+.zone{margin-top:10px}.zone h3{font-size:14px;margin:0 0 4px;color:var(--muted)}
+.row{display:flex;gap:6px;flex-wrap:wrap}
+.cd{width:92px;min-height:104px;border-radius:10px;border:2px solid var(--line);background:var(--card);padding:6px;font:inherit;color:inherit;text-align:left;cursor:pointer;position:relative;display:flex;flex-direction:column;gap:2px}
+.cd .k{font-size:11px;font-weight:800;border-radius:6px;padding:0 5px;align-self:flex-start;color:#fff}
+.cd .k.bat{background:#c0592f}.cd .k.pit{background:#2f6fa8}.cd .k.st{background:#7a5bb0}
+.cd .n{font-weight:800;font-size:13px;line-height:1.2}.cd .v{font-size:13px;font-variant-numeric:tabular-nums}.cd .v b{font-size:17px}
+.cd .rk{position:absolute;right:6px;top:4px;font-family:"Dela Gothic One";font-size:14px;color:var(--muted)}
+.cd.sel{border-color:var(--red);box-shadow:0 0 0 3px color-mix(in srgb,var(--red) 35%,transparent);transform:translateY(-3px)}
+.cd.dim{opacity:.45}.cd.back{background:repeating-linear-gradient(45deg,var(--board) 0 8px,var(--board2) 8px 16px);cursor:default}
+.log{margin-top:12px;font-size:14px;max-height:220px;overflow:auto;background:var(--card);border-radius:12px;padding:8px 12px;border:1px solid var(--line)}
+.log p{margin:2px 0}
+.panel{display:none}.panel.on{display:block}
+.box{background:var(--card);border-radius:14px;padding:14px;border:1px solid var(--line);margin-bottom:12px}
+.box h2{font-size:20px;margin-bottom:8px}.box ol,.box ul{padding-left:1.3em;margin:6px 0}
+.tag{display:inline-block;font-size:12px;font-weight:800;background:var(--gold);color:var(--board);border-radius:6px;padding:0 6px;margin-left:4px}
+.scroll{overflow-x:auto}table.ro{border-collapse:collapse;font-size:13px;width:100%}
+table.ro td,table.ro th{border-bottom:1px solid var(--line);padding:4px 5px;text-align:center;white-space:nowrap}table.ro td:nth-child(2){text-align:left}
+.start label{display:block;font-weight:800;margin:10px 0 4px}.start select{font:16px inherit;font-family:inherit;min-height:44px;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+@media(max-width:560px){.field{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.dia{grid-column:1/-1;grid-row:1;justify-self:center}.cd{width:calc(33.3% - 4px)}}
+@media(prefers-reduced-motion:reduce){.cd.sel{transform:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>アニマルベースボール</h1>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" data-p="game" aria-selected="true">試合</button>
+    <button class="tab" role="tab" data-p="rule" aria-selected="false">ルール</button>
+    <button class="tab" role="tab" data-p="team" aria-selected="false">チーム</button>
+  </div>
+</header>
+<main>
+  <p class="note"><a href="../">← 試作ゲームラボに戻る</a> ・ アニマルベースボール v0.1<br>選手カードを出し合い、攻撃力−守備力の差で打者ごとのバッティング表を引いて結果が決まります。<span class="tag">仮</span> の付いたルールは調整中です。</p>
+  <section class="panel on" id="p-game"><div id="game"></div></section>
+  <section class="panel" id="p-rule">
+    <div class="box"><h2>1打席の流れ</h2>
+      <ol>
+        <li><b>ドロー</b>：おたがい手札が6枚になるまで引く。攻撃側は投手カードが4枚以上、守備側は野手カードが4枚以上あれば、手札をぜんぶ引き直せる。選手カードが1枚もないときも引き直せる <span class="tag">仮</span></li>
+        <li><b>作戦タイム</b>：作戦カードを自分の作戦ゾーンに裏向きで置く（ゾーンは3枚まで。使うまで残る）。いらなくなったゾーンのカードは捨てられる <span class="tag">仮</span></li>
+        <li><b>メイン</b>：手札から選手カードを1枚、裏向きでプレイゾーンに出す。攻撃側はカードの<b>攻</b>、守備側は<b>守</b>が足される。</li>
+        <li><b>作戦実行</b>：作戦ゾーンのカードを好きなだけ表にして使う。</li>
+        <li><b>判定</b>：攻撃力合計−守備力合計の差で、<b>打者のバッティング表</b>を引いて結果が決まる。</li>
+      </ol>
+    </div>
+    <div class="box"><h2>計算</h2>
+      <ul>
+        <li>攻撃力合計 ＝ 打者の攻 ＋ 出したカードの攻 ＋ 作戦</li>
+        <li>守備力合計 ＝ 投手の守 ＋ 出したカードの守 ＋ 作戦</li>
+        <li>いま打席（マウンド）にいる選手と同じ選手のカードを出すと<b>コンボ +1</b>。</li>
+        <li>差が −4 より下なら −4、+4 より上なら +4 の欄を見る <span class="tag">仮</span></li>
+      </ul>
+    </div>
+    <div class="box"><h2>作戦カード</h2>
+      <ul>
+        <li><b>強打</b>（攻撃）：攻撃力 +2</li>
+        <li><b>好投</b>（守備）：守備力 +2</li>
+        <li><b>盗塁</b>（攻撃）：一塁走者が二塁へ（二塁が空いているとき）</li>
+        <li><b>盗塁阻止</b>（守備）：ゾーンに置いておくと、相手の盗塁を自動でアウトにする</li>
+      </ul>
+    </div>
+    <div class="box"><h2>走者と結果 <span class="tag">仮</span></h2>
+      <ul>
+        <li>安打・二塁打・三塁打は、走者も打者と同じ数だけ進む。本塁打は全員ホームイン。</li>
+        <li>外野フライは、アウトが3つ目でなければ三塁走者が還る。犠打は打者アウトで走者が1つ進む。</li>
+        <li>併殺は一塁走者がいてアウトが1つ以下のとき2アウト。それ以外は1アウト。</li>
+        <li>山札が切れたら捨て札を混ぜて山札にする。DHあり。投手のスタミナ・投手交代・代打はまだ入っていない。</li>
+        <li>決められた回が終わってリードしていれば勝ち。同点なら3回まで延長し、それでも同点なら引き分け。</li>
+      </ul>
+    </div>
+  </section>
+  <section class="panel" id="p-team"><div id="teams"></div></section>
+</main>
+<script>
+{
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const TBL={
+  power:  ['併殺','凡打','内F','三振','三振','安打','二塁打','本塁打','本塁打'],
+  contact:['凡打','内F','三振','犠打','安打','安打','二塁打','二塁打','三塁打'],
+  speed:  ['凡打','内F','三振','犠打','安打','安打','二塁打','三塁打','三塁打'],
+  balance:['併殺','凡打','内F','三振','外F','安打','二塁打','三塁打','本塁打']
+};
+const SHORT={'併殺':'併','凡打':'凡','内F':'内飛','外F':'外飛','三振':'振','犠打':'犠','安打':'安','二塁打':'二','三塁打':'三','本塁打':'本'};
+const HITS=['安打','二塁打','三塁打','本塁打'];
+const TYPE={power:'長打',contact:'巧打',speed:'俊足',balance:'万能'};
+// [名前, 動物, 守備位置, 攻, 守, 表, 色, 耳]
+const TEAMS=[
+ {name:'もりのクマーズ',short:'クマ',col:'#8a5a32',bat:[
+  ['ちょろ','リス','中',7,5,'speed','#c98a4b','round'],['ぴょん太','ウサギ','二',6,5,'contact','#e9e2d6','long'],
+  ['こん吉','キツネ','遊',8,4,'balance','#e0873a','point'],['どすこい','クマ','一',9,3,'power','#8a5a32','round'],
+  ['ドドン','イノシシ','三',8,3,'power','#6d5443','point'],['ぽん','タヌキ','左',7,4,'balance','#9b7c5c','round'],
+  ['しかお','シカ','右',7,4,'speed','#b9844f','long'],['むっく','アナグマ','捕',6,6,'contact','#7d7a72','round'],
+  ['ガオ','オオカミ','DH',8,3,'power','#8f97a0','point']],
+  pit:[['ホー助','フクロウ',2,8,'#a07a52','point'],['のんびり','カメ',2,7,'#6c9a5b','none'],['チクリ','ハリネズミ',3,6,'#9a8670','round']]},
+ {name:'うみのペンギンズ',short:'ペン',col:'#2f5f8a',bat:[
+  ['かもめ丸','カモメ','中',7,5,'speed','#eef0f2','none'],['らっこ','ラッコ','遊',6,6,'contact','#8b6a50','round'],
+  ['ごま','アザラシ','右',8,4,'balance','#b8bec4','none'],['キバ','セイウチ','一',9,3,'power','#a5774f','none'],
+  ['クロ','シャチ','左',8,4,'power','#2a2f36','none'],['ペン','ペンギン','三',7,4,'balance','#30363e','none'],
+  ['うそ吉','カワウソ','二',6,5,'speed','#7b5a3e','round'],['ハサミ','カニ','捕',6,6,'contact','#d6553f','point'],
+  ['はっちゃん','タコ','DH',7,3,'power','#e07a8a','none']],
+  pit:[['キュー','イルカ',2,8,'#6fa2c9','none'],['ドーン','クジラ',2,7,'#3f6c96','none'],['ふわり','クラゲ',3,6,'#c7a6e0','none']]}
+];
+const rank=v=>v>=9?'S':v>=8?'A':v>=7?'B':'C';
+function face(c,ear,s=40){
+  const e={round:`<circle cx="9" cy="10" r="6" fill="${c}"/><circle cx="31" cy="10" r="6" fill="${c}"/>`,
+    point:`<path d="M5 18 9 2 17 11Z M35 18 31 2 23 11Z" fill="${c}"/>`,
+    long:`<rect x="9" y="0" width="7" height="18" rx="3.5" fill="${c}"/><rect x="24" y="0" width="7" height="18" rx="3.5" fill="${c}"/>`,none:''}[ear]||'';
+  return `<svg class="face" viewBox="0 0 40 40" width="${s}" height="${s}" aria-hidden="true">${e}<circle cx="20" cy="23" r="15" fill="${c}"/><circle cx="20" cy="23" r="15" fill="none" stroke="rgba(0,0,0,.25)" stroke-width="1.5"/><ellipse cx="20" cy="28" rx="8" ry="6" fill="rgba(255,255,255,.55)"/><circle cx="14" cy="20" r="2.4" fill="#1b1b1b"/><circle cx="26" cy="20" r="2.4" fill="#1b1b1b"/><circle cx="14.8" cy="19.2" r=".8" fill="#fff"/><circle cx="26.8" cy="19.2" r=".8" fill="#fff"/><ellipse cx="20" cy="26" rx="2.6" ry="1.8" fill="#3a2a22"/></svg>`;
+}
+let uid=0;
+function buildTeam(t,ti){
+  const bat=t.bat.map((b,i)=>({id:`${ti}b${i}`,name:b[0],ani:b[1],pos:b[2],atk:b[3],def:b[4],tbl:b[5],col:b[6],ear:b[7]}));
+  const pit=t.pit.map((p,i)=>({id:`${ti}p${i}`,name:p[0],ani:p[1],pos:'投',atk:+p[2],def:p[3],col:p[4],ear:p[5]}));
+  const deck=[];
+  const pc=(pl,role)=>({uid:uid++,kind:'p',role,pid:pl.id,name:pl.name,ani:pl.ani,atk:pl.atk,def:pl.def,col:pl.col,ear:pl.ear});
+  bat.forEach(b=>deck.push(pc(b,'bat')));
+  [...bat].sort((a,b)=>b.atk-a.atk).slice(0,4).forEach(b=>deck.push(pc(b,'bat')));
+  [4,4,3].forEach((n,i)=>{for(let k=0;k<n;k++)deck.push(pc(pit[i],'pit'))});
+  [['強打',2],['好投',2],['盗塁',1],['盗塁阻止',1]].forEach(([s,n])=>{for(let k=0;k<n;k++)deck.push({uid:uid++,kind:'s',name:s})});
+  return {name:t.name,short:t.short,col:t.col,bat,pit,pi:0,order:0,deck:shuffle(deck),hand:[],disc:[],zone:[]};
+}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function draw(T){while(T.hand.length<6){if(!T.deck.length){if(!T.disc.length)break;T.deck=shuffle(T.disc);T.disc=[];log(`${T.short}：山札が切れたので捨て札を混ぜ直した`)}T.hand.push(T.deck.pop())}}
+function redraw(T){T.deck.push(...T.hand);T.hand=[];if(T.deck.length<12){T.deck.push(...T.disc);T.disc=[]}shuffle(T.deck);draw(T)}
+const noP=T=>!T.hand.some(c=>c.kind==='p');
+const cnt=(T,r)=>T.hand.filter(c=>c.kind==='p'&&c.role===r).length;
+const canRe=(T,isOff)=>cnt(T,isOff?'pit':'bat')>=4||cnt(T,'bat')+cnt(T,'pit')===0;
+
+let G=null,opt={you:0,first:0,inn:3};
+const off=()=>G.teams[G.top?0:1],dfn=()=>G.teams[G.top?1:0];
+const isYou=T=>G.teams[G.you]===T;
+function log(t){if(G){G.log.unshift(t);if(G.log.length>60)G.log.pop()}}
+
+function newGame(){
+  uid=0;const you=opt.you,a=opt.first===0?you:1-you;// a = 先攻のチーム
+  const T=[buildTeam(TEAMS[a],0),buildTeam(TEAMS[1-a],1)];
+  G={teams:T,you:a===you?0:1,N:opt.inn,inning:1,top:true,outs:0,bases:[null,null,null],score:[0,0],line:[[],[]],phase:'draw',sel:new Set(),play:{},used:{off:[],def:[]},steal:null,res:null,over:null,log:[],canRe:false};
+  log(`プレイボール！ ${T[0].name}（先攻）対 ${T[1].name}（後攻）`);
+  startAB();
+}
+function startAB(){
+  G.phase='draw';G.sel.clear();G.play={};G.used={off:[],def:[]};G.res=null;G.steal=null;
+  const O=off(),D=dfn();draw(O);draw(D);
+  for(const T of [O,D]){if(!isYou(T)&&canRe(T,T===O)){redraw(T);log(`${T.short}：手札を引き直した`)}
+    for(let k=0;k<3&&noP(T)&&isYou(T);k++){redraw(T);log('あなた：選手カードがないので自動で引き直した')}}
+  const Y=G.teams[G.you];G.canRe=canRe(Y,Y===O);G.drop=new Set();
+  render();
+}
+function cpuTactic(T){for(const c of [...T.zone])if(T.zone.length>=3&&(c.name==='盗塁'||c.name==='盗塁阻止')){T.zone.splice(T.zone.indexOf(c),1);T.disc.push(c);break}
+  for(const c of [...T.hand])if(c.kind==='s'&&T.zone.length<3){T.zone.push(c);T.hand.splice(T.hand.indexOf(c),1)}}
+function cpuMain(T,isOff){
+  const ps=T.hand.filter(c=>c.kind==='p');if(!ps.length)return null;
+  const me=isOff?off().bat[off().order]:dfn().pit[dfn().pi];
+  const v=c=>(isOff?c.atk:c.def)+(c.pid===me.id?1:0);
+  return ps.sort((a,b)=>v(b)-v(a))[0];
+}
+function cpuExec(T,isOff){
+  const u=[];
+  for(const c of T.zone){
+    if(isOff&&c.name==='強打'&&(G.bases.some(Boolean)||G.inning>=G.N||Math.random()<.5))u.push(c);
+    if(isOff&&c.name==='盗塁'&&canSteal()&&G.outs<2&&Math.random()<.6)u.push(c);
+    if(!isOff&&c.name==='好投'&&(G.bases.some(Boolean)||G.inning>=G.N||Math.random()<.5))u.push(c);
+  }
+  return u;
+}
+const canSteal=()=>G.bases[0]&&!G.bases[1];
+function usable(c,isOff){return isOff?(c.name==='強打'||(c.name==='盗塁'&&canSteal())):c.name==='好投'}
+
+function act(a,arg){
+  const O=off(),D=dfn(),Y=G.teams[G.you],yOff=Y===O;
+  if(a==='redraw'){redraw(Y);G.canRe=false;log(`あなた：手札を引き直した`);render();return}
+  if(a==='pick'){
+    const c=Y.hand.find(x=>x.uid===arg)||Y.zone.find(x=>x.uid===arg);if(!c)return;
+    if(G.phase==='tactic'&&Y.zone.includes(c)){G.drop.has(c.uid)?G.drop.delete(c.uid):G.drop.add(c.uid);for(const id of [...G.sel])if(Y.zone.length-G.drop.size+G.sel.size>3)G.sel.delete(id)}
+    else if(G.phase==='tactic'&&c.kind==='s'&&Y.hand.includes(c)){if(G.sel.has(c.uid))G.sel.delete(c.uid);else if(Y.zone.length-G.drop.size+G.sel.size<3)G.sel.add(c.uid)}
+    else if(G.phase==='main'&&c.kind==='p'&&Y.hand.includes(c)){G.sel.clear();G.sel.add(c.uid)}
+    else if(G.phase==='exec'&&Y.zone.includes(c)&&usable(c,yOff)){G.sel.has(c.uid)?G.sel.delete(c.uid):G.sel.add(c.uid)}
+    render();return;
+  }
+  if(a==='next'){
+    if(G.phase==='draw'){G.phase='tactic';G.sel.clear()}
+    else if(G.phase==='tactic'){
+      for(const id of G.drop){const c=Y.zone.find(x=>x.uid===id);Y.zone.splice(Y.zone.indexOf(c),1);Y.disc.push(c);log(`あなた：作戦ゾーンの${c.name}を捨てた`)}G.drop.clear();
+      for(const id of G.sel){const c=Y.hand.find(x=>x.uid===id);Y.zone.push(c);Y.hand.splice(Y.hand.indexOf(c),1)}
+      cpuTactic(Y===O?D:O);G.sel.clear();G.phase='main';
+    }else if(G.phase==='main'){
+      const id=[...G.sel][0],c=Y.hand.find(x=>x.uid===id)||null;
+      if(c)Y.hand.splice(Y.hand.indexOf(c),1);
+      const C=Y===O?D:O,cc=cpuMain(C,C===O);if(cc)C.hand.splice(C.hand.indexOf(cc),1);
+      G.play=yOff?{off:c,def:cc}:{off:cc,def:c};G.sel.clear();G.phase='exec';
+    }else if(G.phase==='exec'){
+      const mine=Y.zone.filter(c=>G.sel.has(c.uid)),C=Y===O?D:O,theirs=cpuExec(C,C===O);
+      G.used=yOff?{off:mine,def:theirs}:{off:theirs,def:mine};
+      for(const [T,arr] of [[O,G.used.off],[D,G.used.def]])for(const c of arr){T.zone.splice(T.zone.indexOf(c),1);T.disc.push(c)}
+      judge();
+    }else if(G.phase==='result'){
+      if(G.over){render();return}
+      if(G.res.change)changeSide();
+      startAB();return;
+    }
+    render();return;
+  }
+  if(a==='new'){G=null;render()}
+}
+function judge(){
+  const O=off(),D=dfn(),b=O.bat[O.order],p=D.pit[D.pi],pl=G.play,uo=G.used.off.map(c=>c.name),ud=G.used.def.map(c=>c.name);
+  const A=[['打者 '+b.name,b.atk]],Df=[['投手 '+p.name,p.def]];
+  if(pl.off){A.push(['カード '+pl.off.name,pl.off.atk]);if(pl.off.pid===b.id)A.push(['コンボ',1])}
+  if(pl.def){Df.push(['カード '+pl.def.name,pl.def.def]);if(pl.def.pid===p.id)Df.push(['コンボ',1])}
+  if(uo.includes('強打'))A.push(['強打',2]);if(ud.includes('好投'))Df.push(['好投',2]);
+  const sa=A.reduce((s,x)=>s+x[1],0),sd=Df.reduce((s,x)=>s+x[1],0),diff=sa-sd,idx=Math.max(-4,Math.min(4,diff))+4;
+  let pre='';
+  if(uo.includes('盗塁')&&canSteal()){
+    const st=D.zone.find(c=>c.name==='盗塁阻止');
+    if(st){D.zone.splice(D.zone.indexOf(st),1);D.disc.push(st);pre=`盗塁 → 盗塁阻止でアウト！`;G.bases[0]=null;G.outs++}
+    else{G.bases[1]=G.bases[0];G.bases[0]=null;pre='盗塁成功！ 一塁走者が二塁へ'}
+    log(`${O.short}：${pre}`);
+  }
+  let result=G.outs>=3?null:TBL[b.tbl][idx],runs=0;
+  if(result)runs=apply(result,b);
+  for(const c of [pl.off,pl.def])if(c)(c===pl.off?O:D).disc.push(c);
+  const ti=G.top?0:1;G.line[ti][G.inning-1]=(G.line[ti][G.inning-1]||0)+runs;G.score[ti]+=runs;
+  G.res={A,Df,sa,sd,diff,idx,result,runs,pre,change:G.outs>=3,b};
+  log(`${G.inning}回${G.top?'表':'裏'} ${b.name}：${result||'（打席前に3アウト）'}${runs?`　${runs}点！`:''}`);
+  if(result)O.order=(O.order+1)%9;
+  G.phase='result';
+  checkEnd();
+}
+function apply(r,b){
+  let runs=0;const B=G.bases;
+  const adv=n=>{for(let i=2;i>=0;i--)if(B[i]){if(i+n>=3){runs++;B[i]=null}else{B[i+n]=B[i];B[i]=null}}};
+  if(HITS.includes(r)){const n=HITS.indexOf(r)+1;if(n===4){runs=B.filter(Boolean).length+1;G.bases=[null,null,null];return runs}adv(n);B[n-1]=b;return runs}
+  if(r==='併殺'&&B[0]&&G.outs<=1){G.outs+=2;B[0]=null;return 0}
+  G.outs++;
+  if(G.outs>=3)return 0;
+  if(r==='外F'&&B[2]){B[2]=null;runs=1}
+  if(r==='犠打')adv(1);
+  return runs;
+}
+function changeSide(){
+  G.outs=0;G.bases=[null,null,null];
+  if(G.top){G.top=false;log(`チェンジ！ ${G.inning}回裏`)}else{G.inning++;G.top=true;log(`チェンジ！ ${G.inning}回表`)}
+}
+function checkEnd(){
+  const [a,h]=G.score,last=G.inning>=G.N;
+  let end=null;
+  if(!G.top&&last&&h>a)end='サヨナラ';
+  else if(G.outs>=3&&last){
+    if(G.top&&h>a)end='試合終了';
+    else if(!G.top&&a!==h)end='試合終了';
+    else if(!G.top&&G.inning>=G.N+3)end='引き分け';
+  }
+  if(end){
+    const yi=G.you,ys=G.score[yi],os=G.score[1-yi];
+    G.over={end,txt:a===h?'引き分け':ys>os?'あなたの勝ち！':'あなたの負け…'};
+    log(`${end}：${G.teams[0].short} ${a} - ${h} ${G.teams[1].short}`);
+  }
+}
+/* ---------- 描画 ---------- */
+const PH=[['draw','ドロー'],['tactic','作戦タイム'],['main','メイン'],['exec','作戦実行'],['result','判定']];
+function card(c,o={}){
+  if(o.back)return `<div class="cd back" aria-label="裏向きのカード"></div>`;
+  const cls=['cd',o.sel?'sel':'',o.dim||o.drop?'dim':'',o.drop?'drop':''].join(' ');
+  const body=c.kind==='s'?`<span class="k st">作戦</span><span class="n">${esc(c.name)}</span><span class="v">${{'強打':'攻撃 +2','好投':'守備 +2','盗塁':'一塁→二塁','盗塁阻止':'盗塁をアウト'}[c.name]}</span>`
+    :`<span class="k ${c.role}">${c.role==='bat'?'野手':'投手'}</span><span class="rk">${rank(c.role==='bat'?c.atk:c.def)}</span>${face(c.col,c.ear,28)}<span class="n">${esc(c.name)}</span><span class="v">攻<b>${c.atk}</b> 守<b>${c.def}</b></span>`;
+  const body2=o.drop?body+'<span class="k" style="background:#d8423a">捨てる</span>':body;if(o.drop)return `<button class="${cls}" data-a="pick" data-u="${c.uid}">${body2}</button>`;
+  return o.btn?`<button class="${cls}" data-a="pick" data-u="${c.uid}">${body}</button>`:`<div class="${cls}">${body}</div>`;
+}
+function dia(){
+  const B=G.bases,pt=[[95,55],[60,20],[25,55]],r=(x,y,on)=>`<rect x="${x-9}" y="${y-9}" width="18" height="18" transform="rotate(45 ${x} ${y})" fill="${on?'#f2c14e':'#f7f4ea'}" stroke="#5a3d1e" stroke-width="2"/>`;
+  return `<svg class="dia" viewBox="0 0 120 110" role="img" aria-label="走者：${['一塁','二塁','三塁'].filter((_,i)=>B[i]).join('・')||'なし'}"><path d="M60 100 100 58 60 16 20 58Z" fill="var(--dirt)" stroke="#f7f4ea" stroke-width="3"/>${pt.map((p,i)=>r(p[0],p[1],B[i])).join('')}<path d="M52 92h16l-8 9z" fill="#f7f4ea"/>${pt.map((p,i)=>B[i]?`<text x="${p[0]}" y="${p[1]-14}" text-anchor="middle" font-size="10" font-weight="800" fill="#fff">${esc(B[i].name)}</text>`:'').join('')}</svg>`;
+}
+function render(){
+  const root=$('#game');
+  if(!G){root.innerHTML=`<div class="box start"><h2>試合の準備</h2>
+    <label for="o-you">あなたのチーム</label><select id="o-you">${TEAMS.map((t,i)=>`<option value="${i}" ${opt.you===i?'selected':''}>${t.name}</option>`).join('')}</select>
+    <label for="o-first">先攻・後攻</label><select id="o-first"><option value="0" ${opt.first===0?'selected':''}>先攻</option><option value="1" ${opt.first===1?'selected':''}>後攻</option></select>
+    <label for="o-inn">イニング</label><select id="o-inn">${[3,5,9].map(n=>`<option value="${n}" ${opt.inn===n?'selected':''}>${n}回</option>`).join('')}</select>
+    <div class="btns" style="margin-top:14px"><button class="a" id="go">プレイボール</button></div></div>`;
+    $('#go').onclick=()=>{opt={you:+$('#o-you').value,first:+$('#o-first').value,inn:+$('#o-inn').value};newGame()};return}
+  const O=off(),D=dfn(),Y=G.teams[G.you],C=G.teams[1-G.you],yOff=Y===O,b=O.bat[O.order],p=D.pit[D.pi],R=G.res;
+  const cols=Math.max(G.N,G.inning);
+  const sb=`<div class="sb"><table><tr><th></th>${Array.from({length:cols},(_,i)=>`<th>${i+1}</th>`).join('')}<th>計</th></tr>${G.teams.map((T,ti)=>`<tr><td>${esc(T.short)}${isYou(T)?'（あなた）':''}</td>${Array.from({length:cols},(_,i)=>{const v=G.line[ti][i];const cur=i===G.inning-1&&(G.top?ti===0:ti===1)&&!G.over;return `<td class="${cur?'cur':''}">${v??(i<G.inning-1||(i===G.inning-1&&ti===0&&!G.top)?0:'')}</td>`}).join('')}<td class="r">${G.score[ti]}</td></tr>`).join('')}</table>
+    <div class="status"><span>${G.inning}回${G.top?'表':'裏'}　${yOff?'あなたの攻撃':'あなたの守備'}</span><span class="outs">アウト${[0,1,2].map(i=>`<i class="${i<G.outs?'on':''}"></i>`).join('')}</span></div></div>`;
+  const btRow=b2=>`<div class="bt">${TBL[b2.tbl].map((r,i)=>`<div class="${HITS.includes(r)?'hit':''} ${R&&R.result&&R.b===b2&&R.idx===i?'on':''}"><b>${i-4>0?'+':''}${i-4}</b>${SHORT[r]}</div>`).join('')}</div>`;
+  const shownB=R?R.b:b;
+  const field=`<div class="field">
+    <div class="pc"><div class="who">${face(shownB.col,shownB.ear)}<div><div class="nm">${esc(shownB.name)}</div><div class="sub">${esc(shownB.ani)}・${shownB.pos}・${TYPE[shownB.tbl]}</div></div></div><div>攻 <span class="stat">${shownB.atk}</span></div>${btRow(shownB)}</div>
+    ${dia()}
+    <div class="pc"><div class="who">${face(p.col,p.ear)}<div><div class="nm">${esc(p.name)}</div><div class="sub">${esc(p.ani)}・投手</div></div></div><div>守 <span class="stat">${p.def}</span></div><div class="sub">次の打者：${esc(O.bat[O.order].name)}（${O.order+1}番）</div></div></div>`;
+  let msg='',btn='';
+  const zoneCnt=Y.zone.length;
+  if(G.phase==='draw'){msg=`手札を6枚にしました。${G.canRe?(cnt(Y,'bat')+cnt(Y,'pit')===0?'選手カードが1枚もないので、手札をぜんぶ引き直せます。':yOff?'投手カードが4枚以上あるので、手札をぜんぶ引き直せます。':'野手カードが4枚以上あるので、手札をぜんぶ引き直せます。'):''}`;
+    btn=`${G.canRe?'<button class="a s" data-a="redraw">引き直す</button>':''}<button class="a" data-a="next">次へ</button>`}
+  if(G.phase==='tactic'){const has=Y.hand.some(c=>c.kind==='s');msg=(has?`作戦ゾーンに置く作戦カードを選んでください（ゾーンは3枚まで、いま${zoneCnt}枚）。`:'手札に作戦カードがありません。')+(zoneCnt?' ゾーンのカードをタップすると捨てられます。':'');btn=`<button class="a" data-a="next">${G.sel.size||G.drop.size?[G.sel.size?`${G.sel.size}枚置く`:'',G.drop.size?`${G.drop.size}枚捨てる`:''].filter(Boolean).join('・')+'：次へ':'このまま次へ'}</button>`}
+  if(G.phase==='main'){const has=Y.hand.some(c=>c.kind==='p');msg=yOff?'攻撃に使う選手カードを1枚選んでください。カードの「攻」が足されます。打者と同じ選手ならコンボ+1。':'守備に使う選手カードを1枚選んでください。カードの「守」が足されます。投手と同じ選手ならコンボ+1。';if(!has)msg='手札に選手カードがありません。';btn=`<button class="a" data-a="next" ${has&&!G.sel.size?'disabled':''}>${has?'このカードで勝負':'出さずに進む'}</button>`}
+  if(G.phase==='exec'){const u=Y.zone.filter(c=>usable(c,yOff));msg=u.length?'使う作戦カードを選んでください（複数可）。':'いま使える作戦カードはありません。';if(!yOff&&Y.zone.some(c=>c.name==='盗塁阻止'))msg+=' 盗塁阻止は相手が盗塁したとき自動で使われます。';btn=`<button class="a" data-a="next">判定へ</button>`}
+  let res='';
+  if(G.phase==='result'&&R){
+    res=`<div class="res">${R.pre?`<div><b>${esc(R.pre)}</b></div>`:''}<div class="big">${R.result?esc(R.result):'3アウト'}${R.runs?`　${R.runs}点`:''}</div>
+    ${R.result?`<div class="calc">攻撃 ${R.A.map(x=>`${esc(x[0])} ${x[1]}`).join(' ＋ ')} ＝ <b>${R.sa}</b><br>守備 ${R.Df.map(x=>`${esc(x[0])} ${x[1]}`).join(' ＋ ')} ＝ <b>${R.sd}</b><br>差 <b>${R.diff>0?'+':''}${R.diff}</b>${R.diff!==R.idx-4?`（表の端 ${R.idx-4>0?'+':''}${R.idx-4} を使用）`:''}　相手が出したカード：${esc((yOff?G.play.def:G.play.off)?.name||'なし')}${(yOff?G.used.def:G.used.off).length?`／作戦：${(yOff?G.used.def:G.used.off).map(c=>esc(c.name)).join('・')}`:''}</div>`:''}</div>`;
+    if(G.over){msg='';btn=`<button class="a" data-a="new">もう一度</button>`;res+=`<div class="res"><div class="big">${esc(G.over.txt)}</div><div>${esc(G.over.end)}　${esc(G.teams[0].short)} ${G.score[0]} - ${G.score[1]} ${esc(G.teams[1].short)}</div></div>`}
+    else{msg=R.change?'3アウト、チェンジです。':'';btn=`<button class="a" data-a="next">${R.change?'攻守交代':'次の打者へ'}</button>`}
+  }
+  const cur=PH.findIndex(x=>x[0]===G.phase);
+  const phase=`<div class="phase"><div class="steps">${PH.map((x,i)=>`<span class="${i===cur?'now':''}">${x[1]}</span>`).join('')}</div><h2>${PH[cur][1]}</h2>${res}<p class="msg">${msg}</p><div class="btns">${btn}</div></div>`;
+  const pickHand=c=>(G.phase==='tactic'&&c.kind==='s')||(G.phase==='main'&&c.kind==='p');
+  const playZone=G.phase==='exec'&&(yOff?G.play.off:G.play.def);
+  const zones=`<div class="zone"><h3>相手（${esc(C.short)}）の作戦ゾーン ${C.zone.length}/3・手札 ${C.hand.length}枚・山札 ${C.deck.length}枚</h3><div class="row">${C.zone.map(()=>card(null,{back:true})).join('')||'<span class="note">なし</span>'}</div></div>
+    <div class="zone"><h3>あなたの作戦ゾーン ${Y.zone.length}/3${playZone?`・プレイゾーン：${esc(playZone.name)}`:''}</h3><div class="row">${Y.zone.map(c=>card(c,{btn:G.phase==='exec'||G.phase==='tactic',sel:G.sel.has(c.uid),drop:G.phase==='tactic'&&G.drop.has(c.uid),dim:G.phase==='exec'&&!usable(c,yOff)})).join('')||'<span class="note">なし</span>'}</div></div>
+    <div class="zone"><h3>あなたの手札 ${Y.hand.length}枚・山札 ${Y.deck.length}枚・捨て札 ${Y.disc.length}枚</h3><div class="row">${Y.hand.map(c=>card(c,{btn:pickHand(c),sel:G.sel.has(c.uid),dim:(G.phase==='tactic'||G.phase==='main')&&!pickHand(c)})).join('')}</div></div>`;
+  root.innerHTML=sb+field+phase+zones+`<div class="log" aria-label="試合の記録">${G.log.map(t=>`<p>${esc(t)}</p>`).join('')}</div>`;
+}
+function teamsView(){
+  $('#teams').innerHTML=TEAMS.map((t,ti)=>{const T=buildTeam(t,ti);return `<div class="box"><h2>${esc(t.name)}</h2><div class="scroll"><table class="ro"><tr><th>打順</th><th>選手</th><th>守</th><th>攻</th><th>守</th><th>型</th>${[-4,-3,-2,-1,0,1,2,3,4].map(n=>`<th>${n>0?'+':''}${n}</th>`).join('')}</tr>${T.bat.map((b,i)=>`<tr><td>${i+1}</td><td>${esc(b.name)}（${esc(b.ani)}）</td><td>${b.pos}</td><td>${b.atk}</td><td>${b.def}</td><td>${TYPE[b.tbl]}</td>${TBL[b.tbl].map(r=>`<td>${SHORT[r]}</td>`).join('')}</tr>`).join('')}</table></div>
+    <p class="note">投手：${T.pit.map((p,i)=>`${esc(p.name)}（${esc(p.ani)}）守${p.def}${i?'':'・先発'}`).join('／')}<br>山札30枚：野手カード13・投手カード11・作戦カード6</p></div>`}).join('')+`<div class="box"><h2>表の見かた</h2><p>安＝安打、二＝二塁打、三＝三塁打、本＝本塁打、犠＝犠打、振＝三振、内飛・外飛＝内野・外野フライ、凡＝凡打、併＝併殺。</p></div>`;
+}
+document.addEventListener('click',e=>{
+  const t=e.target.closest('.tab');if(t){document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',x===t));document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('on',p.id==='p-'+t.dataset.p));return}
+  const b=e.target.closest('[data-a]');if(b&&G!==undefined){act(b.dataset.a,b.dataset.u!=null?+b.dataset.u:undefined)}
+});
+teamsView();render();
+}
+</script>
+</body>
+</html>
