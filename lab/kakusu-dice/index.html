@@ -8,7 +8,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="試作ゲームラボ">
 <meta property="og:title" content="画数ダイス｜試作ゲームラボ">
-<meta property="og:description" content="場の3枚の漢字カードから1枚を選んでサイコロを振り、合計が画数と合えば獲得。得点は取ったカードの画数の合計で、カードを取るとコインが1枚もらえます。11画以上のカードへの挑戦では振り直しができ、取ると特典ダイスも付きます。ネタ枠『鬱』『龘』を取れば即勝利。2〜6人で遊べます。">
+<meta property="og:description" content="場の3枚の漢字カードから1枚を選んでサイコロを振り、合計が画数と合えば獲得（場のもう1枚と合わせた画数でも2枚まとめて獲得）。得点は取ったカードの画数の合計で、カードを取るとコインが1枚もらえます。11画以上のカードへの挑戦では振り直しができ、取ると特典ダイスも付きます。ネタ枠『鬱』『龘』を取れば即勝利。2〜6人で遊べます。">
 <meta property="og:url" content="https://game-lab-oj9t.onrender.com/kakusu-dice/">
 <meta property="og:image" content="https://game-lab-oj9t.onrender.com/og.png">
 <meta property="og:image:width" content="1200">
@@ -128,7 +128,7 @@
   <div class="headwrap">
     <div class="brand">試作ゲームラボ</div>
     <h1>🎲 画数ダイス</h1>
-    <p>場の3枚の漢字カードから1枚を選んでサイコロを振り、合計がその漢字の画数とぴったり合えば獲得（外れたらそのカードは捨てられますが、1違いなら「おしい！」でコイン1枚）。得点は取ったカードの画数の合計。カードを取るとコインが1枚もらえ、リフレッシュやダイスの購入に使えます。11画以上のカードへの挑戦では「振り直し」ができ、取ると特典ダイスも付きます。激レアのネタ枠『鬱』『龘』を取れば即勝利。2〜6人（あなた＋CPU）で遊べます。</p>
+    <p>場の3枚の漢字カードから1枚を選んでサイコロを振り、合計がその漢字の画数とぴったり合えば獲得（外れたらそのカードは捨てられますが、1違いなら「おしい！」でコイン1枚）。合計が「選んだカード＋場のもう1枚」の画数の合計と合えば、2枚まとめて獲得（2枚どり）。得点は取ったカードの画数の合計。カードを取るとコインが1枚もらえ、リフレッシュやダイスの購入に使えます。11画以上のカードへの挑戦では「振り直し」ができ、取ると特典ダイスも付きます。激レアのネタ枠『鬱』『龘』を取れば即勝利。2〜6人（あなた＋CPU）で遊べます。</p>
     <div class="badges">
       <span class="badge">人数 <strong>2〜6人（あなた＋CPU）</strong></span>
       <span class="badge">時間 <strong>5〜10分</strong></span>
@@ -195,6 +195,7 @@
       <div class="actions">
         <button class="btn" id="rollBtn">🎲 振る</button>
         <button class="btn sub" id="refreshBtn">🔄 リフレッシュ（1コイン）</button>
+        <button class="btn" id="variantTakeBtn" style="display:none">✅ このカードで決定</button>
         <button class="btn sub" id="passBtn" style="display:none">パスする</button>
       </div>
       <div class="actions">
@@ -225,13 +226,14 @@
     <h2>遊び方</h2>
     <ul>
       <li>場の3枚の漢字カードから挑戦する1枚を選び、持っているサイコロから振る組み合わせを選んで振ります。合計が画数とぴったり合えば獲得、外れたらそのカードは捨てられます（画数はヒントだけ表示。字をよく見て数えるのがコツ）。振るダイスは全部でなくても大丈夫です。</li>
+      <li>🃏 <strong>2枚どり</strong>：合計が「選んだカード＋場のもう1枚」の画数の合計と合ったら、2枚まとめて獲得できます（例：『木』4画を選んで合計9なら、場の『田』5画もいっしょに）。コインも2枚もらえます。ネタ枠は2枚どりに使えません。</li>
       <li>😣 <strong>おしい！ボーナス</strong>：外れても、合計が画数と1だけ違っていたら（例：7画に6か8）コインを1枚もらえます。振り直したときは、振り直した後の合計で判定します。</li>
       <li>得点は、獲得したカードの画数の合計です。カードを取るとコインが1枚もらえます。取ったカードは自分の前に置いて、得点の記録になります。</li>
       <li>🔁マークの付いたカード（11画以上）に挑戦するときは、外れても、振ったダイスの一部（全部でも可）を1回だけ振り直せます。</li>
       <li>11画以上のカードを取ると特典ダイスが付きます（11〜16画→12面、17〜20画→20面）。所持ダイスが上限（5個）のときは、いちばん小さいダイスと入れ替わります。</li>
       <li>リフレッシュ（場の3枚を全入れ替え）と6面ダイスの購入はボタンで、どちらも1コイン。支払いはコインだけです。ダイスの所持は5個までです。</li>
       <li>✨ネタ枠『鬱』（29画）『龘』（48画）：ネタ枠ルールONでサイコロで取れば即勝利（人間が取るときは「家に6面ダイスはありますか？」の確認つき）。</li>
-      <li>🔀 ヴァリアント「振ってから選ぶ」：先にダイスを振ってから、合計と画数が合うカードを選んで獲得します。🔁マークのカードを選んで合わなかったときは、そのカードに対して1回だけ振り直せます。合わないカードを選ぶとそのカードは捨てられ（1違いなら「おしい！」でコイン1枚）、選ばずにパスもできます。</li>
+      <li>🔀 ヴァリアント「振ってから選ぶ」：先にダイスを振ってから、合計と画数が合うカードを1枚、または画数の合計が合う2枚を選んで獲得します（2枚を選んで合わなければ2枚とも捨てられます）。🔁マークのカードを選んで合わなかったときは、そのカードに対して1回だけ振り直せます。合わないカードを選ぶとそのカードは捨てられ（1違いなら「おしい！」でコイン1枚）、選ばずにパスもできます。</li>
       <li>手番の順番はラウンドごとに1つずつずれます。スタートは6面ダイス2個とコイン2枚（所持カードは0枚）。ラウンド数は人数で変わり（2人10／3人8／4人7／5人6／6人5）、山札が尽きたらそのラウンドで終了。得点が一番多い人の勝ちです。</li>
     </ul>
   </section>
@@ -345,11 +347,58 @@ function allSubsets(dice){
   }
   return out;
 }
-/* 目標に対して最も当たる確率が高い組み合わせ */
+/* ===== 2枚どり =====
+   通常ルール：合計が「選んだカード」の画数か、「選んだカード＋場のもう1枚」の画数の合計と合えば獲得（2枚どりは2枚とも獲得）。
+   ヴァリアント：合計が場の1枚の画数か、2枚の画数の合計と合えば獲得。ネタ枠は2枚どりに使えない */
+function pairable(c){ return !!c && !c.joke; }
+/* 選んだカード card に対する「取れる合計」：[{sum, partner}]（partner は2枚どりの相手。1枚どりは null）。
+   2枚どりは相手の画数が大きい順 */
+function takeTargets(card, others){
+  const out = [{sum:card.strokes, partner:null}];
+  if(pairable(card)){
+    (others||[]).filter(pairable).slice().sort((a,b)=>b.strokes-a.strokes)
+      .forEach(o=>out.push({sum:card.strokes+o.strokes, partner:o}));
+  }
+  return out;
+}
+function othersOf(field, idx){ return field.filter((_,j)=>j!==idx); }
+function targetSums(targets){ return [...new Set(targets.map(t=>t.sum))]; }
+function matchTarget(targets, sum){ return targets.find(t=>t.sum===sum) || null; }
+/* 場の idx を選んだときの「取れる合計」（重複なし） */
+function fieldSums(field, idx){ return targetSums(takeTargets(field[idx], othersOf(field, idx))); }
+/* 目標（数 or 数の配列）のどれかが出る確率 */
+function hitProbAny(facesList, target){
+  const sums = Array.isArray(target) ? target : [target];
+  return sums.reduce((a,t)=>a+hitProb(facesList, t), 0);
+}
+/* ヴァリアント用：場から取れる組み合わせすべて [{sum, idxs}]（1枚どり＋ネタ枠以外の2枚どり） */
+function allTargets(field){
+  const out = field.map((c,i)=>({sum:c.strokes, idxs:[i]}));
+  for(let i=0;i<field.length;i++) for(let j=i+1;j<field.length;j++){
+    if(pairable(field[i]) && pairable(field[j])) out.push({sum:field[i].strokes+field[j].strokes, idxs:[i,j]});
+  }
+  return out;
+}
+/* ヴァリアント用：合計 sum で取れる組み合わせ。2枚どり（コインが多い）→特典ダイスつき を優先 */
+function bestVariantMatch(field, sum){
+  const ms = allTargets(field).filter(t=>t.sum===sum);
+  if(!ms.length) return null;
+  const val = t => t.idxs.length*10 + t.idxs.filter(i=>field[i].bonusDie).length;
+  ms.sort((a,b)=>val(b)-val(a));
+  return ms[0];
+}
+/* 場から複数枚を取り除く（インデックスの大きい方から）。取り除いたカードを返す（元の順） */
+function takeFromField(field, idxs){
+  const sorted = idxs.slice().sort((a,b)=>b-a);
+  const cards = idxs.map(i=>field[i]);
+  for(const i of sorted) field.splice(i, 1);
+  return cards;
+}
+/* 目標に対して最も当たる確率が高い組み合わせ（target は数 or 数の配列） */
 function bestCombo(dice, target){
   let best=null, bestP=-1;
   for(const sub of allSubsets(dice)){
-    const p = hitProb(sub, target);
+    const p = hitProbAny(sub, target);
     if(p>bestP || (p===bestP && best && sub.length<best.length)){
       best=sub; bestP=p;
     }
@@ -367,7 +416,8 @@ function bestRerollSubset(facesList, rolls, target){
     for(let i=0;i<n;i++){
       if(mask&(1<<i)) idxs.push(i); else kept += rolls[i];
     }
-    const p = hitProb(idxs.map(i=>facesList[i]), target - kept);
+    const sums = Array.isArray(target) ? target : [target];
+    const p = sums.reduce((a,t)=>a+hitProb(idxs.map(i=>facesList[i]), t - kept), 0);
     if(p > bestP){ bestP = p; best = idxs; }
   }
   return best ? {indices: best, prob: bestP} : null;
@@ -434,37 +484,42 @@ function applyReroll(combo, rolls, indices, rng){
 /* CPU判断の振り直し（B方式）：マーク付きカードへの挑戦で外れたとき、
    的中確率が上がる最善のサブセットがあるときだけ使う。
    戻り値 {rolls, sum, hit, indices}（使わなければ null） */
-function tryReroll(card, combo, rolls, rng){
+function tryReroll(card, combo, rolls, rng, sums){
   if(!card.reroll) return null;
-  const best = bestRerollSubset(combo, rolls, card.strokes);
+  const targets = sums || [card.strokes];
+  const best = bestRerollSubset(combo, rolls, targets);
   if(!best || best.prob<=0) return null;
   const applied = applyReroll(combo, rolls, best.indices, rng);
   if(!applied) return null;
-  return {rolls:applied.rolls, sum:applied.sum, hit: applied.sum===card.strokes, indices: best.indices};
+  return {rolls:applied.rolls, sum:applied.sum, hit: targets.includes(applied.sum), indices: best.indices};
 }
 /* 1回の挑戦の解決（CPU・シミュレーション用）：振る→マーク付きカードなら外れたら方針で振り直し→当たれば獲得。
    戻り値 {firstRolls, firstSum, rolls, sum, hit, rerollUsed, rerollIndices, bonusDie} */
-function resolveChallenge(player, card, combo, rng){
+function resolveChallenge(player, card, combo, rng, others){
+  const targets = takeTargets(card, others);
+  const sums = targetSums(targets);
   const firstRolls = rollDice(combo, rng);
   const firstSum = firstRolls.reduce((a,b)=>a+b,0);
-  let rolls = firstRolls, sum = firstSum, hit = (sum===card.strokes);
+  let rolls = firstRolls, sum = firstSum, hit = sums.includes(sum);
   let rerollUsed = false, rerollIndices = null;
   if(!hit){
-    const rr = tryReroll(card, combo, rolls, rng);
+    const rr = tryReroll(card, combo, rolls, rng, sums);
     if(rr){
       rerollUsed = true; rerollIndices = rr.indices;
       rolls = rr.rolls; sum = rr.sum; hit = rr.hit;
     }
   }
-  let bonusDie = 0, nearMiss = 0;
+  let bonusDie = 0, bonusDie2 = 0, nearMiss = 0, partner = null;
   if(hit){
+    partner = matchTarget(targets, sum).partner;
     bonusDie = acquireCard(player, card).bonusDie;
+    if(partner) bonusDie2 = acquireCard(player, partner).bonusDie;
     player.missStreak = 0;
   }else{
     nearMiss = nearMissBonus(player, card, sum);
     player.missStreak += 1;
   }
-  return {firstRolls, firstSum, rolls, sum, hit, rerollUsed, rerollIndices, bonusDie, nearMiss};
+  return {firstRolls, firstSum, rolls, sum, hit, rerollUsed, rerollIndices, bonusDie, bonusDie2, partner, nearMiss};
 }
 /* ダイス購入（コイン払い）。成功したら価格、失敗したら null */
 function buyDie(player, faces){
@@ -518,7 +573,7 @@ function hintBand(strokes){
 function bestFieldChoice(player, field){
   let best = null;
   field.forEach((card, i)=>{
-    const bc = bestCombo(player.dice, card.strokes);
+    const bc = bestCombo(player.dice, fieldSums(field, i));
     if(!best || bc.prob > best.prob){
       best = {index:i, card, combo:bc.combo, prob:bc.prob};
     }
@@ -537,7 +592,7 @@ function strategyMaybeBuy(player, state){
                           .sort((a,b)=>a.price-b.price || a.faces-b.faces);
   for(const item of affordable){
     const trial = player.dice.concat(item.faces);
-    const helps = state.field.some(card=>bestCombo(trial, card.strokes).prob>0);
+    const helps = state.field.some((card, i)=>bestCombo(trial, fieldSums(state.field, i)).prob>0);
     if(helps){
       const paid = buyDie(player, item.faces);
       return paid ? {faces:item.faces, paid} : null;
@@ -556,9 +611,9 @@ function strategyMaybeRefresh(player, state){
   return refreshField(player, state) !== null;
 }
 /* ===== ヴァリアント「振ってから選ぶ」用の判断 ===== */
-/* 組み合わせのカバー率：場の（異なる）画数のいずれかに一致する確率 */
+/* 組み合わせのカバー率：場から取れる合計（1枚どり・2枚どり、重複なし）のいずれかに一致する確率 */
 function coverageOf(combo, field){
-  const targets = [...new Set(field.map(c=>c.strokes))];
+  const targets = [...new Set(allTargets(field).map(t=>t.sum))];
   return targets.reduce((a,s)=>a+hitProb(combo, s), 0);
 }
 /* 場の3枚を最もカバーしやすい組み合わせ */
@@ -637,20 +692,18 @@ function simulateGame(rng, opts){
           const combo = bestCoverageCombo(pl.dice, state.field).combo;
           const rolls = rollDice(combo, rng);
           const sum = rolls.reduce((a,b)=>a+b,0);
-          const matchIdxs = state.field.map((c,i)=>c.strokes===sum?i:-1).filter(i=>i>=0);
-          if(matchIdxs.length){
-            /* 合うカードが複数あれば、振り直しつき・画数の大きい方を優先 */
-            matchIdxs.sort((a,b)=>((state.field[b].reroll?1:0)-(state.field[a].reroll?1:0)) || (state.field[b].strokes-state.field[a].strokes));
-            const idx = matchIdxs[0];
-            const card = state.field[idx];
-            const acq = acquireCard(pl, card);
-            if(acq.bonusDie) bonusGained[seat]++;
-            if(card.reroll) acqMarked[seat]++;
-            acquisitions[seat]++;
-            acqStrokes[seat] += card.strokes;
+          const match = bestVariantMatch(state.field, sum);
+          if(match){
+            /* 合う組み合わせ（1枚どり・2枚どり）があれば取る */
+            for(const card of takeFromField(state.field, match.idxs)){
+              const acq = acquireCard(pl, card);
+              if(acq.bonusDie) bonusGained[seat]++;
+              if(card.reroll) acqMarked[seat]++;
+              acquisitions[seat]++;
+              acqStrokes[seat] += card.strokes;
+              if(isJokeWin(card, jokeRule)) jokeWinnerIdx = seat;
+            }
             pl.missStreak = 0;
-            state.field.splice(idx, 1);
-            if(isJokeWin(card, jokeRule)) jokeWinnerIdx = seat;
             refillField(state);
           }else{
             /* マーク付きカードのうち、振り直しで最も当たりやすいものへ挑戦する */
@@ -701,12 +754,19 @@ function simulateGame(rng, opts){
       if(state.field.length){
         const choice = bestFieldChoice(pl, state.field);
         const card = state.field[choice.index];
-        const res = resolveChallenge(pl, card, choice.combo, rng);
+        const res = resolveChallenge(pl, card, choice.combo, rng, othersOf(state.field, choice.index));
         if(res.rerollUsed){
           rrUsed[seat]++;
           if(res.hit) rrSaved[seat]++;
         }
         state.field.splice(choice.index, 1);
+        if(res.partner){
+          state.field.splice(state.field.indexOf(res.partner), 1);
+          acquisitions[seat]++;
+          acqStrokes[seat] += res.partner.strokes;
+          if(res.bonusDie2) bonusGained[seat]++;
+          if(res.partner.reroll) acqMarked[seat]++;
+        }
         if(res.hit){
           acquisitions[seat]++;
           acqStrokes[seat] += card.strokes;
@@ -790,6 +850,9 @@ function renderAll(){
     ? '🂠 山札が尽きました。このラウンドが終わると対戦終了です'
     : (left<=10 && !S.over ? '🂠 山札が残りわずかです。尽きたら、そのラウンドで終了します' : '');
   $('passBtn').style.display = (!S.over && isHuman && S.phase==='variantPick') ? '' : 'none';
+  $('variantTakeBtn').style.display = (!S.over && isHuman && S.phase==='variantPick') ? '' : 'none';
+  $('variantTakeBtn').disabled = !(S.varSel && S.varSel.length);
+  $('variantTakeBtn').textContent = (S.varSel && S.varSel.length===2) ? '✅ この2枚で決定（2枚どり）' : '✅ このカードで決定';
   renderField();
   renderBuyBtn();
   renderRefreshBtn();
@@ -803,9 +866,9 @@ function renderField(){
     const div = document.createElement('div');
     div.className = 'fcard'
       + (pickable ? ' pickable' : '')
-      + (S.selCard===i && S.turnSeat===0 ? ' sel' : '')
-      + (S.selCard===i && S.turnSeat!==0 ? ' cpuSel' : '');
-    const revealed = (S.revealIdx===i);
+      + ((S.selCard===i || S.extraIdx===i || (S.phase==='variantPick' && S.varSel.includes(i))) && S.turnSeat===0 ? ' sel' : '')
+      + ((S.selCard===i || S.extraIdx===i) && S.turnSeat!==0 ? ' cpuSel' : '');
+    const revealed = (S.revealIdx===i || S.extraIdx===i);
     div.innerHTML = '<div class="corner">'+card.strokes+'</div>'
       + '<div class="kanji">'+card.kanji+'</div>'
       + '<div class="strokes">'+(revealed ? card.strokes+'画' : '画数は ？')+'</div>'
@@ -817,7 +880,7 @@ function renderField(){
       + (card.joke && S.jokeRule ? '<div class="bonus">✨ 取れば即勝利！</div>' : '');
     if(pickable){
       div.addEventListener('click', ()=>{
-        if(S.phase==='variantPick'){ variantPickCard(i); return; }
+        if(S.phase==='variantPick'){ variantToggle(i); return; }
         S.selCard = i;
         renderAll();
         renderDicePick();
@@ -829,8 +892,9 @@ function renderField(){
     wrap.innerHTML = '<div class="fieldnote">場にカードがありません</div>';
   }
   $('fieldNote').textContent = (S.variant && S.phase==='variantPick' && isHuman)
-    ? '合計と画数が合うカードを選んでください。合わないカードを選ぶと、そのカードは捨てられます'
-    : '画数はヒントだけ表示。字をよく見て数えてみよう';
+    ? '合計と画数が合うカードを1枚、または画数の合計が合う2枚を選んで「決定」。合わないと選んだカードは捨てられます'
+    : (S.variant ? '画数はヒントだけ表示。字をよく見て数えてみよう'
+       : '画数はヒントだけ表示。合計が「選んだカード＋場のもう1枚」の画数の合計でも、2枚まとめて取れます');
 }
 /* 購入ボタン（リフレッシュの下）：コイン0のとき・所持ダイス上限のときは押せない */
 function canActBeforeRoll(){
@@ -930,6 +994,17 @@ function commitField(idx, hit, card){
   refillField(S.state);
   S.revealIdx = -1;
   S.selCard = -1;
+  S.extraIdx = -1;
+}
+/* 複数枚（2枚どり）を場から外し、補充する */
+function commitFieldMulti(idxs, hit){
+  const cards = takeFromField(S.state.field, idxs);
+  if(!hit) S.state.discard.push(...cards);
+  refillField(S.state);
+  S.revealIdx = -1;
+  S.selCard = -1;
+  S.extraIdx = -1;
+  S.varSel = [];
 }
 function startRound(){
   S.order = turnOrder(S.round, S.numPlayers);
@@ -945,6 +1020,8 @@ function startTurn(){
   S.phase = 'aim';
   S.selCard = -1;
   S.revealIdx = -1;
+  S.extraIdx = -1;
+  S.varSel = [];
   S.pending = null;
   S.rrSel = [];
   S.selDice = S.players[0].dice.map(()=>true);
@@ -1017,9 +1094,12 @@ function playerRoll(){
         enterVariantPick();
         return;
       }
-      S.pending = {idx, card, combo, rolls, sum};
+      const targets = takeTargets(card, othersOf(S.state.field, idx));
+      S.pending = {idx, card, combo, rolls, sum, targets};
       S.revealIdx = idx;
-      if(sum===card.strokes){
+      const m = matchTarget(targets, sum);
+      if(m){
+        S.pending.partner = m.partner;
         finishHumanHit();
       }else if(card.reroll){
         S.phase = 'reroll';
@@ -1037,7 +1117,7 @@ function playerRoll(){
 function showRerollBox(){
   const {card, combo, rolls} = S.pending;
   $('rerollText').textContent = '💦 合計'+S.pending.sum+'で外れ…でもこのカードは「振り直し」が使えます';
-  const best = bestRerollSubset(combo, rolls, card.strokes);
+  const best = bestRerollSubset(combo, rolls, S.pending.targets ? targetSums(S.pending.targets) : [card.strokes]);
   S.rrSel = rolls.map((_,i)=> best ? best.indices.includes(i) : false);
   renderRerollDice();
   $('rerollBox').style.display = '';
@@ -1076,7 +1156,9 @@ function playerRerollExec(){
   log('🔁 あなたは振り直しを使った（'+cardLabel(S.pending.card)+'狙い）');
   S.phase = 'rolling';
   renderAll();
-  if(applied.sum===S.pending.card.strokes) finishHumanHit();
+  const m = S.pending.targets ? matchTarget(S.pending.targets, applied.sum)
+    : (applied.sum===S.pending.card.strokes ? {partner:null} : null);
+  if(m){ S.pending.partner = m.partner; finishHumanHit(); }
   else finishHumanMiss();
 }
 function playerRerollSkip(){
@@ -1097,6 +1179,24 @@ function finishHumanHit(){
     S.phase = 'joke';
     renderAll();
     showJokeDialog(idx, card);
+    return;
+  }
+  if(S.pending.partner){
+    const partner = S.pending.partner;
+    const pIdx = S.state.field.indexOf(partner);
+    const a1 = acquireCard(pl, card), a2 = acquireCard(pl, partner);
+    S.extraIdx = pIdx;
+    $('msg').textContent = '🎉 2枚どり！ '+cardLabel(card)+'＋'+cardLabel(partner)+'＝'+S.pending.sum+'で2枚とも獲得！（+'+(card.strokes+partner.strokes)+'点）';
+    $('msg').className = 'msg good';
+    log('✅ あなた：合計'+S.pending.sum+'で2枚どり！ '+cardLabel(card)+'＋'+cardLabel(partner)+'を獲得（得点 '+scoreOf(pl)+'点／コイン '+coinsOf(pl)+'枚）');
+    [a1, a2].forEach(a=>{ if(a.bonusDie) log('🎲 特典ダイス（'+a.bonusDie+'面）を手に入れた！（所持ダイス：'+pl.dice.map(diceLabel).join('・')+'）'); });
+    S.pending = null;
+    renderAll();
+    setTimeout(()=>{
+      commitFieldMulti([idx, pIdx], true);
+      renderAll();
+      afterTurn();
+    }, 1600);
     return;
   }
   const acq = acquireCard(pl, card);
@@ -1159,6 +1259,59 @@ function showJokeDialog(idx, card){
     setTimeout(afterTurn, 1200);
   };
 }
+/* ヴァリアント：カードをタップで選ぶ（2枚まで。3枚目を選ぶといちばん古い選択が外れる） */
+function variantToggle(i){
+  if(S.phase!=='variantPick' || !S.pending) return;
+  const k = S.varSel.indexOf(i);
+  if(k>=0) S.varSel.splice(k, 1);
+  else{
+    S.varSel.push(i);
+    if(S.varSel.length>2) S.varSel.shift();
+  }
+  renderAll();
+}
+function variantDecide(){
+  if(S.phase!=='variantPick' || !S.pending || !S.varSel.length) return;
+  const sel = S.varSel.slice();
+  if(sel.length===1){ S.varSel = []; variantPickCard(sel[0]); return; }
+  variantPickPair(sel[0], sel[1]);
+}
+/* ヴァリアント：2枚を選んだとき。画数の合計が合えば2枚とも獲得、合わなければ2枚とも捨てる（1違いならおしい！） */
+function variantPickPair(i, j){
+  const a = S.state.field[i], b = S.state.field[j];
+  if(!a || !b) return;
+  const sum = S.pending.sum;
+  const pl = S.players[0];
+  S.revealIdx = i; S.extraIdx = j; S.varSel = [];
+  S.phase = 'rolling';
+  const total = a.strokes + b.strokes;
+  if(!pairable(a) || !pairable(b)){
+    $('msg').textContent = '✨ ネタ枠は2枚どりに使えません。1枚だけ選んでください';
+    $('msg').className = 'msg bad';
+    S.revealIdx = -1; S.extraIdx = -1; S.phase = 'variantPick';
+    renderAll();
+    return;
+  }
+  if(total===sum){
+    const a1 = acquireCard(pl, a), a2 = acquireCard(pl, b);
+    $('msg').textContent = '🎉 2枚どり！ '+cardLabel(a)+'＋'+cardLabel(b)+'＝'+sum+'で2枚とも獲得！（+'+total+'点）';
+    $('msg').className = 'msg good';
+    log('✅ あなた：合計'+sum+'で2枚どり！ '+cardLabel(a)+'＋'+cardLabel(b)+'を獲得（得点 '+scoreOf(pl)+'点／コイン '+coinsOf(pl)+'枚）');
+    [a1, a2].forEach(x=>{ if(x.bonusDie) log('🎲 特典ダイス（'+x.bonusDie+'面）を手に入れた！（所持ダイス：'+pl.dice.map(diceLabel).join('・')+'）'); });
+  }else{
+    const nm = Math.abs(total - sum)===1 ? (pl.coins += NEAR_MISS_COINS, NEAR_MISS_COINS) : 0;
+    $('msg').textContent = (nm?'😣 おしい！ ':'💦 ')+cardLabel(a)+'＋'+cardLabel(b)+'＝'+total+'で、合計'+sum+'と合わず2枚とも捨てられました'+(nm?'。1違いなのでコイン+'+nm:'');
+    $('msg').className = 'msg bad';
+    log((nm?'😣 ':'❌ ')+'あなた：合計'+sum+'で'+cardLabel(a)+'＋'+cardLabel(b)+'（計'+total+'）を選んだが合わず、2枚とも捨てられた'+(nm?'。おしい！でコイン+'+nm:''));
+  }
+  S.pending = null;
+  renderAll();
+  setTimeout(()=>{
+    commitFieldMulti([i, j], total===sum);
+    renderAll();
+    afterTurn();
+  }, 1600);
+}
 /* ヴァリアント：振った後に場のカードを選ぶ */
 function variantPickCard(i){
   if(S.phase!=='variantPick' || !S.pending) return;
@@ -1198,6 +1351,7 @@ function variantPickCard(i){
 }
 function playerPass(){
   if(S.phase!=='variantPick' || !S.pending) return;
+  S.varSel = [];
   log('⏭️ あなたはパスした（合計 '+S.pending.sum+'）');
   S.pending = null;
   renderAll();
@@ -1226,7 +1380,8 @@ function cpuTurn(seat){
   renderAll();
   $('cpuNote').textContent = name+'は 『'+card.kanji+'』 に挑戦（ダイス：'+combo.map(diceLabel).join('＋')+'）';
   setTimeout(()=>{
-    const res = resolveChallenge(pl, card, combo, Math.random);
+    const res = resolveChallenge(pl, card, combo, Math.random, othersOf(S.state.field, idx));
+    const pIdx = res.partner ? S.state.field.indexOf(res.partner) : -1;
     showRolls($('cpuRoll'), res.firstRolls, res.firstSum);
     S.revealIdx = idx;
     renderAll();
@@ -1236,6 +1391,12 @@ function cpuTurn(seat){
         $('msg').textContent = '✨ '+name+'がネタ枠'+cardLabel(card)+'を獲得 → 即勝利！';
         $('msg').className = 'msg bad';
         log('✨ '+name+'：ネタ枠'+cardLabel(card)+'に合計'+res.sum+'で的中。獲得 → 即勝利！（CPUは家にダイスがあるので確認なし）');
+      }else if(res.hit && res.partner){
+        S.extraIdx = pIdx;
+        $('msg').textContent = name+'が合計'+res.sum+'で2枚どり！ '+cardLabel(card)+'＋'+cardLabel(res.partner)+'を獲得';
+        $('msg').className = 'msg bad';
+        log('✅ '+name+'：合計'+res.sum+'で2枚どり！ '+cardLabel(card)+'＋'+cardLabel(res.partner)+'を獲得（+'+(card.strokes+res.partner.strokes)+'点）');
+        [res.bonusDie, res.bonusDie2].forEach(d=>{ if(d) log('🎲 '+name+'は特典ダイス（'+d+'面）を手に入れた！'); });
       }else if(res.hit){
         $('msg').textContent = name+'が'+cardLabel(card)+'を合計'+res.sum+'で獲得';
         $('msg').className = 'msg bad';
@@ -1248,7 +1409,8 @@ function cpuTurn(seat){
       }
       renderAll();
       setTimeout(()=>{
-        commitField(idx, res.hit, card);
+        if(pIdx >= 0) commitFieldMulti([idx, pIdx], true);
+        else commitField(idx, res.hit, card);
         renderAll();
         if(jokeWin) endGame('joke', card, seat);
         else afterTurn();
@@ -1285,10 +1447,24 @@ function cpuTurnVariant(seat){
     const rolls = rollDice(combo, Math.random);
     const sum = rolls.reduce((a,b)=>a+b,0);
     showRolls($('cpuRoll'), rolls, sum);
-    const matchIdxs = S.state.field.map((c,i)=>c.strokes===sum?i:-1).filter(i=>i>=0);
-    if(matchIdxs.length){
-      matchIdxs.sort((a,b)=>((S.state.field[b].reroll?1:0)-(S.state.field[a].reroll?1:0)) || (S.state.field[b].strokes-S.state.field[a].strokes));
-      const idx = matchIdxs[0];
+    const vm = bestVariantMatch(S.state.field, sum);
+    if(vm && vm.idxs.length===2){
+      const [i1, i2] = vm.idxs;
+      const c1 = S.state.field[i1], c2 = S.state.field[i2];
+      S.selCard = i1; S.revealIdx = i1; S.extraIdx = i2;
+      const a1 = acquireCard(pl, c1), a2 = acquireCard(pl, c2);
+      $('msg').textContent = name+'が合計'+sum+'で2枚どり！ '+cardLabel(c1)+'＋'+cardLabel(c2)+'を獲得';
+      $('msg').className = 'msg bad';
+      log('✅ '+name+'：合計'+sum+'で2枚どり！ '+cardLabel(c1)+'＋'+cardLabel(c2)+'を獲得（+'+sum+'点）');
+      [a1, a2].forEach(a=>{ if(a.bonusDie) log('🎲 '+name+'は特典ダイス（'+a.bonusDie+'面）を手に入れた！'); });
+      renderAll();
+      setTimeout(()=>{
+        commitFieldMulti(vm.idxs, true);
+        renderAll();
+        afterTurn();
+      }, 1400);
+    }else if(vm){
+      const idx = vm.idxs[0];
       const card = S.state.field[idx];
       S.selCard = idx;
       S.revealIdx = idx;
@@ -1467,6 +1643,7 @@ $('rollBtn').addEventListener('click', playerRoll);
 $('refreshBtn').addEventListener('click', playerRefresh);
 $('buyBtn').addEventListener('click', playerBuy);
 $('passBtn').addEventListener('click', playerPass);
+$('variantTakeBtn').addEventListener('click', variantDecide);
 $('rerollExecBtn').addEventListener('click', playerRerollExec);
 $('rerollSkipBtn').addEventListener('click', playerRerollSkip);
 $('againBtn').addEventListener('click', init);
