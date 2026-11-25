@@ -43,6 +43,8 @@ h1{font-size:20px;margin:4px 0 2px}
 .cell svg{position:absolute;inset:0;width:100%;height:100%}
 .cell.legal{background:#fff3c4;outline:2px dashed #d7a21e;outline-offset:-3px;cursor:pointer}
 .cell.legal:hover{outline-style:solid}
+.cell.legalrot{background:#d9ecff;outline:2px dashed var(--you);outline-offset:-3px}
+.cell .rotmark{position:absolute;top:0;right:3px;font-size:12px;font-weight:bold;color:var(--you)}
 .tilebox{display:flex;gap:12px;align-items:center}
 .hand{display:flex;gap:8px}
 .htile{width:64px;height:64px;flex:none;background:#fff;border:2px solid #d7c9a8;border-radius:10px;position:relative;cursor:pointer}
@@ -82,6 +84,7 @@ select{font-size:15px;padding:8px;border-radius:8px;border:1px solid #c9b896;bac
     <ul class="rules">
       <li>手番では手札3枚から1枚を選び、回転させて空きマスに置きます。置いたら山札から1枚引いて補充。</li>
       <li>置けるのは、となりのタイルと道がつながるマスだけ。道が合わない向きには置けません。</li>
+      <li>タイルを選ぶと、置けるマスが光ります（黄色＝そのまま置ける、青色↻＝回転すると置ける）。</li>
       <li>道の両端がふさがって完成したら、置いた人の得点に。点数はその道のタイルの数。</li>
       <li>手札が1枚も置けないときは手札を入れ替えます。タイルがなくなったら終了。いちばん点数の多い人の勝ち。</li>
       <li>実物版のイメージ：タイルカード24枚と得点チップだけのシンプルな作りです。</li>
@@ -96,7 +99,7 @@ select{font-size:15px;padding:8px;border-radius:8px;border:1px solid #c9b896;bac
       <div class="hand" id="hand"></div>
       <div class="btns">
         <button id="rotBtn">↻ 回転する</button>
-        <div style="font-size:13px;color:var(--mute)">手札をタップして選び、光るマスに置く<br>残りタイル：<b id="deckLeft">24</b>枚</div>
+        <div style="font-size:13px;color:var(--mute)">手札をタップして選び、光るマスに置く<br>黄色＝そのまま置ける／青色↻＝回転すると置ける<br>残りタイル：<b id="deckLeft">24</b>枚</div>
       </div>
     </div>
   </div>
@@ -238,14 +241,23 @@ function renderScores(){
 }
 function renderBoard(){
   var b=el("board"); b.innerHTML="";
-  var legals=(turn===0&&!over&&cur)?legalCells(cur.mask,cur.rot):[];
-  var legalSet={};
-  legals.forEach(function(c){legalSet[idx(c.x,c.y)]=true;});
+  var legalSet={}, rotSet={};
+  if(turn===0&&!over&&cur){
+    legalCells(cur.mask,cur.rot).forEach(function(c){legalSet[idx(c.x,c.y)]=true;});
+    for(var r=0;r<4;r++){
+      if(r===cur.rot) continue;
+      legalCells(cur.mask,r).forEach(function(c){
+        var i=idx(c.x,c.y);
+        if(!legalSet[i]) rotSet[i]=true;
+      });
+    }
+  }
   for(var y=0;y<SIZE;y++)for(var x=0;x<SIZE;x++){
     var cell=document.createElement("div");
-    cell.className="cell"+(legalSet[idx(x,y)]?" legal":"");
+    cell.className="cell"+(legalSet[idx(x,y)]?" legal":(rotSet[idx(x,y)]?" legalrot":""));
     var t=board[idx(x,y)];
     if(t) cell.innerHTML=tileSVG(rotMask(t.mask,t.rot),COLORS[t.owner]);
+    else if(rotSet[idx(x,y)]) cell.innerHTML='<span class="rotmark">↻</span>';
     (function(cx,cy){
       cell.addEventListener("click",function(){ onCell(cx,cy); });
     })(x,y);

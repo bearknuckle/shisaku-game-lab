@@ -124,12 +124,12 @@ const GAMES=[
   {
     id:'michi-tsunagi', name:'みちつなぎ', icon:'🛤️', color:'#2e7d6b',
     desc:'タイルを1枚ずつ置いて道をつなぐ。手札3枚から選んで、となりの道とつなげて置く。道がふさがって完成したら、その道のタイルの数が点数に。タイルがなくなるまでCPUと道の取り合い。',
-    players:'1人（CPU 1〜3人）', time:'5〜10分', genre:'ボドゲ', added:'2026-11-25', version:'0.1', updated:'2026-11-25', isNew:true
+    players:'1人（CPU 1〜3人）', time:'5〜10分', genre:'ボドゲ', added:'2026-11-25', version:'0.2', updated:'2026-11-25', isNew:true
   },
   {
     id:'horoyoi-call', name:'ほろよいコール', icon:'🥂', color:'#5a418f',
     desc:'グラスカードを1枚ずつおでこに当てて、自分のだけ見えない。みんなのグラスの「ほろよい度」の合計を「○以上！」と順番に上げてコールし、怪しいと思ったら「ダウト！」。外した人はお冷を1杯失う。だれかのお冷がなくなったら終了、残りが一番多い人の勝ち。',
-    players:'1人（CPU 2〜4人）', time:'5〜10分', genre:'お酒', added:'2026-11-25', version:'0.1', updated:'2026-11-25', isNew:true,
+    players:'1人（CPU 2〜4人）', time:'5〜10分', genre:'お酒', added:'2026-11-25', version:'0.2', updated:'2026-11-25', isNew:true,
     note:'お酒を飲まなくても遊べます。飲むときは20歳以上で、ほどほどに'
   },
   {
@@ -243,7 +243,7 @@ const GAMES=[
   {
     id:'setori-shokunin', name:'セトリ職人', icon:'🎤', color:'#e07b39',
     desc:'ライブのセットリストを組むカードゲーム。取った曲はすぐ1〜8曲目の枠に置き、あとからは動かせない。中盤で一度落とす聴かせどころから、アンコールまで上げきってCPU店長と勝負。',
-    players:'1人（CPU 1人）', time:'5分', genre:'音楽', added:'2026-11-18', version:'0.8', updated:'2026-11-24', isNew:true
+    players:'1人（CPU 1人）', time:'5分', genre:'音楽', added:'2026-11-18', version:'0.9', updated:'2026-11-25', isNew:true
   },
   {
     id:'doubutsu-kabu', name:'せーの株 どうぶつ版', icon:'🦦', color:'#3f8f5a',
@@ -263,6 +263,9 @@ const GAMES=[
 ];
 // 最近の更新（新しい順）。ゲームを更新したら先頭に1件足し、GAMES の version / updated も上げる
 const UPDATES=[
+  {date:'2026-11-25', id:'michi-tsunagi',   version:'0.2', text:'置ける場所の表示を拡張：そのまま置けるマス（黄）に加えて、回転すると置けるマス（青・↻）も分かるように'},
+  {date:'2026-11-25', id:'horoyoi-call',    version:'0.2', text:'「見えているグラスの合計」を、ダウト後の全公開フェーズでも表示し続けるように（従来は入札中のみ）'},
+  {date:'2026-11-25', id:'setori-shokunin', version:'0.9', text:'「🎫公演カード」を追加。公演ごとに条件カードを1枚引き、その公演だけ得点条件が変わる（全6種・両者共通・OFFも可）'},
   {date:'2026-11-25', id:'michi-tsunagi', version:'0.1', text:'新しく登場（ボドゲのゲーム・タイルを置いて道をつなぎ、完成した道の長さが点数に）'},
   {date:'2026-11-25', id:'ipo-rush',       version:'0.3', text:'各社に「いま決算なら ○コイン（成長度★ぶん除く）」の決算プレビューを追加。★は最後までヒミツのまま'},
   {date:'2026-11-25', id:'seeno-doubutsu', version:'0.3', text:'「出したどうぶつ」一覧を追加。全員の使用済みと残りがいつでも見えるように（進行中の回の選択は出ません）'},

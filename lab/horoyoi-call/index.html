@@ -127,7 +127,7 @@ button{font-family:inherit;font-weight:700;border:none;border-radius:12px;cursor
   <!-- 結果 -->
   <section id="result" class="panel" style="display:none"></section>
 
-  <p class="foot"><a href="../">← 試作ゲームラボに戻る</a> ・ ほろよいコール v0.1</p>
+  <p class="foot"><a href="../">← 試作ゲームラボに戻る</a> ・ ほろよいコール v0.2</p>
 </div>
 
 <div class="modal" id="rules">
@@ -258,7 +258,7 @@ function render(revealed){
   });
   $('callbox').innerHTML=call>0?'いまのコール：合計<b>'+call+'</b>以上<span style="font-size:12px;opacity:.8">（'+P[caller].name+'）</span>':'まだコールなし';
   const vis=P.slice(1).filter(p=>p.lives>0).reduce((a,p)=>a+p.card,0);
-  $('hint').textContent=$('showSum').checked&&phase==='bid'?'見えているグラスの合計：'+vis+'　＋ あなたのグラス（？）':'';
+  $('hint').textContent=$('showSum').checked?'見えているグラスの合計：'+vis+(phase==='bid'?'　＋ あなたのグラス（？）':''):'';
 }
 function renderCtrl(){
   const c=$('ctrl');c.innerHTML='';

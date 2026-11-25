@@ -132,6 +132,8 @@
   .levelrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 10px;font-size:13px;color:var(--ink2)}
   .levelrow button{min-height:36px;padding:4px 12px;border-radius:999px;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);font-weight:700;font-size:13px}
   .levelrow button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+  .showcard{border:1.5px solid var(--gold);background:var(--panel2);border-radius:10px;padding:8px 11px;font-size:13.5px;margin:0 0 10px}
+  .showcard b{color:var(--accent)}
   .turnbadge{display:inline-block;font-size:11.5px;font-weight:700;padding:1px 9px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);color:var(--ink2);margin-bottom:8px}
   @media (max-width:380px){ .cards{grid-template-columns:repeat(3,1fr);gap:6px} .card .ttl{font-size:12.5px} }
 </style>
@@ -157,6 +159,7 @@
         <li><b>置き方：</b>取った曲はすぐに1〜8曲目の空いている枠に置きます。<b>置いた曲は動かせません。</b>8曲目はアンコールです。CPU店長のセトリは表向きで見えています。</li>
         <li><b>CPU店長の強さ：</b>最初の1枚を取る前に「はじめて」「ふつう」から選べます。</li>
         <li><b>モード：</b>最初の画面で「通常（1公演）」「ツアー（3公演）」を選べます。ツアーは公演を3回くり返し（公演ごとに新しいドラフトから）、<b>3公演の累計点</b>で勝敗を決めます。</li>
+        <li><b>公演カード：</b>最初の画面で「あり／なし」を選べます。「あり」のときは公演の開始時に1枚引き、その公演だけ得点条件が少し変わります（あなたとCPU店長に同じ条件。ツアーでは公演ごとに引き直し）。例：「アンコールの夜」アンコール+8点、「バラードの夜」聴かせどころがバラード+5点、「ノンストップ・ライブ」失速ペナルティなし、など全6種。</li>
         <li><b>リハーサル：</b>8曲そろったら、自分のセトリの2曲を<b>1回だけ</b>入れ替えられます（入れ替えずに開演してもOK）。</li>
         <li><b>得点の目安：</b>ドラフトで曲を選ぶと、各空き枠に最終得点の目安（残りを標準的な流れで埋めた場合）が出て、一番高い枠に★が付きます。リハーサルでは、1曲目を選ぶと入れ替え候補ごとに点数が何点変わるか出ます。</li>
       </ul>
@@ -190,6 +193,11 @@
       <button type="button" data-mode="single">通常（1公演）</button>
       <button type="button" data-mode="tour">ツアー（3公演）</button>
     </div>
+    <div class="levelrow" id="card-row">公演カード：
+      <button type="button" data-card="on">あり</button>
+      <button type="button" data-card="off">なし</button>
+    </div>
+    <div class="showcard hidden" id="show-card-draft"></div>
     <span class="turnbadge" id="turn-badge"></span>
     <div class="cards" id="draft-cards"></div>
     <p class="muted" style="margin:14px 0 6px">あなたのセトリ（<span id="placed-count">0</span> / 8曲）</p>
@@ -203,6 +211,7 @@
   <!-- フェーズ2：リハーサル -->
   <section id="phase-rehearsal" class="panel hidden">
     <h2>リハーサル</h2>
+    <div class="showcard hidden" id="show-card-rehearsal"></div>
     <p class="muted" style="margin-top:0" id="rehearsal-hint">入れ替えたい2曲を順にタップすると、1回だけ入れ替えられます。</p>
     <div class="slots" id="rehearsal-slots"></div>
     <p class="preview" id="preview"></p>
@@ -221,6 +230,7 @@
       <thead><tr><th>公演</th><th>あなた</th><th>CPU店長</th></tr></thead>
       <tbody id="tour-mid-body"></tbody>
     </table>
+    <p class="muted" id="tour-mid-card" style="margin:10px 0 0"></p>
     <p class="muted" id="tour-mid-note" style="margin:10px 0 0"></p>
     <div class="btnrow">
       <button class="btn primary" id="btn-next-leg" type="button">次の公演へ</button>
@@ -250,6 +260,7 @@
 
     <div class="panel">
       <h2>スコア内訳</h2>
+      <p class="muted hidden" id="show-card-result" style="margin:0 0 6px"></p>
       <table class="scoretable">
         <thead><tr><th>項目</th><th>あなた</th><th>CPU店長</th></tr></thead>
         <tbody id="score-body"></tbody>
@@ -308,6 +319,19 @@ function buildDeck(){
   return shuffle(deck);
 }
 
+/* ============ 公演カード ============ */
+// 公演の開始時に1枚引き、その公演だけ得点条件が少し変わる（あなたとCPU店長に同じ条件）。
+// mod は scoreSetlist の内訳への修飾。SHOW_MOD が null のとき採点は従来と完全に同じ。
+var SHOW_CARDS = [
+  { id:"encore",  name:"アンコールの夜",       desc:"アンコール +5点 → +8点",                       mod:{ encore:8 } },
+  { id:"ballad",  name:"バラードの夜",         desc:"聴かせどころがバラード +2点 → +5点",           mod:{ kikiBallad:5 } },
+  { id:"nonstop", name:"ノンストップ・ライブ", desc:"失速（5の直後に1）のペナルティなし",           mod:{ stall:0 } },
+  { id:"genre",   name:"ジャンル統一戦",       desc:"隣同士・同じジャンル 1組 +2点 → +3点",         mod:{ genreMul:3 } },
+  { id:"gear",    name:"ギアチェンジナイト",   desc:"ギアチェンジ（遅い→速い） +1点 → +2点",       mod:{ gearMul:2 } },
+  { id:"tsukami", name:"幕開け勝負",           desc:"つかみ（1曲目が盛り上がり3以上） +2点 → +5点", mod:{ tsukami:5 } }
+];
+var SHOW_MOD = null; // 現在の公演のカードの修飾（カードなし／OFFのとき null）
+
 /* ============ 採点 ============ */
 function scoreSetlist(list){
   var genrePts = 0, rise = 0, stall = 0, gear = 0, mono = 0, drops = [], i;
@@ -336,9 +360,19 @@ function scoreSetlist(list){
   var maxHeat = Math.max.apply(null, list.map(function(c){ return c.heat; }));
   var maxCount = list.filter(function(c){ return c.heat === maxHeat; }).length;
   var encore = (list[list.length-1].heat === maxHeat && maxCount === 1) ? 5 : 0;
+  // 公演カードの修飾（SHOW_MOD が null のときは何もしない＝従来の採点と完全一致）
+  var modded = {};
+  if (SHOW_MOD){
+    if (SHOW_MOD.encore != null && encore > 0 && encore !== SHOW_MOD.encore){ encore = SHOW_MOD.encore; modded.encore = true; }
+    if (SHOW_MOD.kikiBallad != null && kikiBallad > 0 && kikiBallad !== SHOW_MOD.kikiBallad){ kikiBallad = SHOW_MOD.kikiBallad; modded.kikiBallad = true; }
+    if (SHOW_MOD.stall != null && stall !== SHOW_MOD.stall){ stall = SHOW_MOD.stall; modded.stall = true; }
+    if (SHOW_MOD.genreMul != null && genrePts !== 0){ var ng = genrePts / 2 * SHOW_MOD.genreMul; if (ng !== genrePts){ genrePts = ng; modded.genre = true; } }
+    if (SHOW_MOD.gearMul != null && gear !== 0){ var ng2 = gear * SHOW_MOD.gearMul; if (ng2 !== gear){ gear = ng2; modded.gear = true; } }
+    if (SHOW_MOD.tsukami != null && tsukami > 0 && tsukami !== SHOW_MOD.tsukami){ tsukami = SHOW_MOD.tsukami; modded.tsukami = true; }
+  }
   var total = genrePts + rise + kiki + kikiBallad + cut + tsukami + encore + stall + gear + mono;
   return { genre:genrePts, rise:rise, kiki:kiki, kikiBallad:kikiBallad, cut:cut, tsukami:tsukami,
-           encore:encore, stall:stall, gear:gear, mono:mono, total:total, drops:drops, kikiPos:kikiPos };
+           encore:encore, stall:stall, gear:gear, mono:mono, total:total, drops:drops, kikiPos:kikiPos, modded:modded };
 }
 
 /* ============ CPU ============ */
@@ -398,6 +432,27 @@ function setMode(m){
 Array.prototype.forEach.call(document.querySelectorAll("#mode-row button"), function(b){
   b.addEventListener("click", function(){ setMode(b.getAttribute("data-mode")); });
 });
+var cardOn = true; // 公演カードを使うか（デフォルトON）
+try { var scd = localStorage.getItem("setori-card"); if (scd === "off") cardOn = false; } catch (e) {}
+function setCard(on){
+  cardOn = on;
+  try { localStorage.setItem("setori-card", on ? "on" : "off"); } catch (e) {}
+  newGame(); // カード設定を変えたら最初から（公演開始前にだけ選べる）
+}
+Array.prototype.forEach.call(document.querySelectorAll("#card-row button"), function(b){
+  b.addEventListener("click", function(){ setCard(b.getAttribute("data-card") === "on"); });
+});
+function renderShowCard(id){
+  var el = document.getElementById(id);
+  if (!el) return;
+  if (state && state.card){
+    el.innerHTML = "🎫 公演カード <b>「" + state.card.name + "」</b>：" + state.card.desc + "（この公演の条件・両者共通）";
+    el.classList.remove("hidden");
+  } else {
+    el.innerHTML = "";
+    el.classList.add("hidden");
+  }
+}
 function newGame(){
   state = {
     leg: 1,          // ツアー：今が第何公演か（通常モードでは常に1）
@@ -406,6 +461,9 @@ function newGame(){
   startShow();
 }
 function startShow(){
+  // 公演カード：公演ごとに1枚引く（ツアーでは公演ごとに引き直し）。OFFのときは引かない
+  state.card = cardOn ? SHOW_CARDS[Math.floor(Math.random() * SHOW_CARDS.length)] : null;
+  SHOW_MOD = state.card ? state.card.mod : null;
   state.deck = buildDeck();      // 48枚のうち、8ラウンド × 3枚 = 24枚を使う（公演ごとに作り直す）
   state.round = 1;
   state.slots = new Array(N).fill(null);
@@ -527,6 +585,12 @@ function renderDraft(){
   Array.prototype.forEach.call(mr.querySelectorAll("button"), function(b){
     b.classList.toggle("on", b.getAttribute("data-mode") === mode);
   });
+  var cr = document.getElementById("card-row");
+  cr.classList.toggle("hidden", !fresh);
+  Array.prototype.forEach.call(cr.querySelectorAll("button"), function(b){
+    b.classList.toggle("on", (b.getAttribute("data-card") === "on") === cardOn);
+  });
+  renderShowCard("show-card-draft");
   document.getElementById("turn-badge").textContent = state.playerFirst
     ? "あなたが先に取る番（残り2枚からCPU店長が取ります）"
     : "CPU店長が先に取りました（残り2枚から選べます）";
@@ -596,6 +660,7 @@ function doSwap(i, j){
   var t = state.slots[i]; state.slots[i] = state.slots[j]; state.slots[j] = t;
 }
 function renderRehearsal(){
+  renderShowCard("show-card-rehearsal");
   var box = document.getElementById("rehearsal-slots");
   box.innerHTML = "";
   var dips = dropsOf(state.slots);
@@ -751,6 +816,9 @@ function tourRowsHTML(){
 }
 function showTourMid(){
   document.getElementById("tour-mid-title").textContent = "第" + state.leg + "公演 終了（全" + TOUR_LEGS + "公演）";
+  document.getElementById("tour-mid-card").textContent = state.card
+    ? "この公演のカード：🎫「" + state.card.name + "」（" + state.card.desc + "）。次の公演では引き直します。"
+    : "";
   document.getElementById("tour-mid-body").innerHTML = tourRowsHTML();
   var t = tourTotals(), left = TOUR_LEGS - state.leg;
   document.getElementById("tour-mid-note").textContent =
@@ -809,21 +877,30 @@ function showResult(){
   else if (ps.total < cs.total){ v.textContent = "CPU店長の勝ち"; sub.textContent = "あと少し。聴かせどころの位置と、アンコール用の曲の取っておき方を見直してみよう。"; }
   else { v.textContent = "引き分け"; sub.textContent = "互角の名勝負。もう一回やれば決着がつくかも。"; }
 
+  var scr = document.getElementById("show-card-result");
+  if (state.card){
+    scr.innerHTML = "🎫 公演カード <b>「" + state.card.name + "」</b>：" + state.card.desc + "（🎫の項目に適用）";
+    scr.classList.remove("hidden");
+  } else {
+    scr.innerHTML = "";
+    scr.classList.add("hidden");
+  }
   var rows = [
-    ["隣同士・同じジャンル（1組 +2）", ps.genre, cs.genre],
-    ["盛り上がりが上がった回数（+1ずつ）", ps.rise, cs.rise],
-    ["聴かせどころ（4〜6曲目で1回だけ下げる）", ps.kiki, cs.kiki],
-    ["聴かせどころがバラード", ps.kikiBallad, cs.kikiBallad],
-    ["流れが切れる（2回目以降の下降）", ps.cut, cs.cut],
-    ["つかみ（1曲目が盛り上がり3以上）", ps.tsukami, cs.tsukami],
-    ["アンコール（最後が単独最高）", ps.encore, cs.encore],
-    ["失速（5の直後に1・バラード除く）", ps.stall, cs.stall],
-    ["ギアチェンジ（遅い→速い）", ps.gear, cs.gear],
-    ["単調（同じテンポが3曲続く）", ps.mono, cs.mono]
+    ["隣同士・同じジャンル（1組 +2）", ps.genre, cs.genre, "genre"],
+    ["盛り上がりが上がった回数（+1ずつ）", ps.rise, cs.rise, "rise"],
+    ["聴かせどころ（4〜6曲目で1回だけ下げる）", ps.kiki, cs.kiki, "kiki"],
+    ["聴かせどころがバラード", ps.kikiBallad, cs.kikiBallad, "kikiBallad"],
+    ["流れが切れる（2回目以降の下降）", ps.cut, cs.cut, "cut"],
+    ["つかみ（1曲目が盛り上がり3以上）", ps.tsukami, cs.tsukami, "tsukami"],
+    ["アンコール（最後が単独最高）", ps.encore, cs.encore, "encore"],
+    ["失速（5の直後に1・バラード除く）", ps.stall, cs.stall, "stall"],
+    ["ギアチェンジ（遅い→速い）", ps.gear, cs.gear, "gear"],
+    ["単調（同じテンポが3曲続く）", ps.mono, cs.mono, "mono"]
   ];
   var html = "";
   rows.forEach(function(r){
-    html += "<tr><td>" + r[0] + "</td><td class='" + (r[1] > 0 ? "pos" : r[1] < 0 ? "neg" : "") + "'>" + fmt(r[1]) + "</td><td class='" + (r[2] > 0 ? "pos" : r[2] < 0 ? "neg" : "") + "'>" + fmt(r[2]) + "</td></tr>";
+    var mark = ((ps.modded && ps.modded[r[3]]) || (cs.modded && cs.modded[r[3]])) ? " 🎫" : "";
+    html += "<tr><td>" + r[0] + mark + "</td><td class='" + (r[1] > 0 ? "pos" : r[1] < 0 ? "neg" : "") + "'>" + fmt(r[1]) + "</td><td class='" + (r[2] > 0 ? "pos" : r[2] < 0 ? "neg" : "") + "'>" + fmt(r[2]) + "</td></tr>";
   });
   html += "<tr class='tot'><td>合計</td><td>" + ps.total + "点</td><td>" + cs.total + "点</td></tr>";
   document.getElementById("score-body").innerHTML = html;
