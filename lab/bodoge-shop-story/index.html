@@ -874,16 +874,29 @@
       // CPU仲間の力は、実効パワーで必要パワーの約3分の1までしか入らない（残りはプレイヤーの担当）
       function cpuRoom(ev) { return Math.floor(ev.def.need * 0.35) - ev.cpuEff; }
 
+      // 空き時間の市場入れ替え（仕入れCPUの入れ替えと同型。手が空いた仲間が確率50%で行う）
+      function cpuSwapMarket(label) {
+        if (Math.random() >= 0.5) return;
+        var slots = [0, 1, 2].filter(function (i) { return S.market[i]; });
+        if (slots.length === 0) return;
+        var s = pick(slots);
+        var old = S.market[s];
+        S.commonDiscard.push({ kind: "card", def: old });
+        S.market[s] = null;
+        refillSlot(s);
+        logMsg("仲間（" + label + "）が市場の「" + old.name + "」を入れ替えました。", "cpu");
+      }
+
       function cpuAct(role) {
         if (role === "service") {
-          if (S.events.length === 0) return;
+          if (S.events.length === 0) { cpuSwapMarket("接客"); return; }
           // 自分の担当（接客）イベントを優先し、残り必要パワーの少ない順に助ける
           var ev = S.events.filter(function (e) { return cpuRoom(e) > 0; }).sort(function (a, b) {
             var ma = a.def.role === "service" ? 0 : 1, mb = b.def.role === "service" ? 0 : 1;
             if (ma !== mb) return ma - mb;
             return (a.def.need - eventTotal(a)) - (b.def.need - eventTotal(b));
           })[0];
-          if (!ev) return;
+          if (!ev) { cpuSwapMarket("接客"); return; }
           var p = Math.random() < 0.45 ? 2 : 1;
           addPowerToEvent(ev, "service", p, true);
           logMsg("仲間（接客）が「" + ev.def.name + "」にパワー+" + p + "（合計 " + eventTotal(ev) + "/" + ev.def.need + "）。", "cpu");
@@ -893,7 +906,7 @@
             income(2, "仲間（店長）の資金繰り");
           } else if (S.events.length > 0) {
             var targets = S.events.filter(function (e) { return cpuRoom(e) > 0; });
-            if (targets.length === 0) return;
+            if (targets.length === 0) { cpuSwapMarket("店長"); return; }
             // 自分の担当（店長）イベントを優先して支援する
             var own = targets.filter(function (e) { return e.def.role === "manager"; });
             var ev2 = pick(own.length ? own : targets);
@@ -902,6 +915,8 @@
             checkEventComplete(ev2);
           } else if (S.commonDiscard.length >= 2) {
             income(2, "仲間（店長）の資金繰り");
+          } else {
+            cpuSwapMarket("店長");
           }
         } else if (role === "buyer") {
           // 自分の担当（仕入れ）イベントがあれば、まずパワーを置いて対応する

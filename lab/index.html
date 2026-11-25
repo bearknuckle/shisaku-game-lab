@@ -188,7 +188,7 @@ const GAMES=[
   {
     id:'yutai-collection', name:'株主優待コレクション', icon:'🎁', color:'#2e7d32',
     desc:'同じ会社の株を3枚集めて、その会社の優待カードをゲット。株の少ない会社ほど優待の点数が高い。権利確定日のあとは権利落ちで1枚手放すけれど、残った株は長期保有になって良い優待を選べる。いろいろな会社の優待を集めるとボーナス。',
-    players:'1人（CPU 1〜3人）', time:'5〜10分', genre:'株', added:'2026-11-24', version:'0.5', updated:'2026-11-26', isNew:true
+    players:'1人（CPU 1〜3人）', time:'5〜10分', genre:'株', added:'2026-11-24', version:'0.6', updated:'2026-11-26', isNew:true
   },
   {
     id:'oyatsu-wakekko', name:'おやつわけっこ', icon:'🍪', color:'#e8743b',
@@ -214,12 +214,12 @@ const GAMES=[
   {
     id:'ipo-rush', name:'IPOラッシュ', icon:'🚀', color:'#1565c0',
     desc:'新規上場（IPO）株を申し込むゲーム。業績カード3枚のうち1枚だけこっそり見て、何株申し込むか決める。人気が集まると初値が上がり、すぐ売るのもアリ。赤字や上場廃止のカードもある。5社上場したら決算、いちばんお金を持っている人の勝ち。',
-    players:'1人（CPU 1〜3人）', time:'5〜10分', genre:'株', added:'2026-11-22', version:'0.4', updated:'2026-11-25', isNew:true
+    players:'1人（CPU 1〜3人）', time:'5〜10分', genre:'株', added:'2026-11-22', version:'0.5', updated:'2026-11-26', isNew:true
   },
   {
     id:'bodoge-shop-story', name:'ボドゲショップ物語', icon:'🏪', color:'#1e6b41',
     desc:'みんなで1つのボドゲショップを経営する協力デッキ構築。接客・店長・仕入れで役割ごとにデッキが違い、共通の市場デッキがお金と残り時間を兼ねる。買うたび山札が減り、尽きたら閉店。イベントを処理して評判を目標まで上げれば勝ち。試作は役割を1つ選んで、残りはCPU仲間が担当。',
-    players:'1人（CPU仲間2人）', time:'10〜15分', genre:'ボドゲ', added:'2026-11-22', version:'0.8', updated:'2026-11-23', isNew:true
+    players:'1人（CPU仲間2人）', time:'10〜15分', genre:'ボドゲ', added:'2026-11-22', version:'0.9', updated:'2026-11-26', isNew:true
   },
   {
     id:'izakaya-seri', name:'居酒屋せり市', icon:'🔨', color:'#8a6d3b',
@@ -316,6 +316,9 @@ const GAMES=[
 ];
 // 最近の更新（新しい順）。ゲームを更新したら先頭に1件足し、GAMES の version / updated も上げる
 const UPDATES=[
+  {date:'2026-11-26', id:'bodoge-shop-story', version:'0.9', text:'バランス調整：手が空いた仲間（接客・店長）が市場の入れ替えを手伝うように。仕入れ担当でも遊びやすくなった'},
+  {date:'2026-11-26', id:'yutai-collection', version:'0.6', text:'バランス調整：カメ🐢が新しい会社や点数の高い優待をねらうようになり、勝ちやすくなった'},
+  {date:'2026-11-26', id:'ipo-rush', version:'0.5', text:'バランス調整：業績カードの内訳と相場イベントを見直し、参加するCPUは毎回ランダムに。カメとブタも勝ちやすくなった'},
   {date:'2026-11-26', id:'animal-baseball', version:'0.2', text:'投手のスタミナと投手交代、打者1人ずつの特殊能力（チャンスに強い・快足・選球眼など）、試合中いつでも見られる打順表を追加'},
   {date:'2026-11-26', id:'kakusu-dice',     version:'1.5', text:'自己ベスト（最高得点・最多獲得枚数・勝利回数）を保存して開始画面に表示するように'},
   {date:'2026-11-26', id:'yutai-collection',version:'0.5', text:'「みんなの優待カード」パネルを追加。全員が取った優待（会社・点数）をいつでも比べられるように'},

@@ -378,7 +378,7 @@ function cpuScore(p,id){
   const hasYu=p.yutai.some(y=>y.co===id);
   switch(p.ai){
     case 'rabbit': return own*3+Math.random();
-    case 'turtle': return own*2+Math.random()*2;
+    case 'turtle': return own*2+(hasYu?0:1.5)+avgLeft(id)*0.5+Math.random()*2;
     case 'fox': return own*2+avgLeft(id)+deny+Math.random()*0.5;
     case 'owl': return own*2+(hasYu?0:1.5)+avgLeft(id)*0.5+Math.random()*0.5;
   }
