@@ -18,7 +18,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="description" content="試作ゲームを、ブラウザですぐ遊べる。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#14121c;--panel:#1f1c2b;--line:#2f2b40;--text:#f2eff8;--dim:#9a94ad;--accent:#4f8cff}
 *{box-sizing:border-box}
@@ -82,6 +82,52 @@ html{scroll-behavior:smooth}
 .service-links .svc-domain{display:block;color:var(--dim);font-size:12px}
 .service-links .svc-name{display:block;font-size:14px;font-weight:800;margin-top:1px}
 .service-links small{display:block;color:var(--dim);font-size:12px;font-weight:500;margin-top:2px}
+
+/* ===== リニューアル：フラスコの液体の色（青・紫・オレンジ）と太い見出し ===== */
+:root{--display:"Dela Gothic One","M PLUS Rounded 1c",sans-serif;--liquid:linear-gradient(90deg,#4f8cff,#a06bff 55%,#ff8a3d)}
+html{background:var(--bg)}
+body{background:
+  radial-gradient(55% 32% at 92% 0%,rgba(160,107,255,.28),transparent 70%),
+  radial-gradient(45% 26% at 0% 4%,rgba(79,140,255,.22),transparent 70%),
+  radial-gradient(40% 24% at 60% 18%,rgba(255,138,61,.10),transparent 70%),
+  linear-gradient(180deg,#231f36 0,var(--bg) 520px) var(--bg)}
+header{position:relative;padding-bottom:22px;margin-bottom:22px}
+header::after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;border-radius:6px;background:var(--liquid)}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(32px,8.5vw,48px);letter-spacing:.02em;line-height:1.15;gap:14px}
+.logo{width:clamp(48px,12vw,64px);height:clamp(48px,12vw,64px);border-radius:14px;box-shadow:0 8px 22px rgba(160,107,255,.35)}
+.lead{font-size:15px;color:#c9c3da;margin-top:12px}
+h2.cat,.theme h2,.service-links h2{font-family:var(--display);font-weight:400;font-size:19px;letter-spacing:.02em}
+h2.cat{border-bottom:0;padding-bottom:0;margin-bottom:12px}
+.filters button.on{background:var(--liquid);border-color:transparent;color:#fff}
+.game{background:linear-gradient(150deg,rgba(255,255,255,.045),rgba(255,255,255,0) 60%),var(--panel)}
+.icon{box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 4px 12px rgba(0,0,0,.25)}
+.jump-services{background:rgba(255,255,255,.04)}
+
+/* ===== 改善：今日の新作・上に固定するカテゴリ・説明は2行 ===== */
+.hero{display:block;position:relative;margin:0 0 22px;padding:20px;border-radius:22px;color:inherit;text-decoration:none;
+  background:linear-gradient(150deg,rgba(255,255,255,.07),rgba(255,255,255,0) 55%),var(--panel);border:1px solid var(--line);overflow:hidden}
+.hero::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--liquid)}
+.hero-label{display:inline-block;font-size:12px;font-weight:800;padding:3px 10px;border-radius:99px;background:var(--liquid);color:#fff}
+.hero-label small{font-weight:500;opacity:.9;margin-left:6px}
+.hero-main{display:flex;gap:16px;align-items:center;margin:14px 0 10px}
+.hero .icon{width:76px;height:76px;border-radius:20px;font-size:40px}
+.hero-name{font-family:var(--display);font-size:clamp(22px,6vw,30px);line-height:1.2;margin:0}
+.hero-cat{display:block;color:var(--dim);font-size:12px;margin-top:4px}
+.hero .desc{font-size:14px;margin:0 0 12px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.hero-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.hero-play{display:inline-flex;align-items:center;min-height:44px;padding:0 22px;border-radius:12px;background:var(--liquid);color:#fff;font-weight:800;font-size:15px}
+a.hero:hover{border-color:var(--accent)}
+.filters{position:sticky;top:0;z-index:20;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:8px -16px 14px;padding:10px 16px;
+  background:rgba(20,18,28,.88);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid transparent}
+.filters::-webkit-scrollbar{display:none}
+.filters.stuck{border-bottom-color:var(--line)}
+.filters button{flex:none;min-height:36px}
+h2.cat{scroll-margin-top:70px}
+.game .desc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:2px}
+.game.open .desc{display:block;-webkit-line-clamp:unset}
+.desc-more{display:none;background:none;border:0;padding:2px 0 8px;font:inherit;font-size:12px;font-weight:800;color:#a98cff;cursor:pointer}
+.desc-more.show{display:inline-block}
+.game .meta:first-of-type{margin-top:4px}
 </style>
 </head>
 <body>
@@ -91,6 +137,7 @@ html{scroll-behavior:smooth}
     <p class="lead">ブラウザですぐ遊べる試作ゲームの置き場です。スマホでもそのまま遊べます。</p>
     <a class="jump-services" href="#related-services">関連サービスへ ↓</a>
   </header>
+  <div id="hero"></div>
   <div id="updates"></div>
   <div class="filters" id="filters"></div>
   <div class="grid" id="grid"></div>
@@ -397,7 +444,7 @@ let showAllUpdates=false;
 function md(d){const [,m,dd]=d.split('-');return (+m)+'/'+(+dd);}
 function renderUpdates(){
   const box=document.getElementById('updates');if(!box)return;
-  const list=showAllUpdates?UPDATES:UPDATES.slice(0,3);
+  const list=showAllUpdates?UPDATES:UPDATES.slice(0,1);
   box.innerHTML='<h2 class="cat">📝 最近の更新</h2>';
   const ul=document.createElement('div');ul.className='upd';
   list.forEach(u=>{const g=GAMES.find(x=>x.id===u.id);if(!g)return;
@@ -406,7 +453,7 @@ function renderUpdates(){
     a.innerHTML=`<span class="ud">${md(u.date)}</span><span class="ui">${g.icon}</span><span class="ut"><b>${g.name}</b> <span class="uv">v${u.version}</span><br>${u.text}</span>`;
     ul.appendChild(a);});
   box.appendChild(ul);
-  if(UPDATES.length>3){const b=document.createElement('button');b.className='more';b.textContent=showAllUpdates?'閉じる':'もっと見る（全'+UPDATES.length+'件）';
+  if(UPDATES.length>1){const b=document.createElement('button');b.className='more';b.textContent=showAllUpdates?'閉じる':'もっと見る（全'+UPDATES.length+'件）';
     b.onclick=()=>{showAllUpdates=!showAllUpdates;renderUpdates();};box.appendChild(b);}
 }
 const SOON={name:'次の試作を準備中…',icon:'🛠️',color:'#2a2639',desc:'新しいゲームができたらここに追加されます。'};
@@ -456,9 +503,38 @@ function card(g){
   const pl=PLAYS[g.id];
   a.innerHTML=`<div class="icon" style="background:${g.color}">${g.icon}</div>
     <div class="body"><div class="name">${g.name}${g.badge?`<span class="tag" style="background:#3a3550">${g.badge}</span>`:''}${g.isNew&&!pl?'<span class="tag">NEW</span>':''}</div>
-    <div class="desc">${g.desc}</div>
+    <div class="desc">${g.desc}</div><button class="desc-more" type="button" aria-expanded="false">続きを読む</button>
     <div class="meta"><span>👥 ${g.players}</span><span>⏱ ${g.time}</span>${g.version?`<span>🧪 v${g.version}・${md(g.updated)}更新</span>`:''}</div>${GLOBAL[g.id]?`<div class="meta hot">🔥 みんなで ${GLOBAL[g.id]}回</div>`:''}${pl?`<div class="meta played">🕘 ${ago(pl.last)}に遊んだ · ${pl.n}回</div>`:''}${g.note?`<div class="meta" style="margin-top:4px">ℹ️ ${g.note}</div>`:''}</div>`;
+  const more=a.querySelector('.desc-more');
+  more.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();
+    const open=a.classList.toggle('open');more.textContent=open?'閉じる':'続きを読む';more.setAttribute('aria-expanded',open);});
   return a;
+}
+// 2行に収まらない説明だけ「続きを読む」を出す
+function markLongDescs(){
+  document.querySelectorAll('.game:not(.open) .desc').forEach(d=>{
+    const b=d.nextElementSibling;if(b&&b.classList.contains('desc-more'))b.classList.toggle('show',d.scrollHeight>d.clientHeight+2);});
+}
+window.addEventListener('resize',()=>{clearTimeout(window._mld);window._mld=setTimeout(markLongDescs,150);});
+// 今日の新作（いちばん新しく追加されたゲーム）
+function todayJST(){return new Date(Date.now()+9*3600e3).toISOString().slice(0,10);}
+function renderHero(){
+  const box=document.getElementById('hero');if(!box||!GAMES.length)return;
+  const latest=GAMES.map(g=>g.added).sort().pop();
+  const cands=GAMES.filter(g=>g.added===latest);
+  const order=id=>{let i=UPDATES.findIndex(u=>u.id===id&&/新しく登場/.test(u.text));if(i<0)i=UPDATES.findIndex(u=>u.id===id);return i<0?1e9:i;};
+  const g=cands.sort((a,b)=>order(a.id)-order(b.id))[0];
+  const c=CATS.find(x=>x.id===g.genre);
+  const isToday=g.added===todayJST();
+  box.innerHTML='';
+  const a=document.createElement('a');a.className='hero';a.href=g.url||(g.id+'/');
+  a.addEventListener('click',()=>recordPlay(g.id));
+  a.innerHTML=`<span class="hero-label">${isToday?'今日の新作':'最新作'}<small>${md(g.added)} 追加</small></span>
+    <div class="hero-main"><div class="icon" style="background:${g.color}">${g.icon}</div>
+    <div><p class="hero-name">${g.name}</p><span class="hero-cat">${c?c.icon+' '+c.label:''}</span></div></div>
+    <p class="desc">${g.desc}</p>
+    <div class="hero-foot"><span class="meta"><span>👥 ${g.players}</span><span>⏱ ${g.time}</span></span><span class="hero-play">遊ぶ</span></div>`;
+  box.appendChild(a);
 }
 function render(){
   const cats=CATS.filter(c=>GAMES.some(g=>g.genre===c.id));
@@ -468,7 +544,7 @@ function render(){
     const n=c.id==='すべて'?GAMES.length:GAMES.filter(g=>g.genre===c.id).length;
     b.textContent=(c.icon?c.icon+' ':'')+(c.id==='すべて'?'すべて':c.id)+' '+n;
     if(c.id===cur)b.className='on';
-    b.onclick=()=>{cur=c.id;render();};f.appendChild(b);
+    b.onclick=()=>{cur=c.id;render();const top=document.getElementById('grid').getBoundingClientRect().top+scrollY-f.offsetHeight-8;if(scrollY>top)scrollTo({top,behavior:'smooth'});};f.appendChild(b);
   });
   const root=document.getElementById('grid');root.innerHTML='';root.className='';
   const hot=GAMES.filter(g=>GLOBAL[g.id]).sort(byPop).slice(0,3);
@@ -497,12 +573,17 @@ function render(){
     s.innerHTML=`<div class="icon" style="background:${SOON.color}">${SOON.icon}</div><div class="body"><div class="name">${SOON.name}</div><div class="desc">${SOON.desc}</div></div>`;
     grid.appendChild(s);root.appendChild(grid);
   }
+  markLongDescs();
 }
 document.getElementById('reset').onclick=()=>{savePlays({});PLAYS={};render();};
 window.addEventListener('pageshow',()=>{PLAYS=loadPlays();render();});
 render();
+renderHero();
 renderUpdates();
 loadGlobal();
+(function(){const f=document.getElementById('filters');if(!('IntersectionObserver' in window))return;
+  const s=document.createElement('div');s.style.height='1px';f.parentNode.insertBefore(s,f);
+  new IntersectionObserver(([e])=>f.classList.toggle('stuck',!e.isIntersecting)).observe(s);})();
 </script>
 </body>
 </html>
