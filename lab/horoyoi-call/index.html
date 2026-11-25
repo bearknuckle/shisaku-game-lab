@@ -8,7 +8,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="試作ゲームラボ">
 <meta property="og:title" content="ほろよいコール｜試作ゲームラボ">
-<meta property="og:description" content="自分のグラスだけ見えない！みんなのグラスの「ほろよい度」の合計を、順番に高く宣言していく読み合いゲーム。怪しいと思ったら「ダウト！」。外した人はお冷を1杯失う。">
+<meta property="og:description" content="自分のグラスだけ見えない！みんなのグラスの「ほろよい度」の合計を、順番に高く宣言していく読み合いゲーム。怪しいと思ったら「ダウト！」、ちょうどだと思ったら「ピッタリ乾杯！」。">
 <meta property="og:url" content="https://game-lab-oj9t.onrender.com/horoyoi-call/">
 <meta property="og:image" content="https://game-lab-oj9t.onrender.com/og.png">
 <meta property="og:image:width" content="1200">
@@ -86,6 +86,15 @@ button{font-family:inherit;font-weight:700;border:none;border-radius:12px;cursor
 .foot{text-align:center;font-size:13px;margin-top:22px;opacity:.85}
 .foot a{color:var(--gold2)}
 .chk{font-size:13px;display:flex;align-items:center;gap:6px;justify-content:center;margin-top:8px;opacity:.9}
+.seat.win{border-color:var(--green);background:rgba(76,175,114,.18)}
+.bub.ok{color:#7fe0a3}
+.btn.green{background:var(--green);color:#fff;box-shadow:0 3px 0 #2f7a4c}
+.gcard .v.sp{font-size:14px;font-family:"Zen Maru Gothic",sans-serif;font-weight:900}
+.plate{display:flex;align-items:center;justify-content:center;gap:10px;font-size:13px;font-weight:700;margin-bottom:6px}
+.gcard.sm{width:56px;height:72px;margin:0}
+.gcard.sm .em{font-size:22px}
+.gcard.sm .v{font-size:18px}
+.gcard.sm .v.sp{font-size:11px}
 @media (max-width:420px){
   h1{font-size:22px}
   .seats{grid-template-columns:repeat(2,1fr)}
@@ -106,7 +115,7 @@ button{font-family:inherit;font-weight:700;border:none;border-radius:12px;cursor
   <section id="start" class="panel">
     <div style="font-weight:900">CPUの人数</div>
     <div class="opts" id="cpuOpts"></div>
-    <div style="font-size:13px;opacity:.85;line-height:1.6">お冷💧を3杯ずつ持ってスタート。読みを外すと1杯失い、だれかのお冷がなくなったら終了。残ったお冷がいちばん多い人の勝ち。</div>
+    <div style="font-size:13px;opacity:.85;line-height:1.6">お冷💧を3杯ずつ持ってスタート。読みを外すと1杯失い、「ピッタリ乾杯！」を当てると1杯もらえる。だれかのお冷がなくなったら終了。残ったお冷がいちばん多い人の勝ち。</div>
     <div class="ctrl"><button class="btn ghost" id="ruleBtn2">📖 ルールを見る</button><button class="btn" id="startBtn">はじめる</button></div>
     <p class="note">🔞 このゲームはお酒を飲まなくても遊べます。飲みながら遊ぶときは<b>20歳以上</b>で、飲みすぎや一気飲みはやめましょう。ソフトドリンクでも楽しめます。</p>
   </section>
@@ -115,6 +124,7 @@ button{font-family:inherit;font-weight:700;border:none;border-radius:12px;cursor
   <section id="game" style="display:none">
     <div class="seats" id="seats"></div>
     <div class="panel center">
+      <div class="plate" id="plate"></div>
       <div class="callbox" id="callbox"></div>
       <div class="hint" id="hint"></div>
       <div class="msg" id="msg"></div>
@@ -127,59 +137,113 @@ button{font-family:inherit;font-weight:700;border:none;border-radius:12px;cursor
   <!-- 結果 -->
   <section id="result" class="panel" style="display:none"></section>
 
-  <p class="foot"><a href="../">← 試作ゲームラボに戻る</a> ・ ほろよいコール v0.2</p>
+  <p class="foot"><a href="../">← 試作ゲームラボに戻る</a> ・ ほろよいコール v0.3</p>
 </div>
 
 <div class="modal" id="rules">
   <div class="mbox">
     <h2>📖 ほろよいコールのあそび方</h2>
-    <p style="margin:4px 0">グラスカードを1枚ずつ配って、<b>自分には見えないようにおでこに当てます</b>（ほかの人のグラスは見えます）。</p>
-    <div class="deck"><span>🍵烏龍茶 0 ×4</span><span>🍋サワー 1 ×4</span><span>🍺ビール 2 ×4</span><span>🥃ハイボール 3 ×4</span><span>🍷ワイン 4 ×4</span><span>🍶日本酒 5 ×3</span><span>🏺泡盛 10 ×1</span></div>
+    <p style="margin:4px 0">グラスカードを1枚ずつ配って、<b>自分には見えないようにおでこに当てます</b>（ほかの人のグラスは見えます）。さらに1枚を<b>おつまみ皿</b>として真ん中に伏せて置きます（だれにも見えません）。</p>
+    <div class="deck"><span>🍵烏龍茶 0 ×4</span><span>🍋サワー 1 ×4</span><span>🍺ビール 2 ×4</span><span>🥃ハイボール 3 ×4</span><span>🍷ワイン 4 ×4</span><span>🍶日本酒 5 ×3</span><span>🏺泡盛 10 ×1</span><span>🧊チェイサー ×1</span><span>🔁おかわり ×1</span></div>
     <ol>
       <li>親から順番に「みんなのグラスの合計は<b>○以上</b>！」とコールする。</li>
-      <li>次の人は、前より<b>大きい数</b>をコールするか、「<b>ダウト！</b>（そんなにない）」と言う。</li>
-      <li>ダウトが出たら全員のグラスを見せて合計する。
-        <ul><li>合計がコール以上 → <b>ダウトした人</b>の負け</li><li>合計がコールより少ない → <b>コールした人</b>の負け</li></ul></li>
-      <li>負けた人はお冷💧を1杯失い、次のラウンドの親になる。カードは毎回まぜ直す。</li>
+      <li>次の人は、次のどれかをする。
+        <ul><li>前より<b>大きい数</b>をコール</li><li>「<b>ダウト！</b>」（そんなにない）</li><li>「<b>ピッタリ乾杯！</b>」（合計はちょうどその数）</li></ul></li>
+      <li>ダウトかピッタリが出たら、おつまみ皿も含めて全部のカードを見せて合計する。
+        <ul><li>ダウト：合計がコール以上 → <b>ダウトした人</b>の負け／足りない → <b>コールした人</b>の負け</li>
+        <li>ピッタリ：ちょうど同じ → 言った人がお冷を<b>1杯もらう</b>（最大5杯）／ちがう → <b>言った人</b>の負け</li></ul></li>
+      <li>負けた人はお冷💧を1杯失う。負けた人（ピッタリが当たったときは言った人）が次の親。カードは毎回まぜ直す。</li>
       <li>だれかのお冷が0杯になったら終了。<b>お冷が一番多く残った人の勝ち</b>。</li>
     </ol>
-    <p style="font-size:13px;margin:6px 0">コツ：見えている合計＋自分のグラス（平均は2〜3くらい）を考えよう。ほかの人のコールから、自分のグラスを推理するのもあり。</p>
-    <p style="font-size:12px;margin:6px 0">紙で遊ぶとき：トランプで代用できます（J＝0を4枚、A〜4を4枚ずつ、5を3枚、10を1枚）。3〜5人がおすすめ。</p>
+    <p style="margin:8px 0 2px;font-weight:900">合計の数え方（この順番で）</p>
+    <ol>
+      <li><b>🧊チェイサー</b>があれば、いちばん大きいお酒1枚を0にする</li>
+      <li>お酒（数字）を全部たす</li>
+      <li><b>🍹ちゃんぽん</b>：お酒が3枚以上あって、<b>全部ちがう種類</b>なら＋3（チェイサーで0になったお酒も元の種類のまま数える）</li>
+      <li><b>🔁おかわり</b>があれば、合計を2倍にする</li>
+    </ol>
+    <p style="font-size:13px;margin:6px 0">コツ：見えている合計に、自分のグラスとおつまみ皿の分（それぞれ平均2〜3くらい）を足して考えよう。ほかの人は<b>あなたのグラスを見てコールしている</b>ので、コールの大きさから自分のグラスを推理できる。</p>
+    <p style="font-size:12px;margin:6px 0">紙で遊ぶとき：トランプで代用できます（J＝0を4枚、A〜4を4枚ずつ、5を3枚、10を1枚、Kを1枚＝チェイサー、ジョーカー1枚＝おかわり）。お冷はコインやおはじきで。3〜5人がおすすめ。</p>
     <div style="text-align:right"><button class="btn" id="ruleClose">とじる</button></div>
   </div>
 </div>
 
 <script>
-const DRINKS={0:['🍵','烏龍茶'],1:['🍋','サワー'],2:['🍺','ビール'],3:['🥃','ハイボール'],4:['🍷','ワイン'],5:['🍶','日本酒'],10:['🏺','泡盛']};
-const DECK_DEF=[[0,4],[1,4],[2,4],[3,4],[4,4],[5,3],[10,1]];
+const DRINKS={0:['🍵','烏龍茶'],1:['🍋','サワー'],2:['🍺','ビール'],3:['🥃','ハイボール'],4:['🍷','ワイン'],5:['🍶','日本酒'],10:['🏺','泡盛'],C:['🧊','チェイサー'],X:['🔁','おかわり']};
+const DECK_DEF=[[0,4],[1,4],[2,4],[3,4],[4,4],[5,3],[10,1],['C',1],['X',1]];
+const MAX_LIVES=5;
 const CPU_DEF=[
-  {name:'店長',style:'堅実',doubt:0.45,safe:0.62,bluff:0.08},
-  {name:'タカさん',style:'強気',doubt:0.38,safe:0.5,bluff:0.25},
-  {name:'ミキ',style:'慎重',doubt:0.52,safe:0.7,bluff:0.05},
-  {name:'ゲンさん',style:'気まぐれ',doubt:0.44,safe:0.58,bluff:0.18},
+  {name:'店長',style:'堅実',doubt:0.45,safe:0.62,bluff:0.08,exact:0.3},
+  {name:'タカさん',style:'強気',doubt:0.38,safe:0.5,bluff:0.25,exact:0.22},
+  {name:'ミキ',style:'慎重',doubt:0.52,safe:0.7,bluff:0.05,exact:0.34},
+  {name:'ゲンさん',style:'気まぐれ',doubt:0.44,safe:0.58,bluff:0.18,exact:0.26},
 ];
 const $=id=>document.getElementById(id);
-let nCpu=3, P=[], cur=0, call=0, caller=-1, myBid=1, phase='idle', starter=0, round=0, timer=null;
+const isNum=v=>typeof v==='number';
+let nCpu=3, P=[], plate=0, cur=0, call=0, caller=-1, myBid=1, phase='idle', starter=0, round=0, timer=null, H=[];
 
 function fullDeck(){const d=[];DECK_DEF.forEach(([v,n])=>{for(let i=0;i<n;i++)d.push(v);});return d;}
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function alive(){return P.filter(p=>p.lives>0);}
 function log(t){const l=$('log');l.innerHTML='<div>'+t+'</div>'+l.innerHTML;}
+function cardName(v){const d=DRINKS[v];return d[0]+d[1]+(isNum(v)?'（'+v+'）':'');}
 
-// CPUの考え：見えている合計 + 自分のカード（残りの山の分布）
-function probAtLeast(i,target){
-  const deck=fullDeck();let vis=0;
-  P.forEach((p,j)=>{if(j!==i){vis+=p.card;const k=deck.indexOf(p.card);if(k>=0)deck.splice(k,1);}});
-  const need=target-vis;
-  return deck.filter(v=>v>=need).length/deck.length;
+// 合計の計算：チェイサー → たし算 → ちゃんぽん → おかわり
+function calc(cards){
+  const nums=cards.filter(isNum);
+  const raw=nums.reduce((a,b)=>a+b,0);
+  let chased=null, sum=raw;
+  if(cards.includes('C')&&nums.length){chased=Math.max(...nums);sum-=chased;}
+  const chanpon=nums.length>=3&&new Set(nums).size===nums.length;
+  if(chanpon)sum+=3;
+  const okawari=cards.includes('X');
+  if(okawari)sum*=2;
+  return {total:sum,raw,chased,chanpon,okawari};
+}
+function tableCards(){return alive().map(p=>p.card).concat([plate]);}
+
+// 見る人vの立場で、見えないカード（自分＋おつまみ皿）の組み合わせごとの合計
+function viewList(v,cardOf){
+  const known=[];P.forEach((p,j)=>{if(j!==v&&p.lives>0)known.push(cardOf(j));});
+  const d=fullDeck();known.forEach(x=>{const k=d.indexOf(x);if(k>=0)d.splice(k,1);});
+  const out=[];
+  for(let a=0;a<d.length;a++)for(let b=0;b<d.length;b++){if(a!==b)out.push([calc(known.concat([d[a],d[b]])).total,d[a]]);}
+  return out;
+}
+// CPU i の読み：ほかの人のコールは「i のグラスを見たうえでの数字」なので、それと合う自分のグラスほど重く見る
+function cpuView(i){
+  const list=viewList(i,j=>P[j].card);
+  const hyps=[...new Set(list.map(e=>e[1]))];
+  const w={};
+  hyps.forEach(h=>{
+    let lw=1;
+    H.forEach(({who,b})=>{
+      if(who===i)return;
+      const vl=viewList(who,k=>k===i?h:P[k].card);
+      const p=vl.filter(e=>e[0]>=b).length/vl.length;
+      lw*=Math.max(0.12,p);
+    });
+    w[h]=lw;
+  });
+  let W=0;list.forEach(e=>{W+=w[e[1]];});
+  return {
+    ge:t=>list.reduce((s,e)=>s+(e[0]>=t?w[e[1]]:0),0)/W,
+    eq:t=>list.reduce((s,e)=>s+(e[0]===t?w[e[1]]:0),0)/W,
+  };
 }
 function cpuMove(i){
-  const c=P[i].cpu;
-  if(call>0 && probAtLeast(i,call)<c.doubt+(Math.random()*0.1-0.05)) return {doubt:true};
+  const c=P[i].cpu, V=cpuView(i);
+  let pe=0;
+  if(call>0){
+    pe=V.eq(call);
+    const pg=V.ge(call);
+    if(pe>=c.exact+(Math.random()*0.06-0.03)&&pe>=(1-pg)*0.7&&P[i].lives<MAX_LIVES) return {exact:true};
+    if(pg<c.doubt+(Math.random()*0.1-0.05)) return {doubt:true};
+  }
   let b=call+1;
-  while(b<call+5 && probAtLeast(i,b+1)>=c.safe) b++;
+  while(b<call+8 && V.ge(b+1)>=c.safe) b++;
   if(Math.random()<c.bluff) b++;
-  if(call>0 && probAtLeast(i,b)<0.25) return {doubt:true};
+  if(call>0 && V.ge(b)<0.25) return (pe>=c.exact*0.8&&P[i].lives<MAX_LIVES)?{exact:true}:{doubt:true};
   return {bid:b};
 }
 
@@ -192,8 +256,9 @@ function setup(){
 }
 function newRound(){
   round++;const d=shuffle(fullDeck());
-  P.forEach(p=>{p.card=d.pop();p.say='';});
-  call=0;caller=-1;cur=starter;phase='bid';
+  P.forEach(p=>{p.card=d.pop();p.say='';p.act='';p.lost=false;p.win=false;});
+  plate=d.pop();
+  call=0;caller=-1;cur=starter;phase='bid';H=[];
   $('msg').textContent='';
   log('<b>第'+round+'ラウンド</b>　親：'+P[cur].name);
   myBid=1;render();step();
@@ -205,60 +270,82 @@ function step(){
   const p=P[cur];
   if(p.human){
     myBid=Math.max(myBid,call+1);
-    $('msg').textContent=call===0?'あなたが親です。最初のコールをどうぞ':'あなたの番。もっと大きくコールするか、ダウト！';
+    $('msg').textContent=call===0?'あなたが親です。最初のコールをどうぞ':'あなたの番。もっと大きくコール／ダウト！／ピッタリ乾杯！';
     renderCtrl();return;
   }
   $('msg').textContent=p.name+'が考え中…';renderCtrl();
   timer=setTimeout(()=>{
     const m=cpuMove(cur);
-    if(m.doubt)doDoubt(cur);else doBid(cur,m.bid);
+    if(m.exact)resolve(cur,'exact');else if(m.doubt)resolve(cur,'doubt');else doBid(cur,m.bid);
   },900+Math.random()*500);
 }
 function doBid(i,b){
-  call=b;caller=i;P[i].say='「'+b+'以上！」';
+  call=b;caller=i;H.push({who:i,b});P[i].say='「'+b+'以上！」';P[i].act='';
   log(P[i].name+'：合計'+b+'以上');
   cur=nextIdx(i);step();
 }
-function doDoubt(i){
-  P[i].say='ダウト！';log(P[i].name+'：<span style="color:#ff8a7e">ダウト！</span>');
+function breakdown(R){
+  let s='お酒の合計 '+R.raw;
+  if(R.chased!==null)s+='　🧊チェイサーで'+R.chased+'が0に → '+(R.raw-R.chased);
+  if(R.chanpon)s+='　🍹ちゃんぽん＋3';
+  if(R.okawari)s+='　🔁おかわり×2';
+  return s;
+}
+function resolve(i,mode){
+  const exact=mode==='exact';
+  P[i].say=exact?'ピッタリ'+call+'！':'ダウト！';P[i].act=exact?'ok':'dt';
+  log(P[i].name+'：'+(exact?'<span style="color:#7fe0a3">ピッタリ乾杯！（'+call+'）</span>':'<span style="color:#ff8a7e">ダウト！</span>'));
   phase='reveal';render();renderCtrl();
-  const total=alive().reduce((s,p)=>s+p.card,0);
-  const ok=total>=call;
-  const loser=ok?i:caller;
+  const R=calc(tableCards()), total=R.total;
   setTimeout(()=>{
-    P[loser].lives--;P[loser].lost=true;
-    const mine=DRINKS[P[0].card];
-    $('msg').innerHTML='合計は <b style="font-size:22px;color:#ffe3a1">'+total+'</b>（コールは'+call+'以上）→ '+
-      (ok?'ちゃんとあった！':'足りなかった！')+'<br><b>'+P[loser].name+'</b>のお冷が1杯へった💧'+
-      (P[0].lives>0||loser===0?'<br><span style="font-size:13px">あなたのグラスは '+mine[0]+mine[1]+'（'+P[0].card+'）でした</span>':'');
-    log('→ 合計'+total+'。'+P[loser].name+'が💧-1');
-    starter=loser;
+    let head, res;
+    if(exact){
+      if(total===call){P[i].lives=Math.min(MAX_LIVES,P[i].lives+1);P[i].win=true;starter=i;head='ピッタリ！🥂';res='<b>'+P[i].name+'</b>がお冷を1杯もらった💧';log('→ 合計'+total+'。ピッタリ！'+P[i].name+'が💧+1');}
+      else{P[i].lives--;P[i].lost=true;starter=i;head='ピッタリならず…';res='<b>'+P[i].name+'</b>のお冷が1杯へった💧';log('→ 合計'+total+'。'+P[i].name+'が💧-1');}
+    }else{
+      const ok=total>=call, loser=ok?i:caller;
+      P[loser].lives--;P[loser].lost=true;starter=loser;
+      head=ok?'ちゃんとあった！':'足りなかった！';res='<b>'+P[loser].name+'</b>のお冷が1杯へった💧';
+      log('→ 合計'+total+'。'+P[loser].name+'が💧-1');
+    }
+    $('msg').innerHTML='合計は <b style="font-size:22px;color:#ffe3a1">'+total+'</b>（コールは'+call+(exact?'':'以上')+'）→ '+head+
+      '<br><span style="font-size:12.5px;opacity:.9">'+breakdown(R)+'</span><br>'+res+
+      '<br><span style="font-size:13px">あなたのグラスは '+cardName(P[0].card)+'、おつまみ皿は '+cardName(plate)+' でした</span>';
     render(true);
     const ctrl=$('ctrl');ctrl.innerHTML='';
     const b=document.createElement('button');b.className='btn';
-    if(P[loser].lives<=0){b.textContent='結果を見る';b.onclick=showResult;}
-    else{b.textContent='次のラウンドへ';b.onclick=()=>{P.forEach(p=>p.lost=false);newRound();};}
+    if(P.some(p=>p.lives<=0)){b.textContent='結果を見る';b.onclick=showResult;}
+    else{b.textContent='次のラウンドへ';b.onclick=newRound;}
     ctrl.appendChild(b);
   },700);
 }
+function cardHTML(v,cls){
+  const d=DRINKS[v];
+  const vt=isNum(v)?v:(v==='C'?'最大→0':'×2');
+  return '<div class="gcard'+(cls||'')+'"><div class="em">'+d[0]+'</div><div class="v'+(isNum(v)?'':' sp')+'">'+vt+'</div><div class="dn">'+d[1]+'</div></div>';
+}
+function hiddenHTML(cls,txt){return '<div class="gcard hide'+(cls||'')+'"><div class="v">？</div><div class="dn">'+txt+'</div></div>';}
 function render(revealed){
   const s=$('seats');s.innerHTML='';
   P.forEach((p,i)=>{
     const d=document.createElement('div');
-    d.className='seat'+(phase==='bid'&&i===cur?' turn':'')+(p.lost?' lose':'');
+    d.className='seat'+(phase==='bid'&&i===cur?' turn':'')+(p.lost?' lose':'')+(p.win?' win':'');
     if(p.lives<=0&&!p.lost)d.style.opacity=.45;
     const show=!p.human||phase!=='bid';
-    const dr=DRINKS[p.card];
     d.innerHTML='<div class="nm">'+p.name+(p.cpu?' <span style="font-size:11px;opacity:.7">('+p.cpu.style+')</span>':'')+'</div>'+
       '<div class="lv">'+('💧'.repeat(Math.max(0,p.lives))||'—')+'</div>'+
-      (show?'<div class="gcard'+(p.human&&revealed?' flip':'')+'"><div class="em">'+dr[0]+'</div><div class="v">'+p.card+'</div><div class="dn">'+dr[1]+'</div></div>'
-           :'<div class="gcard hide"><div class="v">？</div><div class="dn">見えない</div></div>')+
-      '<div class="bub'+(p.say==='ダウト！'?' dt':'')+'">'+(p.say||'')+'</div>';
+      (show?cardHTML(p.card,p.human&&revealed?' flip':''):hiddenHTML('','見えない'))+
+      '<div class="bub'+(p.act?' '+p.act:'')+'">'+(p.say||'')+'</div>';
     s.appendChild(d);
   });
+  $('plate').innerHTML='<span>🍽 おつまみ皿</span>'+(phase==='bid'?hiddenHTML(' sm','伏せ札'):cardHTML(plate,' sm'+(revealed?' flip':'')));
   $('callbox').innerHTML=call>0?'いまのコール：合計<b>'+call+'</b>以上<span style="font-size:12px;opacity:.8">（'+P[caller].name+'）</span>':'まだコールなし';
-  const vis=P.slice(1).filter(p=>p.lives>0).reduce((a,p)=>a+p.card,0);
-  $('hint').textContent=$('showSum').checked?'見えているグラスの合計：'+vis+(phase==='bid'?'　＋ あなたのグラス（？）':''):'';
+  const seen=P.slice(1).filter(p=>p.lives>0).map(p=>p.card);
+  const vis=seen.filter(isNum).reduce((a,b)=>a+b,0);
+  let sp='';
+  if(seen.includes('C'))sp+='　🧊チェイサーあり';
+  if(seen.includes('X'))sp+='　🔁おかわりあり';
+  $('hint').textContent=$('showSum').checked?'見えているお酒の合計：'+vis+(phase==='bid'?'　＋ あなた（？）＋ おつまみ皿（？）':'')+sp:'';
 }
 function renderCtrl(){
   const c=$('ctrl');c.innerHTML='';
@@ -268,12 +355,16 @@ function renderCtrl(){
   const n=document.createElement('div');n.className='n';n.textContent=myBid;
   const pl=document.createElement('button');pl.textContent='＋';
   mn.onclick=()=>{if(myBid>call+1){myBid--;n.textContent=myBid;}};
-  pl.onclick=()=>{if(myBid<60){myBid++;n.textContent=myBid;}};
+  pl.onclick=()=>{if(myBid<80){myBid++;n.textContent=myBid;}};
   st.append(mn,n,pl);
   const cb=document.createElement('button');cb.className='btn';cb.id='callBtn';cb.textContent='コール';
   cb.onclick=()=>{doBid(0,myBid);};
   c.append(st,cb);
-  if(call>0){const db=document.createElement('button');db.className='btn red';db.id='doubtBtn';db.textContent='ダウト！';db.onclick=()=>doDoubt(0);c.append(db);}
+  if(call>0){
+    const db=document.createElement('button');db.className='btn red';db.id='doubtBtn';db.textContent='ダウト！';db.onclick=()=>resolve(0,'doubt');
+    const eb=document.createElement('button');eb.className='btn green';eb.id='exactBtn';eb.textContent='🥂 ピッタリ'+call+'！';eb.onclick=()=>resolve(0,'exact');
+    c.append(db,eb);
+  }
 }
 function showResult(){
   $('game').style.display='none';
