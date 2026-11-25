@@ -103,6 +103,7 @@ button{font-family:inherit;font-weight:700;cursor:pointer;border:none;border-rad
 .card.wild{background:linear-gradient(160deg,#fff6c8,#ffe08a)}
 .card.wild .marks .mk{width:84px;background:linear-gradient(90deg,var(--shio),var(--abura),var(--sappari),var(--amai),var(--umi))}
 .card.wild.expired{filter:grayscale(.7) brightness(.85)}
+.card.sober{filter:grayscale(.85) brightness(.8);opacity:.75}
 .card.empty{background:rgba(0,0,0,.2);box-shadow:none;border:2px dashed rgba(247,239,221,.25);color:rgba(247,239,221,.4);
   justify-content:center;font-weight:700;font-size:13px}
 .card.big{transform:scale(1.08)}
@@ -340,10 +341,10 @@ body.practicemode .explain{display:block}
     <ul>
       <li><b>鉄板ペア</b>：味マークが2つとも同じなら、もう1枚捨てられる</li>
       <li><b>とりあえず生</b>：どのおつまみにも合う。ただし<b>おつまみが出てから2秒以内</b>（とりあえずタイム）しか出せない</li>
-      <li><b>お手つき</b>：合わないカードや、時間切れの生を出すと2枚引く</li>
+      <li><b>お手つき</b>：合わないカードや、時間切れの生を出すと2枚引く。さらに<b>酔いさまし</b>で、次のおつまみ（そのはしご酒も）はお休み</li>
       <li><b>すいませーん！</b>：出せるカードがないときは、次のおつまみを頼む</li>
       <li><b>はしご酒</b>：カンパイのあと2秒間は、<b>いま出たお酒</b>と味マークが合うお酒を誰でも続けて出せる（生は不可）</li>
-      <li><b>得点</b>：上がり +3、（3人以上なら）残り手札が一番少ない人 +1、はしご酒を一番多く決めた人 +1。合計点で総合優勝</li>
+      <li><b>得点</b>：上がり +3、（3人以上なら）残り手札が一番少ない人 +1、はしご酒を一番多く決めた人 +1、鉄板ペアを一番多く決めた人（鉄板王） +1。合計点で総合優勝</li>
     </ul>
     <div class="lbl">ラウンド数</div>
     <div class="opt" id="optRounds"><button data-v="1">1回</button><button data-v="3" class="on">3回</button><button data-v="5">5回</button></div>
@@ -474,6 +475,8 @@ function buildSnacks(){
 const phaseOpen = () => G && (G.phase==='snack' || G.phase==='chain');
 const namaOpen = () => G && G.phase==='snack' && (now()-G.flipT) < namaMs();
 const shareMark = (a,b) => a.marks.some(m=>b.marks.includes(m));
+// 酔いさまし：お手つきした人は、次のおつまみ（そのはしご酒も）では出せない
+const sober = pi => G && G.mode!=='practice' && G.soberRound[pi]===G.round;
 function canPlay(c){
   if(G.phase==='snack') return c.wild ? namaOpen() : shareMark(c,G.snack);
   if(G.phase==='chain') return !c.wild && shareMark(c,G.played);
@@ -540,12 +543,12 @@ function newGame(){
     players=PARTY_DEFS.slice(0,settings.pn).map(d=>({...d,cpu:false,hand:[]}));
   }
   if(!M.scores) M.scores=players.map(()=>0);
-  if(!M.stats) M.stats=players.map(()=>({chain:0,foul:0,win:0}));
+  if(!M.stats) M.stats=players.map(()=>({chain:0,foul:0,win:0,teppan:0}));
   document.body.classList.toggle('partymode', mode==='party');
   document.body.classList.toggle('practicemode', mode==='practice');
   G={mode,players,drawPile:buildDrinks(),discard:[],snackPile:buildSnacks(),usedSnacks:[],
      snack:null,played:null,litSnack:null,litDrink:null,phase:'closed',step:0,flipT:0,timers:[],discarding:-1,
-     kanpaiCount:players.map(()=>0),chainCount:players.map(()=>0),chainLen:0,round:0,over:false,startT:0,waitMs:0,
+     kanpaiCount:players.map(()=>0),chainCount:players.map(()=>0),teppanCount:players.map(()=>0),soberRound:players.map(()=>-1),chainLen:0,round:0,over:false,startT:0,waitMs:0,
      rts:players.map(()=>[]),happy:false,lastOrder:null,discardsLeft:0,afterDiscard:null};
   for(let r=0;r<6;r++) players.forEach(p=>p.hand.push(G.drawPile.pop()));
   players.forEach(sortHand);
@@ -607,6 +610,9 @@ function flipNext(){
   }
   renderTable(true); renderHands(); renderOpps();
   setMsg('合うお酒を出して「カンパイ！」'+(G.happy?'　🍻ハッピーアワー中':'')+(G.lastOrder!==null?`　🔔${G.lastOrder===0?'これが最後の一品':'閉店まであと'+G.lastOrder+'品'}`:''));
+  if(isParty()) G.players.forEach((p,i)=>{ if(sober(i)) zoneBadge(i,'😵 酔いさまし中…このおつまみはお休み',true); });
+  else if(sober(0)) setMsg('😵 酔いさまし中…このおつまみはお休み（次から出せます）');
+  else G.players.forEach((p,i)=>{ if(p.cpu && sober(i)) bubble(i,'😵 酔いさまし中…'); });
 
   if(isParty()){
     G.waitMs=PARTY_WAIT; G.startT=now();
@@ -615,7 +621,7 @@ function flipNext(){
   }
   const lv=LV[settings.lv];
   G.players.forEach((p,i)=>{
-    if(!p.cpu) return;
+    if(!p.cpu || sober(i)) return;
     const choice = cpuChoose(p);
     let d = rand(lv.min,lv.max)*p.speed*crowd();
     if(choice){
@@ -672,18 +678,24 @@ function penalty(pi,card){
   if(M.stats&&M.stats[pi]) M.stats[pi].foul++;
   sBad();
   draw(p,2);
+  G.soberRound[pi]=G.round+1;
   const why = G.phase==='chain'
     ? (card.wild ? 'はしご酒に生は出せません' : `${G.played.name}と味マークが合いません`)
     : (card.wild ? 'とりあえずタイム終了！' : '味マークが合いません');
-  if(p.cpu){ renderOpps(); const L=p.lines.goof; bubble(pi,`${L[Math.random()*L.length|0]}（+2）`); }
-  else if(isParty()){ renderZone(pi); zoneFx(pi,'bad'); zoneBadge(pi,`お手つき！ ${why}（+2枚）`,true); }
-  else { toast(`お手つき！ ${why}。2枚引きます`,true); renderHands(); $('hand').classList.add('shake'); setTimeout(()=>$('hand').classList.remove('shake'),400); }
+  if(p.cpu){ renderOpps(); const L=p.lines.goof; bubble(pi,`${L[Math.random()*L.length|0]}（+2・次はお休み）`); }
+  else if(isParty()){ renderZone(pi); zoneFx(pi,'bad'); zoneBadge(pi,`お手つき！ ${why}（+2枚・次のおつまみはお休み）`,true); }
+  else { toast(`お手つき！ ${why}。2枚引いて、次のおつまみはお休み`,true); renderHands(); $('hand').classList.add('shake'); setTimeout(()=>$('hand').classList.remove('shake'),400); }
 }
 
 function tryPlay(pi,card){
   if(!phaseOpen()) return;
   const p=G.players[pi];
   if(!p.hand.includes(card)) return;
+  if(sober(pi)){
+    if(p.cpu) return;
+    if(isParty()) zoneBadge(pi,'😵 酔いさまし中…このおつまみはお休み',true); else toast('😵 酔いさまし中…このおつまみはお休み',true);
+    return;
+  }
   if(!canPlay(card)){ penalty(pi,card); return; }
 
   const chain = G.phase==='chain';
@@ -697,6 +709,7 @@ function tryPlay(pi,card){
   else { G.chainLen=0; G.litSnack=lit; }
   G.litDrink=lit;
   G.kanpaiCount[pi]++;
+  if(isTp) G.teppanCount[pi]++;
   let rt=null, newBest=false;
   if(!p.cpu){
     rt=(now()-(chain?G.chainT:G.flipT))/1000;
@@ -750,7 +763,7 @@ function openChain(){
   if(isParty()) return;
   const lv=LV[settings.lv];
   G.players.forEach((p,i)=>{
-    if(!p.cpu) return;
+    if(!p.cpu || sober(i)) return;
     const c=p.hand.find(c=>!c.wild && shareMark(c,G.played));
     if(!c || Math.random()<lv.miss) return;
     const d=rand(lv.min,lv.max)*p.speed*lv.chain*crowd();
@@ -861,8 +874,13 @@ function endRound(w,reason){
     const tops=P.map((_,i)=>i).filter(i=>G.chainCount[i]===maxC);
     if(tops.length===1){ pts[tops[0]]+=1; why[tops[0]].push('はしご王+1'); }
   }
+  const maxT=Math.max(...G.teppanCount);
+  if(maxT>0){
+    const tops=P.map((_,i)=>i).filter(i=>G.teppanCount[i]===maxT);
+    if(tops.length===1){ pts[tops[0]]+=1; why[tops[0]].push('鉄板王+1'); }
+  }
   P.forEach((_,i)=>M.scores[i]+=pts[i]);
-  if(M.stats){ P.forEach((_,i)=>{ M.stats[i].chain+=G.chainCount[i]; }); M.stats[wi].win++; }
+  if(M.stats){ P.forEach((_,i)=>{ M.stats[i].chain+=G.chainCount[i]; M.stats[i].teppan+=G.teppanCount[i]; }); M.stats[wi].win++; }
   M.final = M.round>=M.total;
   const best=Math.max(...M.scores);
   const champs=P.filter((_,i)=>M.scores[i]===best);
@@ -890,8 +908,8 @@ function endRound(w,reason){
   }
   let statsTable='';
   if(M.final && M.stats){
-    const srows=order.map(i=>`<tr><td>${P[i].av} ${P[i].name}</td><td>${M.stats[i].chain}回</td><td>${M.stats[i].foul}回</td><td>${M.stats[i].win}回</td></tr>`).join('');
-    statsTable=`<p style="margin:12px 0 0"><b>📊 成績表</b>${M.total>1?`（全${M.total}ラウンド累計）`:''}</p><table class="score"><tr><th></th><th>はしご酒</th><th>お手つき</th><th>上がり</th></tr>${srows}</table>`;
+    const srows=order.map(i=>`<tr><td>${P[i].av} ${P[i].name}</td><td>${M.stats[i].chain}回</td><td>${M.stats[i].teppan}回</td><td>${M.stats[i].foul}回</td><td>${M.stats[i].win}回</td></tr>`).join('');
+    statsTable=`<p style="margin:12px 0 0"><b>📊 成績表</b>${M.total>1?`（全${M.total}ラウンド累計）`:''}</p><table class="score"><tr><th></th><th>はしご酒</th><th>鉄板</th><th>お手つき</th><th>上がり</th></tr>${srows}</table>`;
   }
   const body=`<p>${lead}</p><table class="score"><tr><th></th><th>残り</th><th>はしご</th><th>最速</th><th>得点</th>${M.total>1?'<th>合計</th>':''}</tr>${rows}</table>${stat}${statsTable}`;
   $('endTitle').textContent=title;
@@ -945,6 +963,7 @@ function renderOpps(){
 function cardExtra(p,c,showHint){
   let ex='';
   if(G.mode==='practice'){ if(G.pr && G.pr.showHint && prCan(c)) ex+=' hint'; return ex; }
+  if(sober(G.players.indexOf(p))) ex+=' sober';
   if(c.wild && G.snack && !namaOpen()) ex+=' expired';
   if(showHint && phaseOpen() && canPlay(c)) ex+=' hint';
   return ex;
