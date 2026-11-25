@@ -8,7 +8,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="試作ゲームラボ">
 <meta property="og:title" content="IPOラッシュ｜試作ゲームラボ">
-<meta property="og:description" content="新規上場（IPO）株を買うゲーム。公募価格で買って、成長度はヒミツ。毎ラウンドの相場イベントで株価が動く。5社上場したら全株を売って、いちばんお金を持っている人の勝ち。">
+<meta property="og:description" content="新規上場（IPO）株を申し込むゲーム。業績カード3枚のうち1枚だけこっそり見て、人気なら初値が上がる。赤字や上場廃止もある。5社上場したら決算、いちばんお金を持っている人の勝ち。">
 <meta property="og:url" content="https://game-lab-oj9t.onrender.com/ipo-rush/">
 <meta property="og:image" content="https://game-lab-oj9t.onrender.com/og.png">
 <meta property="og:image:width" content="1200">
@@ -122,6 +122,20 @@ button{font-family:inherit;cursor:pointer;border:none}
 table.stats{width:100%;border-collapse:collapse;font-size:13px}
 table.stats th,table.stats td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:right}
 table.stats th:first-child,table.stats td:first-child{text-align:left}
+
+.peek{display:flex;align-items:center;gap:10px;margin-top:10px;background:rgba(255,255,255,.14);border-radius:12px;padding:8px 10px}
+.pcard{min-width:52px;height:64px;border-radius:10px;background:#fff;color:#1d2b38;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.pcard.back{background:#90a4ae;color:#fff;font-size:20px}
+.pcard.neg{color:var(--down)}.pcard.pos{color:var(--up)}.pcard.skull{background:#263238;color:#fff}
+.peek .ptxt{font-size:13px;line-height:1.5}
+.alloc{margin-top:10px;background:rgba(255,255,255,.14);border-radius:12px;padding:8px 10px;font-size:13px;line-height:1.6}
+.alloc b{font-size:16px}
+.event .next{font-size:12px;color:var(--sub);margin-top:6px}
+.co-b.two{grid-template-columns:1fr 1fr}
+.mini{display:inline-block;min-width:26px;padding:1px 4px;border-radius:6px;background:#eceff1;font-weight:800;margin-right:2px;text-align:center}
+.mini.mine{background:var(--ink);color:#fff}
+.mini.neg{color:var(--down)}.mini.mine.neg{color:#9cc3ff}
+.mini.skull{background:#263238;color:#fff}
 </style>
 </head>
 <body>
@@ -130,18 +144,22 @@ table.stats th:first-child,table.stats td:first-child{text-align:left}
 <!-- START -->
 <section id="start">
   <div class="title">IPO<span>ラッシュ</span></div>
-  <p class="catch">上場したての株を買って、成長にかける。5社めくれたら決算！</p>
+  <p class="catch">上場したての株を申し込んで、業績を読む。5社めくれたら決算！</p>
   <div class="panel">
     <h3>あそびかた（全5ラウンド）</h3>
     <ol>
-      <li>毎ラウンド、新しい会社が1社上場する（公募価格つき）</li>
-      <li>その会社の株を <b>0〜3株</b> まで買う。持っている株は今の値段で売ることもできる</li>
-      <li>相場イベントが1枚めくれて、株価が動く（上場している株に効く）</li>
-      <li>CPUが買った株もぜんぶ見える。買いが集まっている会社を読もう</li>
-      <li>会社の成長度★はヒミツ。5ラウンド終わったら決算！</li>
+      <li>毎ラウンド、新しい会社が1社上場する（公募価格つき）。株の数には<b>枠</b>がある</li>
+      <li>会社には<b>業績カードが3枚</b>伏せてある。1人1枚だけ、こっそり見られる</li>
+      <li>全員いっせいに <b>0〜3株</b> 申し込む。申し込みが枠より多いと、1株ずつ順番に配る</li>
+      <li>申し込みの合計が人数より多いほど<b>初値が上がる</b>（少ないと公募割れ）。配られた株はすぐ売ってもいい（初値売り）</li>
+      <li>相場イベントは<b>先に表向き</b>。ラウンドの最後に起きて株価が動く</li>
     </ol>
-    <p style="font-size:13px;color:var(--sub);margin-top:8px">決算の株価 ＝ 公募価格 ＋ イベントの動き ＋ 成長度★×2。全株を売って、所持金がいちばん多い人の勝ち。</p>
-    <p style="font-size:13px;color:var(--sub);margin-top:4px">市場の一覧には、各社の「いま決算なら○コイン（成長度★ぶん除く）」も出ます。見えている分の見込みは分かるけれど、★は最後までヒミツです。</p>
+    <p style="font-size:13px;color:var(--sub);margin-top:8px">決算の株価 ＝ 今の株価 ＋ 業績カード3枚の合計。業績カードには赤字（−1・−2）もあり、<b>💀不祥事</b>が1枚でもあると上場廃止で株価0。全株を売って、所持金がいちばん多い人の勝ち。</p>
+    <p style="font-size:13px;color:var(--sub);margin-top:4px">CPUもそれぞれ別のカードを見て申し込みます。みんなが避けた会社は、何かあるかも…？</p>
+  </div>
+  <div class="panel">
+    <h3>業績カード（全23枚・ゲームで15枚使う）</h3>
+    <p style="font-size:13px;line-height:1.8">💀×1 ／ −2×3 ／ −1×3 ／ 0×3 ／ +1×4 ／ +2×4 ／ +3×3 ／ +4×2</p>
   </div>
   <div class="panel">
     <h3>対戦するCPUの人数</h3>
@@ -209,20 +227,23 @@ const EVENTS=[
   {emo:'📉',sector:'all',      delta:-3,text:'不況…全銘柄の株価−3'},
   {emo:'💸',sector:'all',      delta:-2,text:'金利上昇…全銘柄の株価−2'},
 ];
-const GROWTH=[1,1,2,2,2,3,3,3,3,4,4,5];
+// 業績カード（'X'=💀不祥事＝上場廃止）
+const PERF_DECK=['X',-2,-2,-2,-1,-1,-1,0,0,0,1,1,1,1,2,2,2,2,3,3,3,4,4];
+const PERF_AVG=PERF_DECK.filter(v=>v!=='X').reduce((a,b)=>a+b,0)/(PERF_DECK.length-1);
 const CPUS=[
-  {name:'ウサギ',icon:'🐰',ai:'rabbit',desc:'強気。新しい株にすぐ飛びつく'},
-  {name:'カメ',icon:'🐢',ai:'turtle',desc:'慎重。安い株だけ少し買う'},
-  {name:'キツネ',icon:'🦊',ai:'fox',desc:'へそまがり。安いと買い、上がったら売る'},
-  {name:'フクロウ',icon:'🦉',ai:'owl',desc:'計算派。値段を見て損得で動く'},
+  {name:'ウサギ',icon:'🐰',ai:'rabbit',desc:'強気。見たカードが悪くなければ3株申し込む'},
+  {name:'カメ',icon:'🐢',ai:'turtle',desc:'慎重。いいカードを見たときだけ買い、あやしい株は手放す'},
+  {name:'キツネ',icon:'🦊',ai:'fox',desc:'初値売り派。上場直後に値上がりしたらすぐ売る'},
+  {name:'フクロウ',icon:'🦉',ai:'owl',desc:'計算派。見たカードとイベントで損得を計算する'},
   {name:'ブタ',icon:'🐷',ai:'pig',desc:'ためこみ派。毎回1株ずつ集めて売らない'},
 ];
 const START=100, ROUNDS=5, MAXBUY=3;
 let numCpu=3, S=null;
 
 function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=a[i];a[i]=a[j];a[j]=t}return a}
-function pick(a){return a[Math.floor(Math.random()*a.length)]}
 function show(id){['start','game','end'].forEach(s=>document.getElementById(s).classList.toggle('hidden',s!==id))}
+function cardTxt(v){return v==='X'?'💀':(v>0?'+'+v:(v<0?'−'+(-v):'0'))}
+function cardCls(v){return v==='X'?'skull':(v>0?'pos':(v<0?'neg':''))}
 
 function renderSetup(){
   document.getElementById('cnt').innerHTML=[1,2,3].map(n=>`<button class="${n===numCpu?'on':''}" onclick="numCpu=${n};renderSetup()">${n}人</button>`).join('');
@@ -230,103 +251,146 @@ function renderSetup(){
 }
 
 function newGame(){
-  const companies=shuffle(COMPANIES).slice(0,ROUNDS).map(c=>Object.assign({},c,{growth:pick(GROWTH)}));
+  const deck=shuffle(PERF_DECK);
+  const companies=shuffle(COMPANIES).slice(0,ROUNDS).map((c,i)=>Object.assign({},c,{cards:deck.slice(i*3,i*3+3)}));
   const events=shuffle(EVENTS).slice(0,ROUNDS);
   const players=[{name:'あなた',icon:'🙂',me:true,coins:START,sh:{}}];
   CPUS.slice(0,numCpu).forEach(c=>players.push({name:c.name,icon:c.icon,ai:c.ai,coins:START,sh:{}}));
-  S={round:0,companies,events,listed:[],players,phase:'buy',myBuy:0,log:[`所持金${START}コインでスタート。5社の上場がはじまる！`]};
+  S={round:0,companies,events,listed:[],players,phase:'order',myOrder:0,log:[`所持金${START}コインでスタート。5社の上場がはじまる！`]};
   show('game');
   startRound();
 }
 
+function seats(){return S.players.length+2} // 枠＝人数＋2株
 function startRound(){
   S.round++;
-  S.phase='buy';
-  S.myBuy=0;
+  S.phase='order';
+  S.myOrder=0;
   const co=S.companies[S.round-1];
-  S.listed.push({co,adj:0});
-  addLog(`第${S.round}ラウンド：${co.emo}${co.name}（${co.sector}）が上場！公募価格${co.ipo}コイン`);
+  // だれがどのカードを見るか（3枚をなるべく別々に）
+  const n=S.players.length;
+  let idx=shuffle([0,1,2]);
+  while(idx.length<n)idx.push(Math.floor(Math.random()*3));
+  const seen={};for(let i=0;i<n;i++)seen[i]=idx[i];
+  S.listed.push({co,adj:0,open:null,seen,orders:null,alloc:null});
+  addLog(`第${S.round}ラウンド：${co.emo}${co.name}（${co.sector}）が上場！公募価格${co.ipo}コイン・枠${seats()}株`);
   render();
 }
 
-function curPrice(l){return l.co.ipo+l.adj}
-function finalPrice(l){return l.co.ipo+l.adj+l.co.growth*2}
-function assets(p,final){
+function isDelisted(l){return l.co.cards.includes('X')}
+function perfSum(l){return l.co.cards.filter(v=>v!=='X').reduce((a,b)=>a+b,0)}
+function curPrice(l){return Math.max(1,(l.open==null?l.co.ipo:l.open)+l.adj)}
+function finalPrice(l){return isDelisted(l)?0:Math.max(0,curPrice(l)+perfSum(l))}
+function seenVal(l,pi){return l.co.cards[l.seen[pi]]}
+function assets(p){
   let t=p.coins;
-  S.listed.forEach(l=>{const n=p.sh[l.co.id]||0;if(n)t+=n*(final?finalPrice(l):curPrice(l))});
+  S.listed.forEach(l=>{const n=p.sh[l.co.id]||0;if(n&&l.open!=null)t+=n*curPrice(l)});
   return t;
 }
-function addLog(s){S.log.unshift(s);if(S.log.length>12)S.log.length=12}
+function addLog(s){S.log.unshift(s);if(S.log.length>14)S.log.length=14}
+function evDelta(ev,l){return (ev.sector==='all'||ev.sector===l.co.sector)?ev.delta:0}
 
-function cpuBuyQty(p,co){
+// CPUの見込み：見たカード＋見ていない2枚の平均
+function cpuEst(l,pi){
+  const v=seenVal(l,pi);
+  if(v==='X')return -99;
+  return v+PERF_AVG*2;
+}
+function cpuOrderQty(p,pi,l){
+  const co=l.co, v=seenVal(l,pi);
   const afford=Math.floor(p.coins/co.ipo);
-  if(afford<=0)return 0;
+  if(afford<=0||v==='X')return 0;
+  const ev=S.events[S.round-1];
   let q=0;
-  if(p.ai==='rabbit')q=3;
-  else if(p.ai==='turtle')q=co.ipo<=10?(Math.random()<0.5?2:1):(Math.random()<0.2?1:0);
-  else if(p.ai==='fox')q=co.ipo<=11?2:(co.ipo>=14?0:1);
-  else if(p.ai==='owl')q=co.ipo<=9?3:(co.ipo<=12?2:(co.ipo<=14?1:0));
+  if(p.ai==='rabbit')q=v>=0?3:(v===-1?2:1);
+  else if(p.ai==='turtle')q=v>=2?(co.ipo<=11?2:1):(v===1&&co.ipo<=10?1:0);
+  else if(p.ai==='fox')q=v>=-1?2:0;
+  else if(p.ai==='owl'){const e=cpuEst(l,pi)+evDelta(ev,l);q=e>=5?3:(e>=3?2:(e>=1?1:0))}
   else if(p.ai==='pig')q=1;
   return Math.min(q,afford,MAXBUY);
 }
-function cpuSell(p){
-  // 上がった持ち株を1株だけ売る（キツネ・フクロウ）
-  if(p.ai!=='fox'&&p.ai!=='owl')return;
-  const th=p.ai==='fox'?4:5;
-  for(const l of S.listed){
-    const n=p.sh[l.co.id]||0;
-    if(n>0&&curPrice(l)>=l.co.ipo+th&&Math.random()<0.6){
-      p.sh[l.co.id]=n-1;p.coins+=curPrice(l);
-      addLog(`${p.icon}${p.name}が${l.co.emo}${l.co.name}を1株売った（${curPrice(l)}コイン）`);
-      return;
+function cpuTrade(p,pi){
+  if(p.ai==='rabbit'||p.ai==='pig')return;
+  const ev=S.events[S.round-1];
+  const cur=S.listed[S.listed.length-1];
+  S.listed.forEach(l=>{
+    let n=p.sh[l.co.id]||0;if(!n)return;
+    const known=l.seen[pi]!=null?seenVal(l,pi):null;
+    let sell=0;
+    if(known==='X')sell=n;
+    else if(p.ai==='fox'){
+      if(l===cur&&l.open>=l.co.ipo+2)sell=n;           // 初値売り
+      else if(curPrice(l)>=l.co.ipo+5)sell=1;
+    }else if(p.ai==='turtle'){
+      if(known!=null&&known<=0&&curPrice(l)>=l.co.ipo)sell=n;
+      else if(ev.delta<0&&ev.sector==='all'&&curPrice(l)>l.co.ipo)sell=1;
+    }else if(p.ai==='owl'){
+      const e=(known==null?PERF_AVG*3:cpuEst(l,pi))+evDelta(ev,l);
+      if(e<0)sell=n;else if(e<1)sell=1;
     }
-  }
+    sell=Math.min(sell,n);
+    if(sell>0){
+      p.sh[l.co.id]=n-sell;p.coins+=sell*curPrice(l);
+      addLog(`${p.icon}${p.name}が${l.co.emo}${l.co.name}を${sell}株売った（1株${curPrice(l)}コイン）`);
+    }
+  });
 }
 
-function setBuy(n){
-  if(S.phase!=='buy')return;
-  const me=S.players[0];
+function setOrder(n){
+  if(S.phase!=='order')return;
   const co=S.companies[S.round-1];
-  if(n*co.ipo>me.coins)return;
-  S.myBuy=n;
-  render();
+  if(n*co.ipo>S.players[0].coins)return;
+  S.myOrder=n;render();
 }
-function sellOne(id){
-  if(S.phase!=='buy')return;
+function sellMine(id,all){
+  if(S.phase!=='trade')return;
   const me=S.players[0];
   const l=S.listed.find(x=>x.co.id===id);
-  if(!l||!(me.sh[id]>0))return;
-  me.sh[id]--;
-  me.coins+=curPrice(l);
-  addLog(`あなたが${l.co.emo}${l.co.name}を1株売った（${curPrice(l)}コイン）`);
+  const n=me.sh[id]||0;
+  if(!l||l.open==null||n<=0)return;
+  const k=all?n:1;
+  me.sh[id]=n-k;me.coins+=k*curPrice(l);
+  addLog(`あなたが${l.co.emo}${l.co.name}を${k}株売った（1株${curPrice(l)}コイン）`);
   render();
 }
 
-function confirmBuy(){
-  if(S.phase!=='buy')return;
-  const me=S.players[0];
-  const co=S.companies[S.round-1];
-  const cost=S.myBuy*co.ipo;
-  if(cost>me.coins)return;
-  me.coins-=cost;
-  me.sh[co.id]=(me.sh[co.id]||0)+S.myBuy;
-  addLog(S.myBuy>0?`あなたが${co.emo}${co.name}を${S.myBuy}株買った（${cost}コイン）`:`あなたは${co.emo}${co.name}を見送った`);
-  // CPUの番
-  for(let i=1;i<S.players.length;i++){
-    const p=S.players[i];
-    cpuSell(p);
-    const q=cpuBuyQty(p,co);
-    if(q>0){const c=q*co.ipo;p.coins-=c;p.sh[co.id]=(p.sh[co.id]||0)+q;addLog(`${p.icon}${p.name}が${co.emo}${co.name}を${q}株買った`)}
-    else addLog(`${p.icon}${p.name}は${co.emo}${co.name}を見送った`);
+// 申し込み → 割り当て → 初値
+function confirmOrder(){
+  if(S.phase!=='order')return;
+  const l=S.listed[S.listed.length-1], co=l.co;
+  const n=S.players.length;
+  const orders=S.players.map((p,i)=>i===0?S.myOrder:cpuOrderQty(p,i,l));
+  const total=orders.reduce((a,b)=>a+b,0);
+  const K=seats();
+  const alloc=orders.map(()=>0);
+  if(total<=K)orders.forEach((o,i)=>alloc[i]=o);
+  else{
+    // スタートプレイヤーから1株ずつ順番に配る（スタートは毎ラウンド左へ）
+    let left=K,i=(S.round-1)%n;
+    while(left>0){if(alloc[i]<orders[i]){alloc[i]++;left--}i=(i+1)%n}
   }
-  // 相場イベント
+  S.players.forEach((p,i)=>{
+    if(alloc[i]>0){p.coins-=alloc[i]*co.ipo;p.sh[co.id]=(p.sh[co.id]||0)+alloc[i]}
+  });
+  l.orders=orders;l.alloc=alloc;
+  const d=total-n;
+  l.open=Math.max(1,co.ipo+d);
+  S.players.forEach((p,i)=>{
+    const o=orders[i],a=alloc[i];
+    addLog(o===0?`${p.icon}${p.name}は申し込まなかった`:`${p.icon}${p.name}：${o}株申し込み→${a}株もらえた`);
+  });
+  addLog(`申し込み合計${total}株（枠${K}株）。初値は${l.open}コイン${d>0?`（公募より+${l.open-co.ipo}）`:(d<0?`（公募割れ ${l.open-co.ipo}）`:'（公募と同じ）')}`);
+  S.phase='trade';
+  render();
+}
+
+function endTrade(){
+  if(S.phase!=='trade')return;
+  for(let i=1;i<S.players.length;i++)cpuTrade(S.players[i],i);
   const ev=S.events[S.round-1];
   let hit=0;
-  S.listed.forEach(l=>{
-    if(ev.sector==='all'||l.co.sector===ev.sector){l.adj+=ev.delta;hit++}
-  });
+  S.listed.forEach(l=>{const dd=evDelta(ev,l);if(dd){l.adj+=dd;hit++}});
   S.phase='event';
-  S.lastEvent=ev;
   addLog(`${ev.emo} ${ev.text}${hit===0?'（上場している株には影響なし）':''}`);
   render();
 }
@@ -338,10 +402,9 @@ function nextRound(){
 
 function settle(){
   S.phase='done';
-  const rows=S.listed.map(l=>{
+  S.listed.forEach(l=>{
     const fp=finalPrice(l);
     S.players.forEach(p=>{const n=p.sh[l.co.id]||0;if(n)p.coins+=n*fp});
-    return l;
   });
   const rank=S.players.map(p=>({p,tot:p.coins})).sort((a,b)=>b.tot-a.tot);
   const myRank=rank.findIndex(r=>r.p.me)+1;
@@ -349,76 +412,90 @@ function settle(){
   document.getElementById('endMsg').textContent=msg;
   document.getElementById('rank').innerHTML=rank.map((r,i)=>`<div class="rk ${r.p.me?'me':''}"><div class="no">${i+1}</div><div class="nm">${r.p.icon} ${r.p.name}</div><div class="v">${r.tot}<small style="font-size:12px">コイン</small></div></div>`).join('');
   const me=S.players[0];
-  document.getElementById('endStats').innerHTML='<h3>決算の内訳</h3><table class="stats"><tr><th>会社</th><th>公募</th><th>成長</th><th>最終価格</th><th>あなたの株</th></tr>'+
-    rows.map(l=>`<tr><td>${l.co.emo}${l.co.name}</td><td>${l.co.ipo}</td><td>${'★'.repeat(l.co.growth)}${'☆'.repeat(5-l.co.growth)}</td><td>${finalPrice(l)}</td><td>${me.sh[l.co.id]||0}株</td></tr>`).join('')+'</table>'+
-    `<p style="font-size:13px;color:var(--sub);margin-top:8px">最終価格 ＝ 公募価格 ＋ イベントの動き ＋ 成長度★×2</p>`;
+  document.getElementById('endStats').innerHTML='<h3>決算の内訳</h3><table class="stats"><tr><th>会社</th><th>公募→初値</th><th>業績カード</th><th>最終</th><th>あなた</th></tr>'+
+    S.listed.map(l=>{
+      const cards=l.co.cards.map((v,ci)=>`<span class="mini ${l.seen[0]===ci?'mine':''} ${cardCls(v)}">${cardTxt(v)}</span>`).join('');
+      return `<tr><td>${l.co.emo}${l.co.name}</td><td>${l.co.ipo}→${l.open}</td><td>${cards}</td><td>${isDelisted(l)?'廃止 0':finalPrice(l)}</td><td>${me.sh[l.co.id]||0}株</td></tr>`;
+    }).join('')+'</table>'+
+    `<p style="font-size:13px;color:var(--sub);margin-top:8px">最終価格 ＝ 今の株価 ＋ 業績カード3枚の合計（💀があれば上場廃止で0）。黒いカードがあなたの見たカード</p>`;
   show('end');
 }
 
 function render(){
   const me=S.players[0];
-  const co=S.companies[S.round-1];
-  const cur=S.listed[S.listed.length-1];
+  const l=S.listed[S.listed.length-1], co=l.co;
   document.getElementById('roundDots').innerHTML=Array.from({length:ROUNDS},(_,i)=>`<i class="${i<S.round-1?'on':i===S.round-1?'now':''}"></i>`).join('');
 
-  document.getElementById('ipoCard').innerHTML=
-    `<span class="tag">第${S.round}ラウンド・新規上場</span>`+
+  const mv=seenVal(l,0);
+  let ipo=`<span class="tag">第${S.round}ラウンド・新規上場</span>`+
     `<div class="name">${co.emo} ${co.name}</div>`+
-    `<div class="meta">業種：${co.sector} ／ 成長度：？？？（決算までヒミツ）</div>`+
+    `<div class="meta">業種：${co.sector} ／ 枠 ${seats()}株</div>`+
     `<div class="ipo-price">公募価格 <b>${co.ipo}</b> コイン／株</div>`+
-    `<div class="growth">買えるのは今だけ。0〜3株まで。</div>`;
-
-  const evEl=document.getElementById('eventCard');
-  if(S.phase==='event'&&S.lastEvent){
-    const ev=S.lastEvent;
-    evEl.innerHTML=`<span class="tag">相場イベント</span><div class="txt">${ev.emo} ${ev.text}</div>`;
+    `<div class="peek">`+co.cards.map((v,ci)=>ci===l.seen[0]?`<div class="pcard ${cardCls(v)}">${cardTxt(v)}</div>`:`<div class="pcard back">？</div>`).join('')+
+    `<div class="ptxt">業績カード3枚のうち<br>あなたが見た1枚${mv==='X'?'<br><b>💀不祥事！上場廃止になる</b>':''}</div></div>`;
+  if(l.orders){
+    const tot=l.orders.reduce((a,b)=>a+b,0);
+    ipo+=`<div class="alloc">申し込み合計 <b>${tot}</b>株（枠${seats()}株）→ 初値 <b>${l.open}</b>コイン<br>`+
+      S.players.map((p,i)=>`${p.icon}${l.orders[i]}→${l.alloc[i]}株`).join('　')+`</div>`;
   }else{
-    evEl.innerHTML=`<span class="tag">相場イベント</span><div class="wait">？？？（買ったあとにめくれる）</div>`;
+    ipo+=`<div class="growth" style="margin-top:8px">0〜3株を申し込む。CPUも同時に申し込みます</div>`;
   }
+  document.getElementById('ipoCard').innerHTML=ipo;
 
-  document.getElementById('market').innerHTML=S.listed.map(l=>{
-    const n=me.sh[l.co.id]||0;
-    const d=l.adj;
-    const cpuTot=S.players.slice(1).reduce((t,p)=>t+(p.sh[l.co.id]||0),0);
-    const cpuHolds=S.players.slice(1).filter(p=>p.sh[l.co.id]).map(p=>`${p.icon}×${p.sh[l.co.id]}`).join(' ');
-    return `<div class="co ${l.co.id===co.id?'is-new':''}">
-      <div class="co-n"><div class="co-name">${l.co.emo} ${l.co.name}</div><div class="own">あなたの持ち株 <b>${n}株</b>・公募${l.co.ipo}</div><div class="cpu-hold">CPUの持ち株 <b>${cpuTot}株</b>${cpuHolds?' '+cpuHolds:'（まだ買っていない）'}${cpuTot>=4?' <span class="hot">🔥買い集中</span>':''}</div></div>
-      <div class="co-s">${l.co.sector}<br>成長 ${S.phase==='done'?'★'.repeat(l.co.growth):'？'}</div>
-      <div class="co-p"><span class="price">${curPrice(l)}<small>コイン</small></span>${d?`<span class="delta ${d>0?'up':'down'}">${d>0?'▲+':'▼'}${d}</span>`:''}<span class="preview">いま決算なら ${curPrice(l)}コイン<br>（成長度★ぶん除く）</span></div>
-      <div class="co-b"><button class="sell" ${S.phase==='buy'&&n>0?'':'disabled'} onclick="sellOne('${l.co.id}')">売る（1株 ${curPrice(l)}コイン）</button></div>
+  const ev=S.events[S.round-1], nx=S.events[S.round];
+  const evEl=document.getElementById('eventCard');
+  evEl.innerHTML=`<span class="tag">${S.phase==='event'?'相場イベント発生！':'このラウンドの相場イベント（最後に起きる）'}</span><div class="txt">${ev.emo} ${ev.text}</div>`+
+    `<div class="next">${nx?`次のラウンドは ${S.phase==='event'?nx.emo+' '+nx.text:'？？？（このラウンドが終わるとめくれる）'}`:'このラウンドのあとは決算！'}</div>`;
+
+  document.getElementById('market').innerHTML=S.listed.map(x=>{
+    const n=me.sh[x.co.id]||0;
+    const d=x.adj;
+    const opened=x.open!=null;
+    const cpuTot=S.players.slice(1).reduce((t,p)=>t+(p.sh[x.co.id]||0),0);
+    const cpuHolds=S.players.slice(1).filter(p=>p.sh[x.co.id]).map(p=>`${p.icon}×${p.sh[x.co.id]}`).join(' ');
+    const v=seenVal(x,0);
+    const firstLine=opened?`公募${x.co.ipo}→初値${x.open}`:`公募${x.co.ipo}・申し込み前`;
+    const prev=!opened?'':(v==='X'?'見たカードは💀<br>決算で0になる':`見えている分で決算 ${Math.max(0,curPrice(x)+v)}コイン<br>（残り2枚はヒミツ）`);
+    const canSell=S.phase==='trade'&&n>0&&opened;
+    return `<div class="co ${x===l?'is-new':''}">
+      <div class="co-n"><div class="co-name">${x.co.emo} ${x.co.name}</div><div class="own">あなたの持ち株 <b>${n}株</b>・${firstLine}</div><div class="cpu-hold">CPUの持ち株 <b>${cpuTot}株</b>${cpuHolds?' '+cpuHolds:'（なし）'}${cpuTot>=4?' <span class="hot">🔥買い集中</span>':''}</div></div>
+      <div class="co-s">${x.co.sector}<br>見たカード <span class="mini ${cardCls(v)}">${cardTxt(v)}</span></div>
+      <div class="co-p">${opened?`<span class="price">${curPrice(x)}<small>コイン</small></span>${d?`<span class="delta ${d>0?'up':'down'}">${d>0?'▲+':'▼'}${d}</span>`:''}<span class="preview">${prev}</span>`:`<span class="price" style="color:var(--sub)">${x.co.ipo}<small>公募</small></span>`}</div>
+      <div class="co-b ${n>1?'two':''}"><button class="sell" ${canSell?'':'disabled'} onclick="sellMine('${x.co.id}',false)">1株売る（${curPrice(x)}）</button>${n>1?`<button class="sell" ${canSell?'':'disabled'} onclick="sellMine('${x.co.id}',true)">全部売る（${n*curPrice(x)}）</button>`:''}</div>
     </div>`;
   }).join('');
 
   document.getElementById('cashLine').innerHTML=`あなたの所持金 <b style="font-size:18px">${me.coins}</b>コイン <small>（持ち株の評価額 ${assets(me)-me.coins}コイン）</small>`;
 
   const qEl=document.getElementById('qty');
-  if(S.phase==='buy'){
+  if(S.phase==='order'){
     qEl.innerHTML=[0,1,2,3].map(n=>{
       const cost=n*co.ipo;
-      return `<button class="${n===S.myBuy?'on':''}" ${cost>me.coins?'disabled':''} onclick="setBuy(${n})">${n}株${n>0?`（${cost}）`:''}</button>`;
+      return `<button class="${n===S.myOrder?'on':''}" ${cost>me.coins?'disabled':''} onclick="setOrder(${n})">${n}株${n>0?`（${cost}）`:''}</button>`;
     }).join('');
-  }else{
-    qEl.innerHTML='';
-  }
+  }else qEl.innerHTML='';
 
   const ph=document.getElementById('phase'), btn=document.getElementById('mainBtn');
-  if(S.phase==='buy'){
-    ph.innerHTML=`${co.emo}${co.name}を何株買う？（公募価格 ${co.ipo}コイン／株）`;
-    btn.textContent=S.myBuy>0?`買う（${S.myBuy*co.ipo}コイン）→ 相場イベントへ`:'見送る → 相場イベントへ';
-    btn.disabled=false;
-    btn.onclick=confirmBuy;
+  btn.disabled=false;
+  if(S.phase==='order'){
+    ph.innerHTML=`${co.emo}${co.name}を何株申し込む？<br><small style="color:var(--sub)">枠より多いと全部はもらえないことも。払うのはもらえた分だけ</small>`;
+    btn.textContent=S.myOrder>0?`${S.myOrder}株申し込む → 初値が決まる`:'申し込まない → 初値が決まる';
+    btn.onclick=confirmOrder;
+  }else if(S.phase==='trade'){
+    ph.innerHTML=`売買タイム：持ち株を今の値段で売れます（初値売りもOK）<br><small style="color:var(--sub)">終わるとCPUも売って、相場イベントが起きる</small>`;
+    btn.textContent='売買おわり → 相場イベント';
+    btn.onclick=endTrade;
   }else if(S.phase==='event'){
-    ph.textContent='イベントで株価が動いた！次へ進もう';
+    ph.textContent='イベントで株価が動いた！';
     btn.textContent=S.round>=ROUNDS?'🏆 決算・結果発表':'次のラウンドへ ▶';
-    btn.disabled=false;
     btn.onclick=nextRound;
   }
 
   document.getElementById('players').innerHTML=S.players.map(p=>{
-    const hold=S.listed.filter(l=>p.sh[l.co.id]).map(l=>l.co.emo+'×'+p.sh[l.co.id]).join(' ')||'株なし';
+    const hold=S.listed.filter(x=>p.sh[x.co.id]).map(x=>x.co.emo+'×'+p.sh[x.co.id]).join(' ')||'株なし';
     return `<div class="pl ${p.me?'me':''}"><div class="nm"><span>${p.icon} ${p.name}</span></div><div class="tot">${assets(p)}<small style="font-size:11px">コイン分</small></div><div class="detail">現金${p.coins}・${hold}</div></div>`;
   }).join('');
-  document.getElementById('log').innerHTML=S.log.map(l=>`<div>${l}</div>`).join('');
+  document.getElementById('log').innerHTML=S.log.map(x=>`<div>${x}</div>`).join('');
 }
 renderSetup();
 </script>
