@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>みちつなぎ</title>
+<!-- 試作ゲームラボ: 下のOGタグ・アイコン・「試作ゲームラボに戻る」リンクは消さないこと（作業ルールはリポジトリ直下の CLAUDE.md） -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="試作ゲームラボ">
+<meta property="og:title" content="みちつなぎ｜試作ゲームラボ">
+<meta property="og:description" content="タイルを1枚ずつ置いて道をつなぐゲーム。道がふさがって完成したら、道のタイルの数がそのまま点数に。タイルがなくなるまで、CPUと道の取り合い。">
+<meta property="og:url" content="https://game-lab-oj9t.onrender.com/michi-tsunagi/">
+<meta property="og:image" content="https://game-lab-oj9t.onrender.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<style>
+:root{
+  --bg:#f4efe4; --ink:#2b2620; --mute:#7a6f60;
+  --you:#2f6fb5; --cpu1:#e0703a; --cpu2:#3c9a6a; --cpu3:#8a5fc0;
+  --start:#8a7a5f; --ok:#2f8f5b; --panel:#fff;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;background:var(--bg);color:var(--ink)}
+.wrap{max-width:520px;margin:0 auto;padding:12px 12px 40px}
+h1{font-size:20px;margin:4px 0 2px}
+.sub{font-size:12px;color:var(--mute);margin-bottom:10px}
+.back{font-size:13px}
+.back a{color:var(--you);text-decoration:none}
+.stats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.stat{background:#fff;border-radius:10px;padding:6px 10px;font-size:13px;box-shadow:0 1px 2px #0001}
+.stat b{font-size:16px}
+.stat.me{outline:2px solid var(--you)}
+.panel{background:var(--panel);border-radius:12px;padding:10px 12px;margin-bottom:10px;box-shadow:0 1px 3px #0001}
+.panel h2{font-size:14px;margin:0 0 6px;color:#5e4b33}
+.msg{font-size:14px;line-height:1.6;min-height:22px}
+.rules{font-size:13px;line-height:1.6;color:#4a4238}
+.rules li{margin-bottom:3px}
+.board{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;background:#cbb693;border-radius:12px;padding:6px}
+.cell{aspect-ratio:1;background:#e8dcc3;border-radius:8px;position:relative;cursor:default}
+.cell svg{position:absolute;inset:0;width:100%;height:100%}
+.cell.legal{background:#fff3c4;outline:2px dashed #d7a21e;outline-offset:-3px;cursor:pointer}
+.cell.legal:hover{outline-style:solid}
+.tilebox{display:flex;gap:12px;align-items:center}
+.hand{display:flex;gap:8px}
+.htile{width:64px;height:64px;flex:none;background:#fff;border:2px solid #d7c9a8;border-radius:10px;position:relative;cursor:pointer}
+.htile svg{position:absolute;inset:0;width:100%;height:100%}
+.htile.sel{border-color:var(--you);box-shadow:0 0 0 2px var(--you)}
+.htile.dim{opacity:.45}
+.btns{display:flex;flex-direction:column;gap:8px}
+button{font-size:15px;padding:10px 16px;border-radius:10px;border:1px solid #c9b896;background:#fff;color:var(--ink);cursor:pointer;font-family:inherit}
+button.primary{background:var(--you);color:#fff;border-color:var(--you)}
+button:disabled{opacity:.45;cursor:default}
+select{font-size:15px;padding:8px;border-radius:8px;border:1px solid #c9b896;background:#fff;font-family:inherit}
+.setup{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.result{font-size:16px;line-height:1.7}
+.result .win{font-size:20px;font-weight:bold;color:var(--ok)}
+.log{font-size:12px;color:var(--mute);line-height:1.6;max-height:96px;overflow:auto}
+.log div{border-bottom:1px dashed #e7dccb;padding:2px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="back"><a href="../">← 試作ゲームラボに戻る</a></p>
+  <h1>🛤️ みちつなぎ</h1>
+  <p class="sub">タイルを置いて道をつなぐ、5〜10分のタイル配置ゲーム（1人・CPU 1〜3人）</p>
+
+  <div class="panel" id="setupPanel">
+    <h2>はじめる</h2>
+    <div class="setup">
+      <label>CPUの人数
+        <select id="cpuCount">
+          <option value="1">1人</option>
+          <option value="2" selected>2人</option>
+          <option value="3">3人</option>
+        </select>
+      </label>
+      <button class="primary" id="startBtn">ゲームスタート</button>
+    </div>
+    <ul class="rules">
+      <li>手番では手札3枚から1枚を選び、回転させて空きマスに置きます。置いたら山札から1枚引いて補充。</li>
+      <li>置けるのは、となりのタイルと道がつながるマスだけ。道が合わない向きには置けません。</li>
+      <li>道の両端がふさがって完成したら、置いた人の得点に。点数はその道のタイルの数。</li>
+      <li>手札が1枚も置けないときは手札を入れ替えます。タイルがなくなったら終了。いちばん点数の多い人の勝ち。</li>
+      <li>実物版のイメージ：タイルカード24枚と得点チップだけのシンプルな作りです。</li>
+    </ul>
+  </div>
+
+  <div class="stats" id="scoreBoard" style="display:none"></div>
+
+  <div class="panel" id="playPanel" style="display:none">
+    <h2 id="turnLabel">あなたの番です</h2>
+    <div class="tilebox">
+      <div class="hand" id="hand"></div>
+      <div class="btns">
+        <button id="rotBtn">↻ 回転する</button>
+        <div style="font-size:13px;color:var(--mute)">手札をタップして選び、光るマスに置く<br>残りタイル：<b id="deckLeft">24</b>枚</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="board" id="board" style="display:none"></div>
+
+  <div class="panel" id="resultPanel" style="display:none">
+    <h2>結果</h2>
+    <div class="result" id="resultText"></div>
+    <p><button class="primary" id="againBtn">もう一度遊ぶ</button></p>
+  </div>
+
+  <div class="panel">
+    <h2>メッセージ</h2>
+    <div class="msg" id="msg">スタートボタンを押してください。</div>
+    <div class="log" id="log"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+// 方向ビット: 北1 東2 南4 西8
+var N=1,E=2,S=4,W=8;
+var DIRS=[{bit:N,dx:0,dy:-1,opp:S},{bit:E,dx:1,dy:0,opp:W},{bit:S,dx:0,dy:1,opp:N},{bit:W,dx:-1,dy:0,opp:E}];
+var SIZE=5;
+var COLORS={you:"#2f6fb5",cpu1:"#e0703a",cpu2:"#3c9a6a",cpu3:"#8a5fc0",start:"#8a7a5f"};
+var NAMES={you:"あなた",cpu1:"CPU 1",cpu2:"CPU 2",cpu3:"CPU 3"};
+
+var board, deck, players, turn, hand, cur, scores, placed, over, busy;
+
+function rotMask(mask,r){
+  for(var i=0;i<r;i++){
+    var m=0;
+    if(mask&N)m|=E; if(mask&E)m|=S; if(mask&S)m|=W; if(mask&W)m|=N;
+    mask=m;
+  }
+  return mask;
+}
+function has(mask,rot,bit){ return (rotMask(mask,rot)&bit)!==0; }
+function shuffle(a){
+  for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}
+  return a;
+}
+function idx(x,y){ return y*SIZE+x; }
+function inB(x,y){ return x>=0&&x<SIZE&&y>=0&&y<SIZE; }
+
+function tileSVG(mask,color){
+  var cx=30,cy=30,lines="";
+  DIRS.forEach(function(d){
+    if(mask&d.bit){
+      var x2=cx, y2=cy;
+      if(d.bit===N)y2=0; if(d.bit===S)y2=60; if(d.bit===E)x2=60; if(d.bit===W)x2=0;
+      lines+='<line x1="'+cx+'" y1="'+cy+'" x2="'+x2+'" y2="'+y2+'" stroke="#fff8e6" stroke-width="9" stroke-linecap="round"/>';
+    }
+  });
+  return '<svg viewBox="0 0 60 60"><rect width="60" height="60" rx="8" fill="'+color+'"/>'+lines+'<circle cx="30" cy="30" r="5" fill="#fff8e6"/></svg>';
+}
+
+function el(id){ return document.getElementById(id); }
+function say(t){ el("msg").textContent=t; }
+function log(t){
+  var d=document.createElement("div"); d.textContent=t;
+  var l=el("log"); l.prepend(d);
+  while(l.children.length>12) l.removeChild(l.lastChild);
+}
+
+function newGame(){
+  var n=parseInt(el("cpuCount").value,10);
+  players=["you"]; for(var i=1;i<=n;i++) players.push("cpu"+i);
+  scores={}; players.forEach(function(p){scores[p]=0;});
+  board=new Array(SIZE*SIZE).fill(null);
+  board[idx(2,2)]={mask:15,rot:0,owner:"start",scored:false};
+  deck=shuffle([5,5,5,10,10, 3,3,6,6,12,12,9,9, 7,7,11,13,14, 15,15, 1,2,4,8]);
+  hand=[]; cur=null;
+  turn=0; placed=0; over=false; busy=false;
+  el("setupPanel").style.display="none";
+  el("resultPanel").style.display="none";
+  el("scoreBoard").style.display="flex";
+  el("playPanel").style.display="block";
+  el("board").style.display="grid";
+  el("log").innerHTML="";
+  renderAll();
+  say("あなたの番です。手札からタイルを選んで、光るマスに置いてください。");
+  refillHand();
+}
+
+// 手札を3枚まで補充する。置けるタイルが1枚もなければ入れ替える。
+// タイルが尽きたらゲーム終了。
+function refillHand(){
+  var guard=0;
+  while(guard++<10){
+    while(hand.length<3&&deck.length>0) hand.push({mask:deck.pop(),rot:0});
+    if(hand.length===0){ endGame(); return; }
+    var any=hand.some(function(t){
+      for(var r=0;r<4;r++) if(legalCells(t.mask,r).length>0) return true;
+      return false;
+    });
+    if(any){
+      if(!cur||hand.indexOf(cur)<0) cur=hand[0];
+      renderHand(); renderBoard();
+      return;
+    }
+    log("置けるタイルがなく、手札を入れ替えました。");
+    hand=[];
+  }
+  endGame();
+}
+
+function legalCells(mask,rot){
+  var out=[];
+  for(var y=0;y<SIZE;y++)for(var x=0;x<SIZE;x++){
+    if(board[idx(x,y)]) continue;
+    var connected=false, ok=true;
+    DIRS.forEach(function(d){
+      var nx=x+d.dx, ny=y+d.dy;
+      if(!inB(nx,ny)) return;
+      var nb=board[idx(nx,ny)];
+      if(!nb) return;
+      var mine=has(mask,rot,d.bit), theirs=has(nb.mask,nb.rot,d.opp);
+      if(mine!==theirs){ ok=false; return; }
+      if(mine&&theirs) connected=true;
+    });
+    if(ok&&connected) out.push({x:x,y:y});
+  }
+  return out;
+}
+
+function renderAll(){
+  renderScores();
+  renderBoard();
+  el("deckLeft").textContent=deck.length;
+}
+function renderScores(){
+  var h="";
+  players.forEach(function(p,i){
+    h+='<div class="stat'+(i===turn&&!over?" me":"")+'">'+NAMES[p]+'：<b>'+scores[p]+'</b>点</div>';
+  });
+  el("scoreBoard").innerHTML=h;
+}
+function renderBoard(){
+  var b=el("board"); b.innerHTML="";
+  var legals=(turn===0&&!over&&cur)?legalCells(cur.mask,cur.rot):[];
+  var legalSet={};
+  legals.forEach(function(c){legalSet[idx(c.x,c.y)]=true;});
+  for(var y=0;y<SIZE;y++)for(var x=0;x<SIZE;x++){
+    var cell=document.createElement("div");
+    cell.className="cell"+(legalSet[idx(x,y)]?" legal":"");
+    var t=board[idx(x,y)];
+    if(t) cell.innerHTML=tileSVG(rotMask(t.mask,t.rot),COLORS[t.owner]);
+    (function(cx,cy){
+      cell.addEventListener("click",function(){ onCell(cx,cy); });
+    })(x,y);
+    b.appendChild(cell);
+  }
+}
+function renderHand(){
+  var h=el("hand"); h.innerHTML="";
+  hand.forEach(function(t){
+    var d=document.createElement("div");
+    var placeable=false;
+    for(var r=0;r<4;r++) if(legalCells(t.mask,r).length>0){ placeable=true; break; }
+    d.className="htile"+(t===cur?" sel":"")+(placeable?"":" dim");
+    d.innerHTML=tileSVG(rotMask(t.mask,t.rot),COLORS[players[turn]]);
+    d.addEventListener("click",function(){
+      if(turn!==0||over) return;
+      cur=t; renderHand(); renderBoard();
+    });
+    h.appendChild(d);
+  });
+  el("deckLeft").textContent=deck.length;
+}
+
+// 道の連結成分を調べ、閉じた道があれば点数化する。得た点数を返す。
+function scoreClosedRoads(){
+  var seen=new Array(SIZE*SIZE).fill(false), gained=0;
+  for(var i=0;i<SIZE*SIZE;i++){
+    if(!board[i]||seen[i]) continue;
+    var comp=[], stack=[i]; seen[i]=true;
+    while(stack.length){
+      var c=stack.pop(); comp.push(c);
+      var cx=c%SIZE, cy=Math.floor(c/SIZE), t=board[c];
+      DIRS.forEach(function(d){
+        if(!has(t.mask,t.rot,d.bit)) return;
+        var nx=cx+d.dx, ny=cy+d.dy;
+        if(!inB(nx,ny)) return;
+        var nb=board[idx(nx,ny)];
+        if(nb&&has(nb.mask,nb.rot,d.opp)&&!seen[idx(nx,ny)]){ seen[idx(nx,ny)]=true; stack.push(idx(nx,ny)); }
+      });
+    }
+    var open=false, already=true;
+    comp.forEach(function(c){
+      var cx=c%SIZE, cy=Math.floor(c/SIZE), t=board[c];
+      if(!t.scored) already=false;
+      DIRS.forEach(function(d){
+        if(!has(t.mask,t.rot,d.bit)) return;
+        var nx=cx+d.dx, ny=cy+d.dy;
+        if(inB(nx,ny)&&!board[idx(nx,ny)]) open=true;
+      });
+    });
+    if(!open&&!already){
+      comp.forEach(function(c){ board[c].scored=true; });
+      gained+=comp.length;
+    }
+  }
+  return gained;
+}
+
+function placeTile(x,y,who,tile){
+  board[idx(x,y)]={mask:tile.mask,rot:tile.rot,owner:who,scored:false};
+  placed++;
+  var g=scoreClosedRoads();
+  if(g>0){ scores[who]+=g; }
+  return g;
+}
+
+function onCell(x,y){
+  if(over||busy||turn!==0||!cur) return;
+  var ok=legalCells(cur.mask,cur.rot).some(function(c){return c.x===x&&c.y===y;});
+  if(!ok) return;
+  var g=placeTile(x,y,"you",cur);
+  hand.splice(hand.indexOf(cur),1);
+  cur=null;
+  log("あなたはタイルを置きました。"+(g>0?"道が完成して +"+g+"点！":""));
+  say(g>0?"道が完成！ +"+g+"点です。":"タイルを置きました。");
+  afterMove();
+}
+
+function afterMove(){
+  renderAll();
+  if(placed>=SIZE*SIZE-1){ endGame(); return; }
+  turn=(turn+1)%players.length;
+  renderScores();
+  if(turn===0){
+    el("turnLabel").textContent="あなたの番です";
+    refillHand();
+    if(!over){ say("あなたの番です。手札からタイルを選んで、光るマスに置いてください。"); }
+  }else{
+    el("turnLabel").textContent=NAMES[players[turn]]+"の番です…";
+    busy=true;
+    setTimeout(cpuTurn,650);
+  }
+}
+
+function cpuTurn(){
+  if(over) return;
+  var who=players[turn];
+  // 3枚引いて、いちばん点が取れる置き方を選ぶ。残りは山札に戻す。
+  var cHand=[];
+  while(cHand.length<3&&deck.length>0) cHand.push({mask:deck.pop(),rot:0});
+  if(cHand.length===0){ endGame(); busy=false; return; }
+  var best=null, bestGain=-1;
+  cHand.forEach(function(tile){
+    for(var rot=0;rot<4;rot++){
+      legalCells(tile.mask,rot).forEach(function(c){
+        var save=board.map(function(t){return t?{mask:t.mask,rot:t.rot,owner:t.owner,scored:t.scored}:null;});
+        board[idx(c.x,c.y)]={mask:tile.mask,rot:rot,owner:who,scored:false};
+        var g=scoreClosedRoads();
+        board=save;
+        if(g>bestGain||(g===bestGain&&Math.random()<0.5)){ bestGain=g; best={tile:tile,rot:rot,x:c.x,y:c.y}; }
+      });
+    }
+  });
+  // 使わなかったタイルは山札に戻す
+  cHand.forEach(function(t){ if(!best||t!==best.tile) deck.push(t.mask); });
+  shuffle(deck);
+  if(!best){
+    log(NAMES[who]+"は置ける場所がなく、手札を入れ替えました。");
+    busy=false;
+    afterMove();
+    return;
+  }
+  var tile=best.tile; tile.rot=best.rot;
+  var g=placeTile(best.x,best.y,who,tile);
+  log(NAMES[who]+"はタイルを置きました。"+(g>0?"道が完成して +"+g+"点！":""));
+  busy=false;
+  afterMove();
+}
+
+function endGame(){
+  if(over) return;
+  over=true; busy=false;
+  el("playPanel").style.display="none";
+  var order=players.slice().sort(function(a,b){return scores[b]-scores[a];});
+  var top=scores[order[0]];
+  var h="";
+  order.forEach(function(p,i){
+    h+=(i+1)+"位："+NAMES[p]+" "+scores[p]+"点"+(scores[p]===top?" 👑":"")+"<br>";
+  });
+  el("resultText").innerHTML=h+(order[0]==="you"?'<div class="win">あなたの勝ちです！🎉</div>':'<div>'+NAMES[order[0]]+'の勝ちです。また挑戦してみてください。</div>');
+  el("resultPanel").style.display="block";
+  say("ゲーム終了！ "+NAMES[order[0]]+"が "+top+"点で勝ちました。");
+  log("ゲーム終了。勝者は"+NAMES[order[0]]+"（"+top+"点）でした。");
+  renderAll();
+}
+
+el("startBtn").addEventListener("click",newGame);
+el("againBtn").addEventListener("click",function(){
+  el("setupPanel").style.display="block";
+  el("resultPanel").style.display="none";
+  el("scoreBoard").style.display="none";
+  el("playPanel").style.display="none";
+  el("board").style.display="none";
+  say("スタートボタンを押してください。");
+});
+el("rotBtn").addEventListener("click",function(){
+  if(!cur||turn!==0||over) return;
+  cur.rot=(cur.rot+1)%4;
+  renderHand(); renderBoard();
+});
+</script>
+</body>
+</html>

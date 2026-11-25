@@ -18,7 +18,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="description" content="試作ゲームを、ブラウザですぐ遊べる。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#14121c;--panel:#1f1c2b;--line:#2f2b40;--text:#f2eff8;--dim:#9a94ad;--accent:#4f8cff}
 *{box-sizing:border-box}
@@ -82,26 +82,6 @@ html{scroll-behavior:smooth}
 .service-links .svc-domain{display:block;color:var(--dim);font-size:12px}
 .service-links .svc-name{display:block;font-size:14px;font-weight:800;margin-top:1px}
 .service-links small{display:block;color:var(--dim);font-size:12px;font-weight:500;margin-top:2px}
-
-/* ===== リニューアル：フラスコの液体の色（青・紫・オレンジ）と太い見出し ===== */
-:root{--display:"Dela Gothic One","M PLUS Rounded 1c",sans-serif;--liquid:linear-gradient(90deg,#4f8cff,#a06bff 55%,#ff8a3d)}
-html{background:var(--bg)}
-body{background:
-  radial-gradient(55% 32% at 92% 0%,rgba(160,107,255,.28),transparent 70%),
-  radial-gradient(45% 26% at 0% 4%,rgba(79,140,255,.22),transparent 70%),
-  radial-gradient(40% 24% at 60% 18%,rgba(255,138,61,.10),transparent 70%),
-  linear-gradient(180deg,#231f36 0,var(--bg) 520px) var(--bg)}
-header{position:relative;padding-bottom:22px;margin-bottom:22px}
-header::after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;border-radius:6px;background:var(--liquid)}
-h1{font-family:var(--display);font-weight:400;font-size:clamp(32px,8.5vw,48px);letter-spacing:.02em;line-height:1.15;gap:14px}
-.logo{width:clamp(48px,12vw,64px);height:clamp(48px,12vw,64px);border-radius:14px;box-shadow:0 8px 22px rgba(160,107,255,.35)}
-.lead{font-size:15px;color:#c9c3da;margin-top:12px}
-h2.cat,.theme h2,.service-links h2{font-family:var(--display);font-weight:400;font-size:19px;letter-spacing:.02em}
-h2.cat{border-bottom:0;padding-bottom:0;margin-bottom:12px}
-.filters button.on{background:var(--liquid);border-color:transparent;color:#fff}
-.game{background:linear-gradient(150deg,rgba(255,255,255,.045),rgba(255,255,255,0) 60%),var(--panel)}
-.icon{box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 4px 12px rgba(0,0,0,.25)}
-.jump-services{background:rgba(255,255,255,.04)}
 </style>
 </head>
 <body>
@@ -141,6 +121,11 @@ h2.cat{border-bottom:0;padding-bottom:0;margin-bottom:12px}
 <script>
 // ゲームを増やすときはここに1件追加する
 const GAMES=[
+  {
+    id:'michi-tsunagi', name:'みちつなぎ', icon:'🛤️', color:'#2e7d6b',
+    desc:'タイルを1枚ずつ置いて道をつなぐ。手札3枚から選んで、となりの道とつなげて置く。道がふさがって完成したら、その道のタイルの数が点数に。タイルがなくなるまでCPUと道の取り合い。',
+    players:'1人（CPU 1〜3人）', time:'5〜10分', genre:'ボドゲ', added:'2026-11-25', version:'0.1', updated:'2026-11-25', isNew:true
+  },
   {
     id:'horoyoi-call', name:'ほろよいコール', icon:'🥂', color:'#5a418f',
     desc:'グラスカードを1枚ずつおでこに当てて、自分のだけ見えない。みんなのグラスの「ほろよい度」の合計を「○以上！」と順番に上げてコールし、怪しいと思ったら「ダウト！」。外した人はお冷を1杯失う。だれかのお冷がなくなったら終了、残りが一番多い人の勝ち。',
@@ -278,6 +263,7 @@ const GAMES=[
 ];
 // 最近の更新（新しい順）。ゲームを更新したら先頭に1件足し、GAMES の version / updated も上げる
 const UPDATES=[
+  {date:'2026-11-25', id:'michi-tsunagi', version:'0.1', text:'新しく登場（ボドゲのゲーム・タイルを置いて道をつなぎ、完成した道の長さが点数に）'},
   {date:'2026-11-25', id:'ipo-rush',       version:'0.3', text:'各社に「いま決算なら ○コイン（成長度★ぶん除く）」の決算プレビューを追加。★は最後までヒミツのまま'},
   {date:'2026-11-25', id:'seeno-doubutsu', version:'0.3', text:'「出したどうぶつ」一覧を追加。全員の使用済みと残りがいつでも見えるように（進行中の回の選択は出ません）'},
   {date:'2026-11-25', id:'kanpai',         version:'0.8', text:'最終結果に「📊成績表」を追加。はしご酒・お手つき・上がりの回数を全員分ふりかえれるように'},
