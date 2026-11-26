@@ -8,13 +8,13 @@
 
 ## 作業場所・ブランチ
 
-- リポジトリ：`bearknuckle/boardgame-tutorial`
-- 作業ブランチ：`lab`
+- リポジトリ：`bearknuckle/shisaku-game-lab`（以前は boardgame-tutorial の lab ブランチ）
+- 作業ブランチ：`main`
 - 調査仕様書：`docs/animal-baseball-rule-research.md`
 - 作業ルール：リポジトリ直下の `CLAUDE.md`
 - 公開サイト：`https://game-lab-oj9t.onrender.com/`
 
-必ず最初に `CLAUDE.md` と調査仕様書を読み、`git fetch origin lab` で最新状態を取得すること。
+必ず最初に `CLAUDE.md` と調査仕様書を読み、`git fetch origin main` で最新状態を取得すること。
 
 ## 絶対に守ること
 

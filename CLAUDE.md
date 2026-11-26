@@ -1,24 +1,24 @@
-# 試作ゲームラボ 作業ルール（lab ブランチ）
+# 試作ゲームラボ 作業ルール
 
-このブランチは「試作ゲームラボ」（https://game-lab-oj9t.onrender.com）の置き場。
+このリポジトリ（`bearknuckle/shisaku-game-lab`）は「試作ゲームラボ」（https://game-lab-oj9t.onrender.com）の置き場。
 複数の会話から同時に更新されるので、**他の人の変更を消さない**ことを最優先にする。
 
 ## 構成
+- 2026-11-26 に `bearknuckle/boardgame-tutorial` の `lab` ブランチから、変更履歴ごと移した。boardgame-tutorial の `lab` ブランチは古いコピーなので、**そちらには push しない**
 - `lab/` … Render の静的サイト `game-lab` が公開するフォルダ。push すると自動で反映される
   - `lab/index.html` … ホーム画面。ゲーム一覧は `GAMES`、カテゴリは `CATS`
   - `lab/<ゲームID>/index.html` … 各ゲーム（1ファイル完結）
   - `lab/icon.svg` / `lab/apple-touch-icon.png` / `lab/og.png` … アイコンとリンクプレビュー画像
-- `lab-api/` … 遊んだ回数カウンター（Render の Web サービス `game-lab-api`）。lab ブランチへの push で再デプロイされる
+- `lab-api/` … 遊んだ回数カウンター（Render の Web サービス `game-lab-api`）。main への push で再デプロイされる
 - `tools/make_og.py` … `lab/og.png` を作り直すスクリプト
-- `main` ブランチは別プロジェクト（ニムト男爵）。**main には push しない**
 
 ## 編集する前に必ず
-1. `git fetch origin lab` して、最新の `origin/lab` の上で作業する
+1. `git fetch origin main` して、最新の `origin/main` の上で作業する
 2. 古いコピーや会話の中に残っているファイルの中身で、ファイルを丸ごと上書きしない
    - 丸ごと書き直すときは、必ず最新のファイルを読んでから、下の「消してはいけないもの」を残す
-3. push が拒否されたら `git fetch` → `git rebase origin/lab` で取り込み直す。**force push はしない**
+3. push が拒否されたら `git fetch` → `git rebase origin/main` で取り込み直す。**force push はしない**
 4. **ホーム（`lab/index.html`）は丸ごと書き直さない。** 最新のファイルの必要な箇所だけを部分的に書き換える（ゲームの追加なら `GAMES` と `UPDATES` に1件ずつ足すだけ）。見た目・今日の新作の枠・カテゴリの固定・関連コンテンツなど、他の会話の変更が入っている
-5. コミット前に `git diff origin/lab -- lab/index.html` を見て、自分が変えたつもりのない行が消えていないか確かめる。消えていたら最新の `origin/lab` からやり直す
+5. コミット前に `git diff origin/main -- lab/index.html` を見て、自分が変えたつもりのない行が消えていないか確かめる。消えていたら最新の `origin/main` からやり直す
 
 ## 消してはいけないもの（各ゲームの index.html）
 - `<!-- 試作ゲームラボ: ... -->` のコメントと、その下の OG タグ（`og:title` `og:image` など）

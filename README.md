@@ -1,61 +1,25 @@
-# Boardgame Tutorial
+# 試作ゲームラボ
 
-ボードゲームのルールを、順番に学びながら理解できるブラウザチュートリアルのプロジェクトです。
+試作ゲームを、ブラウザですぐ遊べるサイトです。
 
-## 現在のゲーム
-
-- **ニムト男爵**：ルールチュートリアル・CPU対戦
-- **アクワイア**：基本ルール解説・理解度チェック
-- **カタン**：基本セット（3〜4人用）のルール解説・理解度チェック
-
-## 方針
-
-- スマートフォンで遊びやすいレスポンシブUI
-- トップ画面のプルダウンからゲームを選択
-- ゲームごとに独立したHTMLで管理
-- ルールを学ぶチュートリアルを順次追加
+- 公開サイト：https://game-lab-oj9t.onrender.com/
+- カテゴリ：株・音楽・お酒・こども・ボドゲ のゲーム
 
 ## 構成
 
 ```text
-boardgame-tutorial/
-├── README.md
-├── app.py
-└── baron-nimmt/
-    ├── home.html
-    ├── index.html
-    ├── draft.html
-    ├── cpu.html
-    ├── acquire.html
-    └── catan.html
+shisaku-game-lab/
+├── lab/            # 公開されるサイト（Render の静的サイト game-lab）
+│   ├── index.html  # ホーム画面（ゲーム一覧 GAMES・カテゴリ CATS・更新情報 UPDATES）
+│   └── <ゲームID>/index.html  # 各ゲーム（1ファイル完結）
+├── lab-api/        # 遊んだ回数カウンター（Render の Web サービス game-lab-api）
+├── tools/          # リンクプレビュー画像などを作るスクリプト
+└── docs/           # 資料
 ```
 
-## URL
+作業のルールは `CLAUDE.md` にまとめています。
 
-- トップ：`/`
-- ニムト男爵：`/baron-nimmt`
-- アクワイア：`/acquire`
-- カタン：`/catan`
+## これまでの経緯
 
-## 公開期間の制御
-
-現在は期間制限を無効にし、通常アクセスで閲覧できる設定です。
-
-期間制限を再度有効にする場合は、Renderの環境変数に `PUBLIC_WINDOW_ENABLED=true` を設定し、`PUBLIC_START_JST` と `PUBLIC_END_JST` に日本時間の開始・終了日時を設定します。
-
-## テスト
-
-```bash
-pip install -r requirements-dev.txt
-pytest -q
-```
-
-ブラウザで2人対戦を操作するテスト（`tests/e2e`）は Playwright を使います。Playwright が入っていない環境では自動でスキップされます。
-
-```bash
-pip install -r requirements-e2e.txt
-python -m playwright install chromium
-pytest -q tests/e2e
-```
-
-Pull Request と `main` への push のたびに、GitHub Actions（`.github/workflows/test.yml`）で同じテストが自動で実行されます。
+2026-11-26 に `bearknuckle/boardgame-tutorial` の `lab` ブランチから、変更履歴ごと移しました。
+`baron-nimmt/` や `app.py` などは、そのときの残りです。
