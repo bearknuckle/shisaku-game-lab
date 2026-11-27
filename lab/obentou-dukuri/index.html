@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>おべんとうづくり</title>
+<!-- 試作ゲームラボ: 下のOGタグ・アイコン・「試作ゲームラボに戻る」リンクは消さないこと（作業ルールはリポジトリ直下の CLAUDE.md） -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="試作ゲームラボ">
+<meta property="og:title" content="おべんとうづくり｜試作ゲームラボ">
+<meta property="og:description" content="3×3のおべんとう箱に、おかずカードを1まいずつつめていく。タテ・ヨコ・ナナメで同じ色や同じおかずをそろえると得点。6しゅるい全部そろえばボーナス。9かいめくって、CPUとてんすう勝負。">
+<meta property="og:url" content="https://game-lab-oj9t.onrender.com/obentou-dukuri/">
+<meta property="og:image" content="https://game-lab-oj9t.onrender.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<style>
+  :root{
+    --bg:#fff3e2; --panel:#ffffff; --line:#f0d3ae; --text:#4a3520; --sub:#8a6f52;
+    --accent:#e85d3d; --good:#3aa569; --box:#b4552d;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:"Hiragino Maru Gothic ProN","Hiragino Kaku Gothic ProN","Noto Sans JP",system-ui,sans-serif;line-height:1.55}
+  .wrap{max-width:640px;margin:0 auto;padding:14px 12px 40px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+  h1{font-size:22px;margin:0}
+  .round{background:var(--accent);color:#fff;font-weight:bold;border-radius:999px;padding:4px 12px;font-size:14px;white-space:nowrap}
+  .panel{background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px}
+  .panel h2{font-size:16px;margin:0 0 8px;color:var(--accent)}
+  .msg{font-size:16px;font-weight:bold;margin:0 0 10px;text-align:center;min-height:1.5em}
+  .sub{font-size:13px;color:var(--sub)}
+  .boxes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+  .box{background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:8px}
+  .box .nm{font-weight:bold;font-size:14px;display:flex;justify-content:space-between}
+  .box .nm .sc{color:var(--accent)}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:6px}
+  .cell{aspect-ratio:1;border-radius:10px;border:2px dashed var(--line);background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:26px;cursor:default;user-select:none}
+  .cell .cn{font-size:9px;color:var(--sub);line-height:1.1;text-align:center}
+  .cell.filled{border-style:solid;border-color:var(--box);background:#fff}
+  .cell.pick{cursor:pointer;border-color:var(--accent);background:#ffe9e2}
+  .cell.pick:active{transform:scale(.96)}
+  .cell.cpu{font-size:20px}
+  .cards{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;min-height:96px}
+  .card{width:76px;height:96px;border-radius:12px;background:#fff;border:2px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:34px;cursor:default;user-select:none;position:relative}
+  .card .nmS{font-size:11px;color:var(--sub)}
+  .card .col{font-size:11px;font-weight:bold;margin-top:2px}
+  .card.tap{cursor:pointer;border-color:var(--accent)}
+  .card.tap:active{transform:scale(.95)}
+  .card.used{opacity:.35}
+  .kinds{display:flex;gap:8px;justify-content:center;font-size:14px;flex-wrap:wrap;margin:6px 0}
+  .kinds .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:2px;vertical-align:middle}
+  .btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+  button{font:inherit;font-size:16px;font-weight:bold;border:none;border-radius:999px;padding:10px 20px;background:var(--accent);color:#fff;cursor:pointer}
+  button.sec{background:#fff;color:var(--accent);border:2px solid var(--accent)}
+  button:disabled{opacity:.4;cursor:default}
+  .rules ol,.rules ul{padding-left:1.3em;margin:6px 0}
+  .rules li{margin:4px 0}
+  table.res{width:100%;border-collapse:collapse;font-size:14px}
+  table.res th,table.res td{border-bottom:1px solid var(--line);padding:5px 4px;text-align:center}
+  table.res td:first-child,table.res th:first-child{text-align:left}
+  .big{font-size:22px;font-weight:bold;text-align:center;margin:8px 0}
+  .log{font-size:13px;color:var(--sub);max-height:110px;overflow:auto}
+  .hidden{display:none}
+  .foot{font-size:12px;color:var(--sub);text-align:center;margin-top:10px}
+  .back{text-align:center;margin:14px 0 0;font-size:13px}.back a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🍱 おべんとうづくり</h1>
+    <div class="round" id="roundTag">あそびかた</div>
+  </header>
+
+  <!-- ルール -->
+  <div id="rulesView" class="panel rules">
+    <h2>あそびかた（2人用）</h2>
+    <ol>
+      <li>おかずカードを<b>3まい</b>めくります。</li>
+      <li><b>あなた</b>が1まいえらんで、じぶんの <b>3×3のおべんとう箱</b> のすきなマスにつめます。</li>
+      <li><b>くまCPU</b>も、のこりの2まいから1まいえらんで、じぶんの箱につめます。のこった1まいはすてます。</li>
+      <li>これを<b>9かい</b>くりかえして、箱がうまったら てんすう勝負！</li>
+    </ol>
+    <div class="kinds" id="kindsList"></div>
+    <p><b>てんすう</b></p>
+    <ul>
+      <li>タテ・ヨコ・ナナメのラインで、<b>おなじ色が3つ</b>そろうと <b>+3点</b>。</li>
+      <li>さらにおなじおかずが3つそろうと <b>+5点</b>（色とあわせて +8点）。</li>
+      <li>箱に<b>6しゅるい全部</b>はいったら <b>+3点</b>。</li>
+    </ul>
+    <p class="sub">コツ：色をそろえるか、おかずをそろえるか、6しゅるいをねらうか。3まいの中から「この箱にほしい1まい」をえらぼう。</p>
+    <div class="btns">
+      <button id="startBtn">あそぶ（CPUとたいせん）</button>
+    </div>
+  </div>
+
+  <!-- ゲーム -->
+  <div id="gameView" class="hidden">
+    <div class="boxes">
+      <div class="box"><div class="nm"><span>🙂 あなた</span><span class="sc" id="youScore">0点</span></div><div class="grid" id="youGrid"></div></div>
+      <div class="box"><div class="nm"><span>🐻 くまCPU</span><span class="sc" id="cpuScore">0点</span></div><div class="grid" id="cpuGrid"></div></div>
+    </div>
+    <div class="panel">
+      <p class="msg" id="msg"></p>
+      <div class="cards" id="pool"></div>
+      <p class="sub" id="hint" style="text-align:center;margin:8px 0 0"></p>
+      <div class="btns" id="actBtns"></div>
+    </div>
+    <div class="panel">
+      <h2>きろく</h2>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+
+  <!-- けっか -->
+  <div id="resultView" class="panel hidden">
+    <h2>けっか</h2>
+    <div class="big" id="winner"></div>
+    <table class="res" id="resTable"></table>
+    <div class="btns">
+      <button id="againBtn">もういちど</button>
+      <button class="sec" id="rulesBtn">あそびかた</button>
+    </div>
+  </div>
+
+  <div class="foot">紙のおかずカード18まい（6しゅるい×3まい）と、おべんとう箱のボード2つで、2人でそのままあそべます</div>
+  <p class="back"><a href="../">← 試作ゲームラボに戻る</a> ・ おべんとうづくり v0.1</p>
+</div>
+<script>
+const KINDS=[
+  {id:'onigiri', e:'🍙', n:'おにぎり', c:'白',   col:'#b8a88a'},
+  {id:'tamago',   e:'🍳', n:'たまごやき', c:'黄', col:'#e8b800'},
+  {id:'karaage',  e:'🍗', n:'からあげ', c:'茶',   col:'#8a5a2b'},
+  {id:'broccoli', e:'🥦', n:'ブロッコリー', c:'緑', col:'#3aa569'},
+  {id:'tomato',   e:'🍅', n:'ミニトマト', c:'赤', col:'#d1453b'},
+  {id:'wiener',   e:'🌭', n:'ウインナー', c:'オレンジ', col:'#e8743b'},
+];
+const KIND=Object.fromEntries(KINDS.map(k=>[k.id,k]));
+const LINES=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+const ROUNDS=9, PER=3;
+let S=null;
+const $=id=>document.getElementById(id);
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function newDeck(){
+  const d=[];let uid=0;
+  KINDS.forEach(k=>{for(let i=0;i<3;i++)d.push({uid:uid++,k:k.id});});
+  return shuffle(d);
+}
+// 箱（9マス、null=空）のライン得点
+function lineScore(box){
+  let color=0,food=0;
+  LINES.forEach(L=>{
+    const cs=L.map(i=>box[i]);
+    if(cs.every(x=>x)){
+      const kinds=cs.map(x=>x.k);
+      const sameColor=new Set(kinds.map(k=>KIND[k].c)).size===1;
+      const sameFood=new Set(kinds).size===1;
+      if(sameColor)color+=3;
+      if(sameFood)food+=5;
+    }
+  });
+  return {color,food};
+}
+function varietyBonus(box){
+  return new Set(box.filter(x=>x).map(x=>x.k)).size===6?3:0;
+}
+function totalScore(box){
+  const l=lineScore(box);
+  return l.color+l.food+varietyBonus(box);
+}
+// CPU用：あるカードをあるマスに置いたときの評価
+function evalPlace(box,card,cell){
+  const b=box.slice();b[cell]=card;
+  let v=totalScore(b)-totalScore(box);
+  LINES.forEach(L=>{
+    if(!L.includes(cell))return;
+    const cs=L.map(i=>b[i]).filter(x=>x);
+    if(cs.length===2){
+      if(cs.every(x=>KIND[x.k].c===KIND[card.k].c))v+=1;
+      if(cs.every(x=>x.k===card.k))v+=1.5;
+    }
+  });
+  if(!box.some(x=>x&&x.k===card.k))v+=0.5; // まだない種類はすこしプラス
+  return v;
+}
+function cpuMove(){
+  // のこりのカード2まい × 空きマスでいちばんいい組み合わせ
+  let best=null;
+  S.pool.forEach(card=>{
+    S.cpuBox.forEach((x,i)=>{
+      if(x)return;
+      const v=evalPlace(S.cpuBox,card,i)+Math.random()*0.4;
+      if(!best||v>best.v)best={v,card,cell:i};
+    });
+  });
+  return best;
+}
+
+function cardEl(c,tap){
+  const k=KIND[c.k];
+  const d=document.createElement('div');d.className='card'+(tap?' tap':'');
+  d.innerHTML=`<div>${k.e}</div><div class="nmS">${k.n}</div><div class="col" style="color:${k.col}">● ${k.c}いろ</div>`;
+  return d;
+}
+function log(t){S.log.unshift(t);$('log').innerHTML=S.log.map(x=>'・'+x).join('<br>');}
+
+function renderGrids(){
+  [['youGrid',S.youBox,false],['cpuGrid',S.cpuBox,true]].forEach(([id,box,isCpu])=>{
+    const g=$(id);g.innerHTML='';
+    box.forEach((c,i)=>{
+      const d=document.createElement('div');
+      d.className='cell'+(c?' filled':'')+(isCpu?' cpu':'')+((!isCpu&&S.phase==='place'&&!c)?' pick':'');
+      if(c){const k=KIND[c.k];d.innerHTML=`<div>${k.e}</div><div class="cn">${k.n}</div>`;}
+      if(!isCpu&&S.phase==='place'&&!c)d.onclick=()=>placeCard(i);
+      g.appendChild(d);
+    });
+  });
+  $('youScore').textContent=totalScore(S.youBox)+'点';
+  $('cpuScore').textContent=totalScore(S.cpuBox)+'点';
+}
+function render(){
+  renderGrids();
+  const pool=$('pool');pool.innerHTML='';
+  const btns=$('actBtns');btns.innerHTML='';$('hint').textContent='';
+  if(S.phase==='pick'){
+    $('msg').textContent='カードを1まいえらんでね';
+    $('hint').textContent='タップすると、そのカードをえらびます';
+    S.pool.forEach(c=>{
+      const e=cardEl(c,true);
+      e.onclick=()=>{S.picked=c;S.phase='place';render();};
+      pool.appendChild(e);
+    });
+  }else if(S.phase==='place'){
+    $('msg').textContent='おべんとう箱のすきなマスをタップ';
+    $('hint').textContent='つめたいマスをえらんでね';
+    S.pool.forEach(c=>{
+      const e=cardEl(c);
+      if(c===S.picked)e.classList.add('tap');
+      pool.appendChild(e);
+    });
+  }else if(S.phase==='cpu'){
+    $('msg').textContent='くまCPUが つめています…';
+    S.pool.forEach(c=>pool.appendChild(cardEl(c)));
+  }else if(S.phase==='done'){
+    S.pool.forEach(c=>{const e=cardEl(c);e.classList.add('used');pool.appendChild(e);});
+    const b=document.createElement('button');b.id='nextBtn';
+    b.textContent=S.round>=ROUNDS?'けっかを見る':'つぎへ';b.onclick=nextRound;btns.appendChild(b);
+  }
+}
+function placeCard(cell){
+  S.youBox[cell]=S.picked;
+  const k=KIND[S.picked.k];
+  log(`${S.round}かいめ：あなたは ${k.e}${k.n} を${cell+1}ばんめのマスにつめた`);
+  S.pool=S.pool.filter(c=>c!==S.picked);
+  S.picked=null;
+  S.phase='cpu';
+  render();
+  setTimeout(()=>{
+    const mv=cpuMove();
+    S.cpuBox[mv.cell]=mv.card;
+    const ck=KIND[mv.card.k];
+    log(`${S.round}かいめ：くまCPUは ${ck.e}${ck.n} をつめた（すてたカード：${S.pool.filter(c=>c!==mv.card).map(c=>KIND[c.k].e+KIND[c.k].n).join('、')||'なし'}）`);
+    S.pool=[];
+    $('msg').textContent=`くまCPUは ${ck.e}${ck.n} をつめました`;
+    S.phase='done';
+    render();
+  },800);
+}
+function nextRound(){
+  if(S.round>=ROUNDS)return finish();
+  S.round++;
+  S.pool=S.deck.splice(0,PER);
+  $('roundTag').textContent=`${S.round} / ${ROUNDS} かいめ`;
+  S.phase='pick';
+  render();
+}
+function start(){
+  S={deck:newDeck(),youBox:Array(9).fill(null),cpuBox:Array(9).fill(null),round:0,pool:[],picked:null,phase:'pick',log:[]};
+  $('rulesView').classList.add('hidden');$('resultView').classList.add('hidden');$('gameView').classList.remove('hidden');
+  $('log').innerHTML='';
+  nextRound();
+}
+function finish(){
+  $('gameView').classList.add('hidden');$('resultView').classList.remove('hidden');
+  $('roundTag').textContent='けっか';
+  const rows=[['','🙂 あなた','🐻 くまCPU']];
+  const ly=lineScore(S.youBox),lc=lineScore(S.cpuBox);
+  const vy=varietyBonus(S.youBox),vc=varietyBonus(S.cpuBox);
+  const mk=(label,ay,ac)=>`<tr><td>${label}</td><td>${ay}点</td><td>${ac}点</td></tr>`;
+  let html='<tr><th></th><th>🙂 あなた</th><th>🐻 くまCPU</th></tr>';
+  html+=mk('おなじ色のライン（+3）',ly.color,lc.color);
+  html+=mk('おなじおかずのライン（+5）',ly.food,lc.food);
+  html+=mk('6しゅるいボーナス（+3）',vy,vc);
+  const ys=totalScore(S.youBox),cs=totalScore(S.cpuBox);
+  html+=`<tr><th>ごうけい</th><th>${ys}点</th><th>${cs}点</th></tr>`;
+  $('resTable').innerHTML=html;
+  $('winner').textContent=ys>cs?'🎉 あなたのかち！ おいしいおべんとう！':ys<cs?'🐻 くまCPUのかち！':'🤝 ひきわけ！';
+}
+$('kindsList').innerHTML=KINDS.map(k=>`<span>${k.e}${k.n} <span class="dot" style="background:${k.col}"></span>${k.c}</span>`).join('');
+$('startBtn').onclick=start;
+$('againBtn').onclick=start;
+$('rulesBtn').onclick=()=>{$('resultView').classList.add('hidden');$('rulesView').classList.remove('hidden');$('roundTag').textContent='あそびかた';};
+</script>
+</body>
+</html>
