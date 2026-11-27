@@ -100,7 +100,7 @@ table.ro td,table.ro th{border-bottom:1px solid var(--line);padding:4px 5px;text
   </div>
 </header>
 <main>
-  <p class="note"><a href="../">← 試作ゲームラボに戻る</a> ・ アニマルベースボール v0.2<br>選手カードを出し合い、攻撃力−守備力の差で打者ごとのバッティング表を引いて結果が決まります。<span class="tag">仮</span> の付いたルールは調整中です。</p>
+  <p class="note"><a href="../">← 試作ゲームラボに戻る</a> ・ アニマルベースボール v0.3<br>選手カードを出し合い、攻撃力−守備力の差で打者ごとのバッティング表を引いて結果が決まります。<span class="tag">仮</span> の付いたルールは調整中です。</p>
   <section class="panel on" id="p-game"><div id="game"></div></section>
   <section class="panel" id="p-rule">
     <div class="box"><h2>1打席の流れ</h2>
@@ -345,6 +345,20 @@ function changeSide(){
   G.outs=0;G.bases=[null,null,null];
   if(G.top){G.top=false;log(`チェンジ！ ${G.inning}回裏`)}else{G.inning++;G.top=true;log(`チェンジ！ ${G.inning}回表`)}
 }
+const REC_KEY='animal-baseball-record';
+function loadRec(){try{const r=JSON.parse(localStorage.getItem(REC_KEY));if(r&&typeof r==='object')return {w:+r.w||0,l:+r.l||0,d:+r.d||0,streak:+r.streak||0}}catch(e){}return {w:0,l:0,d:0,streak:0}}
+function recordResult(){
+  if(!G||!G.over||G.recorded)return;G.recorded=true;
+  const rec=loadRec();
+  if(G.over.txt==='あなたの勝ち！'){rec.w++;rec.streak++}
+  else if(G.over.txt==='あなたの負け…'){rec.l++;rec.streak=0}
+  else{rec.d++;rec.streak=0}
+  try{localStorage.setItem(REC_KEY,JSON.stringify(rec))}catch(e){}
+}
+function recLine(){
+  const rec=loadRec();if(!(rec.w+rec.l+rec.d))return '';
+  return `<p class="note" style="margin-top:12px">📊 通算成績：${rec.w}勝 ${rec.l}敗 ${rec.d}分${rec.streak>=2?`（${rec.streak}連勝中）`:''}</p>`;
+}
 function checkEnd(){
   const [a,h]=G.score,last=G.inning>=G.N;
   let end=null;
@@ -357,6 +371,7 @@ function checkEnd(){
   if(end){
     const yi=G.you,ys=G.score[yi],os=G.score[1-yi];
     G.over={end,txt:a===h?'引き分け':ys>os?'あなたの勝ち！':'あなたの負け…'};
+    recordResult();
     log(`${end}：${G.teams[0].short} ${a} - ${h} ${G.teams[1].short}`);
   }
 }
@@ -380,7 +395,7 @@ function render(){
     <label for="o-you">あなたのチーム</label><select id="o-you">${TEAMS.map((t,i)=>`<option value="${i}" ${opt.you===i?'selected':''}>${t.name}</option>`).join('')}</select>
     <label for="o-first">先攻・後攻</label><select id="o-first"><option value="0" ${opt.first===0?'selected':''}>先攻</option><option value="1" ${opt.first===1?'selected':''}>後攻</option></select>
     <label for="o-inn">イニング</label><select id="o-inn">${[3,5,9].map(n=>`<option value="${n}" ${opt.inn===n?'selected':''}>${n}回</option>`).join('')}</select>
-    <div class="btns" style="margin-top:14px"><button class="a" id="go">プレイボール</button></div></div>`;
+    ${recLine()}<div class="btns" style="margin-top:14px"><button class="a" id="go">プレイボール</button></div></div>`;
     $('#go').onclick=()=>{opt={you:+$('#o-you').value,first:+$('#o-first').value,inn:+$('#o-inn').value};newGame()};return}
   const O=off(),D=dfn(),Y=G.teams[G.you],C=G.teams[1-G.you],yOff=Y===O,b=O.bat[O.order],p=D.pit[D.pi],R=G.res;
   const cols=Math.max(G.N,G.inning);

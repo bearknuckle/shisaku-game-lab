@@ -210,6 +210,7 @@
     </div>
     <p class="hint hidden" id="continueNote" style="text-align:center">続けると、持ち株とお金をそのまま次の期に持ち越して遊べます。</p>
     <button class="primary" id="nextPeriodBtn">次の期へ</button>
+    <button class="primary" id="rematchBtn" style="background:#fff;color:var(--ink)">もう一度あそぶ（最初から）</button>
     <button class="primary" id="againBtn" style="background:#fff;color:var(--ink)">ここで終わる</button>
     <p class="back"><a href="../">← 試作ゲームラボに戻る</a></p>
   </section>
@@ -238,7 +239,7 @@ const sgn=v=>v>0?'+'+v:''+v;
 function newGame(periods){
   const players=[{name:'あなた',cpu:false},...CPU_NAMES.map(n=>({name:n,cpu:true}))]
     .map(p=>({...p,cash:START_CASH,sh:{A:0,B:0,C:0},knows:null,div:0}));
-  S={periods,longRules:periods>1,maxP:periods>1?20:10,hist:{A:[START_PRICE],B:[START_PRICE],C:[START_PRICE]},marks:[],period:0,round:1,price:{A:START_PRICE,B:START_PRICE,C:START_PRICE},prev:{A:0,B:0,C:0},
+  S={periods,initPeriods:periods,longRules:periods>1,maxP:periods>1?20:10,hist:{A:[START_PRICE],B:[START_PRICE],C:[START_PRICE]},marks:[],period:0,round:1,price:{A:START_PRICE,B:START_PRICE,C:START_PRICE},prev:{A:0,B:0,C:0},
      players,pick:null,act:null,log:[],pastEarn:[]};
   startPeriod();
 }
@@ -546,6 +547,7 @@ $('startLongBtn').onclick=()=>newGame(3);
 $('goBtn').onclick=go;
 $('nextBtn').onclick=next;
 $('nextPeriodBtn').onclick=nextPeriod;
+$('rematchBtn').onclick=()=>newGame(S.initPeriods||S.periods);
 $('againBtn').onclick=()=>{clearSave();$('result').classList.add('hidden');$('title').classList.remove('hidden');showResume();window.scrollTo({top:0})};
 $('resumeBtn').onclick=resume;
 
