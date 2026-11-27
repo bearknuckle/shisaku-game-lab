@@ -47,6 +47,12 @@
   .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;font-size:13px}
   .chip{border-radius:999px;padding:3px 10px;background:#f4ece1;color:var(--sub)}
   .chip.on{background:var(--warn);color:#5a4200;font-weight:bold}
+  .hist-label{font-size:12px;color:var(--sub);margin-top:10px}
+  .hist{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+  .hchip{border-radius:8px;padding:2px 8px;font-size:12px;background:#f4ece1}
+  .hchip.up{background:#eaf6ef;color:var(--up);font-weight:bold}
+  .hchip.bad{background:#fff7dc;color:#5a4200;font-weight:bold}
+  .hchip.crash{background:#fde8e5;color:var(--down);font-weight:bold}
   .players{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .pl{border:2px solid var(--line);border-radius:12px;padding:8px 10px;font-size:14px}
   .pl.me{border-color:var(--accent)}
@@ -87,6 +93,9 @@
     </div>
     <div class="chips" id="chips"></div>
     <div class="note" style="margin-top:6px" id="deckInfo"></div>
+    <div class="hist-label">めくったカード（この会社）</div>
+    <div class="hist" id="hist"></div>
+    <div class="note" style="margin-top:4px" id="histBad"></div>
   </div>
 
   <p class="msg" id="msg"></p>
@@ -104,7 +113,7 @@
     <ul class="log" id="log"></ul>
   </div>
 
-  <p class="back"><a href="../">← 試作ゲームラボに戻る</a> ・ 利確チキンレース v0.1</p>
+  <p class="back"><a href="../">← 試作ゲームラボに戻る</a> ・ 利確チキンレース v0.2</p>
 </div>
 
 <div class="modal" id="rules">
@@ -157,7 +166,7 @@ function newGame(){
   startRound();
 }
 function startRound(){
-  G.price=START_PRICE; G.deck=buildDeck(); G.warn={}; G.card=null; G.phase='flip';
+  G.price=START_PRICE; G.deck=buildDeck(); G.warn={}; G.card=null; G.phase='flip'; G.hist=[];
   G.pl.forEach(p=>{p.state='hold';p.got=0;});
   addLog(`【${COMPANIES[G.round]}】みんな1株ずつ持ってスタート（株価${START_PRICE}）`);
   render('カードをめくりましょう。');
@@ -170,12 +179,14 @@ function flip(){
     return endRound();
   }
   const c=G.deck.pop(); G.card=c;
+  const entry={t:c.t,v:c.v,id:c.id}; G.hist.push(entry);
   if(c.t==='up'){
     G.price+=c.v; addLog(`上げ +${c.v} → 株価${G.price}`);
   }else{
     const b=BADS.find(x=>x.id===c.id);
     if(G.warn[c.id]){
       G.card={...c,crash:true};
+      entry.crash=true;
       const hs=holders();
       hs.forEach(p=>{p.state='crash';p.got=0;});
       G.removed[c.id]++;
@@ -266,6 +277,13 @@ function render(msg){
   document.getElementById('chips').innerHTML=BADS.map(b=>`<span class="chip ${G.warn[b.id]?'on':''}">${b.icon}${b.name}${G.warn[b.id]?' 警戒中':''}</span>`).join('');
   const nBad=G.deck.filter(c=>c.t==='bad'&&G.warn[c.id]).length;
   document.getElementById('deckInfo').textContent=`山札の残り ${G.deck.length}枚（うち暴落になる悪材料 ${nBad}枚）`;
+  document.getElementById('hist').innerHTML=G.hist.length?G.hist.map(h=>{
+    if(h.t==='up')return `<span class="hchip up">📈+${h.v}</span>`;
+    const b=BADS.find(x=>x.id===h.id);
+    return h.crash?`<span class="hchip crash">💥${b.icon}${b.name}</span>`:`<span class="hchip bad">${b.icon}${b.name}</span>`;
+  }).join(''):'<span class="note">まだありません</span>';
+  const badCnt={}; G.hist.forEach(h=>{if(h.t==='bad')badCnt[h.id]=(badCnt[h.id]||0)+1;});
+  document.getElementById('histBad').textContent=BADS.filter(b=>badCnt[b.id]).map(b=>badCnt[b.id]>=2?`悪材料：${b.icon}${b.name} 2枚（暴落）`:`悪材料：${b.icon}${b.name} 1枚（もう1枚で暴落！）`).join('　');
   document.getElementById('players').innerHTML=G.pl.map(p=>{
     let st='',cls='';
     if(p.state==='hold'){st='保有中';cls='hold';}

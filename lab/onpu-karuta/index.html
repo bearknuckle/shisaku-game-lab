@@ -69,6 +69,7 @@ h1 span{color:var(--frame)}
 }
 .big:active{transform:translateY(3px);box-shadow:0 1px 0 #8a231d}
 .ghost{display:block;width:100%;font:inherit;font-weight:700;font-size:15px;padding:12px;border-radius:12px;border:1.5px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer;margin-top:10px}
+.bestline{text-align:center;font-size:13px;font-weight:700;color:var(--muted);margin:10px 0 0}
 details{margin-top:12px;font-size:14px;color:var(--muted);line-height:1.7}
 summary{cursor:pointer;font-weight:700;color:var(--ink)}
 
@@ -194,6 +195,7 @@ summary{cursor:pointer;font-weight:700;color:var(--ink)}
       <button data-v="cde">CDE</button>
     </div></div>
 
+  <div class="bestline hidden" id="bestLine"></div>
   <button class="big" id="startBtn">はじめる</button>
 
   <details>
@@ -381,7 +383,7 @@ syncSeg();
 
 // ---------- game ----------
 let G=null;
-function show(id){['setup','game','result'].forEach(s=>$(s).classList.toggle('hidden',s!==id)); window.scrollTo(0,0);}
+function show(id){['setup','game','result'].forEach(s=>$(s).classList.toggle('hidden',s!==id)); if(id==='setup') renderBest(); window.scrollTo(0,0);}
 
 function buildPool(){
   const pool=[];
@@ -392,6 +394,22 @@ function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;
 
 let REVIEW=[];
 try{REVIEW=JSON.parse(localStorage.getItem('onpuKarutaReview')||'[]')||[]}catch(e){REVIEW=[]}
+
+// ---------- ひとりでモードの自己ベスト（お手つき最少） ----------
+const BEST_KEY='onpuKarutaBest';
+function loadBest(){ try{ const b=JSON.parse(localStorage.getItem(BEST_KEY)||'null'); return (b&&typeof b.miss==='number')?b:null; }catch(e){ return null; } }
+function renderBest(){
+  const el=$('bestLine'); if(!el) return;
+  const b=loadBest();
+  if(b){ el.textContent=`🏆 ひとりでモードの自己ベスト：お手つき ${b.miss} 回`; el.classList.remove('hidden'); }
+  else { el.textContent=''; el.classList.add('hidden'); }
+}
+function recordBest(){
+  // ひとりで・通常モードの完走時のみ記録（れんしゅうはお手つき自体がないので対象外）
+  if(!G||!G.solo||S.practice==='on') return;
+  const b=loadBest();
+  if(!b||G.miss<b.miss){ try{localStorage.setItem(BEST_KEY,JSON.stringify({miss:G.miss}))}catch(e){} }
+}
 function startGame(){
   audio();
   const isRev=c=>REVIEW.some(r=>r.clef===c.clef&&r.p===c.p);
@@ -555,6 +573,7 @@ function takeRound(who,cards){
 }
 function finish(){
   G.state='done';
+  recordBest();
   const v=$('verdict'), sub=$('verdictSub');
   if(G.solo){
     v.textContent='クリア！'; v.className='verdict win';
@@ -592,6 +611,7 @@ $('againBtn').onclick=startGame;
 $('backBtn').onclick=()=>show('setup');
 $('quitBtn').onclick=()=>{ if(G){clearTimeout(G.cpuTimer);G.state='done'} try{speechSynthesis.cancel()}catch(e){} show('setup'); };
 $('replay').onclick=()=>{ if(G&&G.seq.length){ audio(); playSeq(G.seq); } };
+renderBest();
 </script>
 </body>
 </html>

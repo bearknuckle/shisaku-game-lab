@@ -177,7 +177,7 @@ const GAMES=[
   {
     id:'rikaku-chicken', name:'利確チキンレース', icon:'🐔', color:'#d9822b',
     desc:'株価カードを1枚ずつめくり、めくるたびに全員で「せーの」で持つか売るかを決める。粘るほど値上がりするけれど、同じ悪材料（決算ミス・不祥事・増資）が2枚出たら暴落して0円。同時に売る人が多いほど値下がりするので、一歩早く売るか粘るかの読み合い。5社で一番お金を持っている人の勝ち。',
-    players:'1人（CPU 3人）', time:'5〜10分', genre:'株', added:'2026-11-27', version:'0.1', updated:'2026-11-27', isNew:true
+    players:'1人（CPU 3人）', time:'5〜10分', genre:'株', added:'2026-11-27', version:'0.2', updated:'2026-11-27', isNew:true
   },
 {
     id:'kabuka-bingo', name:'株価ビンゴ', icon:'📊', color:'#7b1fa2',
@@ -296,7 +296,7 @@ const GAMES=[
   {
     id:'onpu-karuta', name:'音符カルタ', icon:'🎼', color:'#b8322a',
     desc:'読み手が言った音（または鳴らした音）の楽譜札をすばやく取るカルタ。札は5色のレベル別（入門の「目印の音」と、ト音・ヘ音記号 × 五線の中・加線）。取ったら山札から補充。メロディ読み札をめくって3〜4音を順番に取る「メロディ取り」も。加線の札は2点。まちがえた札は「復習の山」で次のゲームに。遊びながら楽譜が読めるようになる。',
-    players:'1人（CPU 1人）', time:'2〜3分', genre:'音楽', added:'2026-11-18', version:'0.6', updated:'2026-11-23', isNew:true
+    players:'1人（CPU 1人）', time:'2〜3分', genre:'音楽', added:'2026-11-18', version:'0.7', updated:'2026-11-27', isNew:true
   },
   {
     id:'shinko-shiritori', name:'進行しりとり', icon:'🎹', color:'#2f8f5f',
@@ -321,7 +321,7 @@ const GAMES=[
   {
     id:'seeno-kabu', name:'せーの株', icon:'🫴', color:'#c8951e',
     desc:'全員が「せーの」で同時に注文。買いが多いほど値上がりし、動いた後の値段で成立する。需給で株価が動くしくみと、株価と本当の価値のズレが身につく。3期くり返して配当・倒産もある「じっくり」モードつき。期ごとの景気カードで毎回展開が変わる。終わった後も続けて遊べて、自動保存で途中から再開できる。',
-    players:'1人（CPU 3人）', time:'5〜15分', genre:'株', added:'2026-11-18', version:'0.7', updated:'2026-11-26', isNew:true
+    players:'1人（CPU 3人）', time:'5〜15分', genre:'株', added:'2026-11-18', version:'0.8', updated:'2026-11-27', isNew:true
   },
   {
     id:'uwasa-kabu', name:'ウワサ株', icon:'📈', color:'#d1453b',
@@ -331,6 +331,9 @@ const GAMES=[
 ];
 // 最近の更新（新しい順）。ゲームを更新したら先頭に1件足し、GAMES の version / updated も上げる
 const UPDATES=[
+  {date:'2026-11-27', id:'rikaku-chicken', version:'0.2', text:'めくったカードの履歴を表示。悪材料の種類ごとの枚数（もう1枚で暴落！）も分かるように'},
+  {date:'2026-11-27', id:'seeno-kabu',     version:'0.8', text:'最終結果の画面に「もう一度あそぶ（最初から）」ボタンを追加。同じ設定ですぐ再戦できるように'},
+  {date:'2026-11-27', id:'onpu-karuta',    version:'0.7', text:'「ひとりで」モードの自己ベスト（お手つき最少）を保存して開始画面に表示するように'},
   {date:'2026-11-27', id:'obentou-dukuri', version:'0.1', text:'新しく登場（こどものゲーム・おかずカードを3×3の箱につめて、色やおかずのラインをそろえる）'},
   {date:'2026-11-27', id:'animal-baseball', version:'0.4', text:'作戦カード「スクイズ」を追加。三塁走者がいる場面で、1点を狙うギャンブルができるように'},
   {date:'2026-11-27', id:'rikaku-chicken', version:'0.1', text:'新しく登場（株のゲーム・めくるたびに「せーの」で売るか決める、利確タイミングの読み合い）'},
