@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>利確チキンレース</title>
+<!-- 試作ゲームラボ: 下のOGタグ・アイコン・「試作ゲームラボに戻る」リンクは消さないこと（作業ルールはリポジトリ直下の CLAUDE.md） -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="試作ゲームラボ">
+<meta property="og:title" content="利確チキンレース｜試作ゲームラボ">
+<meta property="og:description" content="株価カードを1枚ずつめくって、いつ売るかをみんなで「せーの」。粘るほど値上がりするけれど、同じ悪材料が2枚出たら暴落。売りが重なると値下がり。利確のタイミングを読み合うチキンレース。">
+<meta property="og:url" content="https://game-lab-oj9t.onrender.com/rikaku-chicken/">
+<meta property="og:image" content="https://game-lab-oj9t.onrender.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<style>
+  :root{
+    --bg:#fbf4ea; --panel:#ffffff; --line:#ecd9bf; --text:#3b2a1a; --sub:#866c52;
+    --accent:#d9822b; --up:#2e8b57; --down:#c0392b; --warn:#f3c64b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:"Hiragino Kaku Gothic ProN","Noto Sans JP",system-ui,sans-serif;line-height:1.55}
+  .wrap{max-width:640px;margin:0 auto;padding:14px 16px 40px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+  h1{font-size:21px;margin:0}
+  .pill{background:var(--accent);color:#fff;font-weight:bold;border-radius:999px;padding:4px 12px;font-size:13px;white-space:nowrap}
+  .panel{background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px}
+  button{font:inherit;cursor:pointer;border:none;border-radius:12px;padding:12px 14px;font-weight:bold}
+  .btn{background:var(--accent);color:#fff}
+  .btn.sub{background:#efe3d2;color:var(--text)}
+  .btn.hold{background:var(--up);color:#fff}
+  .btn.sell{background:var(--down);color:#fff}
+  .btn:disabled{opacity:.45;cursor:default}
+  .row{display:flex;gap:8px}
+  .row>button{flex:1}
+  .market{display:flex;align-items:center;gap:12px}
+  .price{font-size:44px;font-weight:900;line-height:1;min-width:92px;text-align:center}
+  .price small{display:block;font-size:12px;font-weight:normal;color:var(--sub)}
+  .card{flex:1;border-radius:12px;border:2px dashed var(--line);padding:10px;min-height:76px;display:flex;flex-direction:column;justify-content:center;text-align:center}
+  .card.up{border:2px solid var(--up);background:#eaf6ef}
+  .card.bad{border:2px solid var(--warn);background:#fff7dc}
+  .card.crash{border:2px solid var(--down);background:#fde8e5}
+  .card b{font-size:20px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;font-size:13px}
+  .chip{border-radius:999px;padding:3px 10px;background:#f4ece1;color:var(--sub)}
+  .chip.on{background:var(--warn);color:#5a4200;font-weight:bold}
+  .players{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .pl{border:2px solid var(--line);border-radius:12px;padding:8px 10px;font-size:14px}
+  .pl.me{border-color:var(--accent)}
+  .pl .nm{font-weight:bold}
+  .pl .st{font-size:13px;color:var(--sub)}
+  .pl .st.hold{color:var(--up);font-weight:bold}
+  .pl .st.sold{color:#2b5fa8;font-weight:bold}
+  .pl .st.crash{color:var(--down);font-weight:bold}
+  .pl .tot{font-size:13px}
+  .msg{font-size:15px;min-height:1.5em;margin:0 0 10px}
+  .log{font-size:13px;color:var(--sub);max-height:150px;overflow:auto;margin:0;padding-left:18px}
+  .hidden,.modal.hidden{display:none}
+  .modal{position:fixed;inset:0;background:rgba(40,25,10,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:10}
+  .modal .box{background:#fff;border-radius:16px;max-width:520px;width:100%;max-height:88vh;overflow:auto;padding:16px 18px}
+  .modal h2{margin:0 0 8px;font-size:19px}
+  .modal ol{padding-left:20px;margin:6px 0 12px}
+  .modal li{margin-bottom:6px}
+  .note{font-size:12px;color:var(--sub)}
+  table.res{width:100%;border-collapse:collapse;font-size:14px;margin:8px 0 12px}
+  table.res td,table.res th{border-bottom:1px solid var(--line);padding:6px 4px;text-align:right}
+  table.res td:first-child,table.res th:first-child{text-align:left}
+  .back{font-size:13px;color:var(--sub);text-align:center;margin-top:18px}
+  .back a{color:var(--sub)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🐔 利確チキンレース</h1>
+    <span class="pill" id="roundPill">第1銘柄 / 5</span>
+  </header>
+
+  <div class="panel">
+    <div style="font-size:14px;color:var(--sub)" id="company">—</div>
+    <div class="market">
+      <div class="price" id="price">5<small>いまの株価</small></div>
+      <div class="card" id="card"><span class="note">カードをめくると始まります</span></div>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="note" style="margin-top:6px" id="deckInfo"></div>
+  </div>
+
+  <p class="msg" id="msg"></p>
+  <div class="row" id="actions"></div>
+
+  <div class="panel" style="margin-top:12px">
+    <div class="players" id="players"></div>
+  </div>
+
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <b style="font-size:14px">できごと</b>
+      <button class="btn sub" style="padding:4px 10px;font-size:13px" onclick="showRules()">ルール</button>
+    </div>
+    <ul class="log" id="log"></ul>
+  </div>
+
+  <p class="back"><a href="../">← 試作ゲームラボに戻る</a> ・ 利確チキンレース v0.1</p>
+</div>
+
+<div class="modal" id="rules">
+  <div class="box">
+    <h2>🐔 利確チキンレースのルール</h2>
+    <ol>
+      <li>5つの会社の株で勝負。会社ごとに全員が1株ずつ持ってスタート（株価5）。</li>
+      <li>株価カードを1枚めくる。<b>上げカード</b>なら株価が上がる。</li>
+      <li><b>悪材料カード</b>（決算ミス・不祥事・増資）は1枚目なら株価−2で「警戒」。<b>同じ悪材料が2枚目</b>に出たら<b>暴落</b>！まだ持っている人は0円。</li>
+      <li>めくるたびに、持っている人は「持つ」か「売る」かを<b>せーの</b>で同時に決める。売った人はその株価のお金をもらう。</li>
+      <li><b>売りが重なると値下がり</b>：同時に売った人数−1だけ株価が下がってから売れる（2人なら−1、3人なら−2）。</li>
+      <li>全員売るか暴落したら次の会社へ。暴落したカードは1枚ゲームから取りのぞく。5社終わって、お金がいちばん多い人の勝ち。</li>
+    </ol>
+    <p class="note">相手：🐯トラ（強気）・🦝タヌキ（ふつう）・🐢カメ（慎重）。山札の残りの枚数はいつでも見られます。</p>
+    <div class="row"><button class="btn" id="startBtn" onclick="closeRules()">はじめる</button></div>
+  </div>
+</div>
+
+<div class="modal hidden" id="result">
+  <div class="box">
+    <h2 id="resTitle">結果</h2>
+    <div id="resBody"></div>
+    <div class="row"><button class="btn" onclick="newGame()">もう一度あそぶ</button></div>
+  </div>
+</div>
+
+<script>
+const COMPANIES=['ドーナツ電機','モフモフ製薬','カラアゲ運輸','ねこじゃらし銀行','ぽかぽか電力'];
+const BADS=[{id:'kessan',name:'決算ミス',icon:'📉'},{id:'fushoji',name:'不祥事',icon:'🙇'},{id:'zoushi',name:'増資',icon:'📄'}];
+const UPS=[1,1,1,2,2,2,3,3,3,4,4,5,5];
+const START_PRICE=5, ROUNDS=5;
+const PLAYERS=[
+  {name:'あなた',icon:'🙂',me:true},
+  {name:'トラ',icon:'🐯',k:0.65},
+  {name:'タヌキ',icon:'🦝',k:1.0},
+  {name:'カメ',icon:'🐢',k:1.5},
+];
+let G=null;
+
+function buildDeck(){
+  const d=UPS.map(v=>({t:'up',v}));
+  BADS.forEach(b=>{for(let i=0;i<3-G.removed[b.id];i++)d.push({t:'bad',id:b.id});});
+  for(let i=d.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[d[i],d[j]]=[d[j],d[i]];}
+  return d;
+}
+function newGame(){
+  document.getElementById('result').classList.add('hidden');
+  G={round:0,removed:{kessan:0,fushoji:0,zoushi:0},pl:PLAYERS.map(p=>({...p,money:0,state:'hold',got:0})),log:[]};
+  document.getElementById('log').innerHTML='';
+  startRound();
+}
+function startRound(){
+  G.price=START_PRICE; G.deck=buildDeck(); G.warn={}; G.card=null; G.phase='flip';
+  G.pl.forEach(p=>{p.state='hold';p.got=0;});
+  addLog(`【${COMPANIES[G.round]}】みんな1株ずつ持ってスタート（株価${START_PRICE}）`);
+  render('カードをめくりましょう。');
+}
+function holders(){return G.pl.filter(p=>p.state==='hold');}
+function flip(){
+  if(G.deck.length===0){ // 山札切れ：全員その値段で売る
+    holders().forEach(p=>{p.state='sold';p.got=G.price;p.money+=G.price;});
+    addLog(`山札がなくなったので、残りの人は株価${G.price}で売却`);
+    return endRound();
+  }
+  const c=G.deck.pop(); G.card=c;
+  if(c.t==='up'){
+    G.price+=c.v; addLog(`上げ +${c.v} → 株価${G.price}`);
+  }else{
+    const b=BADS.find(x=>x.id===c.id);
+    if(G.warn[c.id]){
+      G.card={...c,crash:true};
+      const hs=holders();
+      hs.forEach(p=>{p.state='crash';p.got=0;});
+      G.removed[c.id]++;
+      addLog(`${b.icon}${b.name}が2枚目！ 暴落 💥 ${hs.length?hs.map(p=>p.name).join('・')+'は0円':'（だれも持っていなかった）'}`);
+      return endRound();
+    }
+    G.warn[c.id]=true; G.price=Math.max(1,G.price-2);
+    addLog(`${b.icon}${b.name}（警戒）株価−2 → ${G.price}`);
+  }
+  G.phase='decide';
+  const me=G.pl[0];
+  render(me.state==='hold'?'持ち続ける？ それとも売る？':'CPUたちの様子を見ましょう。');
+}
+function crashRisk(){
+  const n=G.deck.length; if(!n)return {p:0,ev:0};
+  let bad=0,sum=0,ok=0;
+  G.deck.forEach(c=>{
+    if(c.t==='bad'&&G.warn[c.id])bad++;
+    else{ok++;sum+=c.t==='up'?c.v:-2;}
+  });
+  return {p:bad/n,ev:ok?sum/ok:0};
+}
+function cpuSells(p){
+  const {p:risk,ev}=crashRisk();
+  const loss=risk*G.price*p.k;
+  const gain=(1-risk)*ev;
+  const noise=(Math.random()-0.5)*1.2;
+  return loss>gain+noise;
+}
+function decide(meSells){
+  if(G.phase!=='decide')return;
+  const sellers=[];
+  G.pl.forEach((p,i)=>{
+    if(p.state!=='hold')return;
+    const s=p.me?meSells:cpuSells(p);
+    if(s)sellers.push(p);
+  });
+  if(sellers.length){
+    const drop=sellers.length-1;
+    const sale=Math.max(1,G.price-drop);
+    sellers.forEach(p=>{p.state='sold';p.got=sale;p.money+=sale;});
+    G.price=sale;
+    addLog(`せーの！ ${sellers.map(p=>p.icon+p.name).join('・')}が売却`+(drop?`（売りが重なって−${drop}）`:'')+` → ${sale}円で利確`);
+  }else addLog('せーの！ だれも売らなかった');
+  if(holders().length===0)return endRound();
+  G.phase='flip';
+  render(G.pl[0].state==='hold'?'次のカードをめくりましょう。':'あなたは売却ずみ。残りの人の行方を見守ろう。');
+}
+function endRound(){
+  G.phase='end';
+  const me=G.pl[0];
+  let m=me.state==='crash'?'暴落に巻き込まれた…0円。':`あなたは${me.got}円で利確。`;
+  render(m);
+}
+function next(){
+  G.round++;
+  if(G.round>=ROUNDS)return finish();
+  startRound();
+}
+function finish(){
+  G.phase='over';
+  const rank=[...G.pl].sort((a,b)=>b.money-a.money);
+  const top=rank[0].money;
+  const winners=rank.filter(p=>p.money===top);
+  const meWin=winners.some(p=>p.me);
+  document.getElementById('resTitle').textContent=meWin?(winners.length>1?'🤝 同点優勝！':'🏆 あなたの勝ち！'):`${winners.map(p=>p.icon+p.name).join('・')}の勝ち`;
+  let h='<table class="res"><tr><th>順位</th><th>お金</th></tr>';
+  rank.forEach((p,i)=>{h+=`<tr><td>${i+1}. ${p.icon}${p.name}</td><td>${p.money}円</td></tr>`;});
+  h+='</table><p class="note">粘るか、みんなより一歩早く売るか。売りが重なると値下がりするので、相手の性格を読むのがカギ。</p>';
+  document.getElementById('resBody').innerHTML=h;
+  render('ゲーム終了！');
+  document.getElementById('result').classList.remove('hidden');
+}
+function addLog(t){
+  const li=document.createElement('li'); li.textContent=t;
+  const ul=document.getElementById('log'); ul.prepend(li);
+}
+function render(msg){
+  document.getElementById('roundPill').textContent=`第${Math.min(G.round+1,ROUNDS)}銘柄 / ${ROUNDS}`;
+  document.getElementById('company').textContent=`${COMPANIES[Math.min(G.round,ROUNDS-1)]} の株`;
+  document.getElementById('price').innerHTML=`${G.price}<small>いまの株価</small>`;
+  const cd=document.getElementById('card'); const c=G.card;
+  if(!c){cd.className='card';cd.innerHTML='<span class="note">まだめくっていません</span>';}
+  else if(c.t==='up'){cd.className='card up';cd.innerHTML=`<b>📈 上げ +${c.v}</b><span class="note">好材料！</span>`;}
+  else{const b=BADS.find(x=>x.id===c.id);
+    if(c.crash){cd.className='card crash';cd.innerHTML=`<b>💥 ${b.icon}${b.name}</b><span class="note">2枚目で暴落！</span>`;}
+    else{cd.className='card bad';cd.innerHTML=`<b>${b.icon}${b.name}</b><span class="note">警戒　株価−2</span>`;}}
+  document.getElementById('chips').innerHTML=BADS.map(b=>`<span class="chip ${G.warn[b.id]?'on':''}">${b.icon}${b.name}${G.warn[b.id]?' 警戒中':''}</span>`).join('');
+  const nBad=G.deck.filter(c=>c.t==='bad'&&G.warn[c.id]).length;
+  document.getElementById('deckInfo').textContent=`山札の残り ${G.deck.length}枚（うち暴落になる悪材料 ${nBad}枚）`;
+  document.getElementById('players').innerHTML=G.pl.map(p=>{
+    let st='',cls='';
+    if(p.state==='hold'){st='保有中';cls='hold';}
+    else if(p.state==='sold'){st=`${p.got}円で利確`;cls='sold';}
+    else {st='暴落 0円';cls='crash';}
+    const sub=p.me?'':`<span class="note">（${p.k<0.9?'強気':p.k>1.2?'慎重':'ふつう'}）</span>`;
+    return `<div class="pl ${p.me?'me':''}"><div class="nm">${p.icon}${p.name}${sub}</div><div class="st ${cls}">${st}</div><div class="tot">合計 ${p.money}円</div></div>`;
+  }).join('');
+  document.getElementById('msg').textContent=msg;
+  const a=document.getElementById('actions'); a.innerHTML='';
+  const me=G.pl[0];
+  const add=(label,cls,fn)=>{const b=document.createElement('button');b.className='btn '+cls;b.textContent=label;b.onclick=fn;a.appendChild(b);};
+  if(G.phase==='flip')add('🃏 カードをめくる','',flip);
+  else if(G.phase==='decide'){
+    if(me.state==='hold'){add('✊ 持つ','hold',()=>decide(false));add(`💰 売る（${G.price}円）`,'sell',()=>decide(true));}
+    else add('▶ せーの（CPUが決める）','',()=>decide(false));
+  }else if(G.phase==='end')add(G.round+1>=ROUNDS?'🏁 結果を見る':'▶ 次の会社へ','',next);
+  else if(G.phase==='over')add('もう一度あそぶ','',newGame);
+}
+function showRules(){document.getElementById('rules').classList.remove('hidden');document.getElementById('startBtn').textContent='とじる';}
+function closeRules(){document.getElementById('rules').classList.add('hidden');}
+newGame();
+</script>
+</body>
+</html>
