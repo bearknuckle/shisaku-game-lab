@@ -169,10 +169,15 @@ h2.cat{scroll-margin-top:70px}
 <script>
 // ゲームを増やすときはここに1件追加する
 const GAMES=[
+{
+    id:'kabuka-bingo', name:'株価ビンゴ', icon:'📊', color:'#7b1fa2',
+    desc:'9つの会社が並んだ3×3のボードで株のビンゴ。市場カードを1枚ずつめくって、タテ・ヨコ・ナナメをそろえよう。配当でコツコツ、暴落でガタガタ。作戦カードでねらいを変えて、3ラウンドの合計点で勝負。',
+    players:'1人（CPU 1〜3人）', time:'5〜10分', genre:'株', added:'2026-11-26', version:'0.2', updated:'2026-11-26', isNew:true
+  },
   {
     id:'animal-baseball', name:'アニマルベースボール', icon:'🐻', color:'#1b4a30',
     desc:'動物チームのカード野球。選手カードを裏向きで出し合い、攻撃力−守備力の差で打者ごとのバッティング表を引いて結果が決まる。強打・好投・盗塁の作戦カードでCPUと1試合。',
-    players:'1人（CPU 1人）', time:'10〜20分', genre:'スポーツ', added:'2026-11-25', version:'0.2', updated:'2026-11-26', isNew:true
+    players:'1人（CPU 1人）', time:'10〜20分', genre:'スポーツ', added:'2026-11-25', version:'0.3', updated:'2026-11-26', isNew:true
   },
   {
     id:'michi-tsunagi', name:'みちつなぎ', icon:'🛤️', color:'#2e7d6b',
@@ -301,7 +306,7 @@ const GAMES=[
   {
     id:'doubutsu-kabu', name:'せーの株 どうぶつ版', icon:'🦦', color:'#3f8f5a',
     desc:'中身はせーの株そのまま、舞台はどうぶつたちの取引所。カワウソ水産・クマのハチミツ製菓・ウサギのカブ農園の株を、チーター・カメ・ヒツジと「せーの」で売り買い。買いが集まると群れが押し寄せて値上がり。持ち株は切り株、配当は実り、倒産すると伐採されて新芽から再上場。',
-    players:'1人（CPU 3匹）', time:'5〜15分', genre:'こども', added:'2026-11-19', version:'0.3', updated:'2026-11-19', isNew:true
+    players:'1人（CPU 3匹）', time:'5〜15分', genre:'こども', added:'2026-11-19', version:'0.4', updated:'2026-11-26', isNew:true
   },
   {
     id:'seeno-kabu', name:'せーの株', icon:'🫴', color:'#c8951e',
@@ -316,7 +321,11 @@ const GAMES=[
 ];
 // 最近の更新（新しい順）。ゲームを更新したら先頭に1件足し、GAMES の version / updated も上げる
 const UPDATES=[
-  {date:'2026-11-26', id:'bodoge-shop-story', version:'0.9', text:'バランス調整：手が空いた仲間（接客・店長）が市場の入れ替えを手伝うように。仕入れ担当でも遊びやすくなった'},
+  {date:'2026-11-26', id:'animal-baseball', version:'0.3', text:'通算成績（勝・敗・分と連勝数）を保存して開始画面に表示するように'},
+  {date:'2026-11-26', id:'kabuka-bingo',    version:'0.2', text:'クイックモード（1ラウンド制）を追加。短い時間でも遊べるように（通常は3ラウンド、選択は保存）'},
+  {date:'2026-11-26', id:'doubutsu-kabu',   version:'0.4', text:'決算発表の画面に「もう一度あそぶ（最初から）」ボタンを追加。同じ設定ですぐ再戦できるように'},
+  {date:'2026-11-26', id:'kabuka-bingo', version:'0.1', text:'新しく登場：9社のボードで株のビンゴ。市場カードをめくってラインをそろえよう'},
+    {date:'2026-11-26', id:'bodoge-shop-story', version:'0.9', text:'バランス調整：手が空いた仲間（接客・店長）が市場の入れ替えを手伝うように。仕入れ担当でも遊びやすくなった'},
   {date:'2026-11-26', id:'yutai-collection', version:'0.6', text:'バランス調整：カメ🐢が新しい会社や点数の高い優待をねらうようになり、勝ちやすくなった'},
   {date:'2026-11-26', id:'ipo-rush', version:'0.5', text:'バランス調整：業績カードの内訳と相場イベントを見直し、参加するCPUは毎回ランダムに。カメとブタも勝ちやすくなった'},
   {date:'2026-11-26', id:'animal-baseball', version:'0.2', text:'投手のスタミナと投手交代、打者1人ずつの特殊能力（チャンスに強い・快足・選球眼など）、試合中いつでも見られる打順表を追加'},

@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>株価ビンゴ</title>
+<!-- 試作ゲームラボ: 下のOGタグ・アイコン・「試作ゲームラボに戻る」リンクは消さないこと（作業ルールはリポジトリ直下の CLAUDE.md） -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="試作ゲームラボ">
+<meta property="og:title" content="株価ビンゴ｜試作ゲームラボ">
+<meta property="og:description" content="9つの会社が並んだ3×3のボードで株のビンゴ。市場カードを1枚ずつめくって、タテ・ヨコ・ナナメをそろえよう。配当でコツコツ、暴落でガタガタ。作戦カードでねらいを変えて、3ラウンドの合計点で勝負。">
+<meta property="og:url" content="https://game-lab-oj9t.onrender.com/kabuka-bingo/">
+<meta property="og:image" content="https://game-lab-oj9t.onrender.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap">
+<style>
+:root{
+  --bg:#f3eef7;--card:#ffffff;--ink:#241d2b;--sub:#6b6470;--line:#d8cfe0;
+  --accent:#7b1fa2;--gold:#b8860b;--red:#c62828;--green:#2e7d32;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--ink);font-family:"M PLUS Rounded 1c",system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
+body{padding:calc(12px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left))}
+.wrap{max-width:460px;margin:0 auto}
+button{font-family:inherit;cursor:pointer;border:none}
+.hidden{display:none!important}
+
+/* start */
+.title{font-size:34px;font-weight:800;text-align:center;letter-spacing:.02em;margin:24px 0 4px}
+.title span{display:inline-block;transform:rotate(-6deg);color:var(--accent)}
+.catch{text-align:center;color:var(--sub);font-size:14px;margin-bottom:20px}
+.panel{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px}
+.panel h3{font-size:15px;margin-bottom:8px}
+.panel ol,.panel ul{padding-left:20px;font-size:14px;line-height:1.8}
+.cnt{display:flex;gap:6px;margin:4px 0 12px}
+.cnt button{flex:1;padding:10px 0;border-radius:10px;background:#fff;border:2px solid var(--line)!important;font-size:16px;font-weight:800;color:var(--ink)}
+.cnt button.on{background:var(--ink);color:#fff;border-color:var(--ink)!important}
+.big{display:block;width:100%;padding:16px;border-radius:14px;background:var(--ink);color:#fff;font-size:18px;font-weight:800;box-shadow:0 4px 0 #000;transition:transform .08s}
+.big:active{transform:translateY(3px);box-shadow:0 1px 0 #000}
+.big:disabled{background:#a9a294;box-shadow:0 4px 0 #8a8478}
+table.stats{width:100%;border-collapse:collapse;font-size:13px}
+table.stats th,table.stats td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left}
+table.stats th:nth-child(n+2),table.stats td:nth-child(n+2){text-align:center}
+.cpu-intro{display:flex;flex-direction:column;gap:8px;font-size:14px}
+.cpu-intro div{display:flex;gap:10px;align-items:center}
+.cpu-intro .av{font-size:24px}
+.cpu-intro small{color:var(--sub);display:block}
+.tac{display:flex;flex-direction:column;gap:8px}
+.tac button{text-align:left;padding:12px;border-radius:12px;background:#fff;border:2px solid var(--line)!important;font-size:14px;font-weight:700;color:var(--ink);line-height:1.5}
+.tac button.on{border-color:var(--accent)!important;background:#f3e5f5}
+.tac button b{color:var(--accent)}
+.tac button small{display:block;color:var(--sub);font-weight:400}
+
+/* header */
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.top .logo{font-weight:800;font-size:18px}
+.deckinfo{font-size:13px;color:var(--sub);font-weight:700}
+
+/* market */
+.market{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:14px;text-align:center;margin-bottom:12px}
+.market .card-emo{font-size:40px}
+.market .card-nm{font-size:18px;font-weight:800;margin-top:4px}
+.market .card-sub{font-size:13px;color:var(--sub);margin-top:2px}
+.market .card-sub.good{color:var(--green);font-weight:800}
+.market .card-sub.bad{color:var(--red);font-weight:800}
+.drawbtn{display:block;width:100%;padding:14px;border-radius:12px;background:var(--accent);color:#fff;font-size:16px;font-weight:800;margin-top:10px;box-shadow:0 4px 0 #4a0072}
+.drawbtn:active{transform:translateY(3px);box-shadow:0 1px 0 #4a0072}
+.drawbtn:disabled{background:#c9b8cf;box-shadow:0 4px 0 #a08aa8}
+.pick-hint{font-size:14px;font-weight:800;color:var(--red);text-align:center;margin-bottom:8px;min-height:20px}
+
+/* board */
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
+.cell{background:var(--card);border:2px solid var(--line);border-radius:12px;padding:10px 2px;text-align:center;min-height:84px;display:flex;flex-direction:column;justify-content:center;gap:2px;position:relative}
+.cell .emo{font-size:26px}
+.cell .nm{font-size:11px;font-weight:800;line-height:1.3}
+.cell .st{font-size:11px;color:var(--gold);font-weight:800}
+.cell.flip{background:#f3e5f5;border-color:var(--accent)}
+.cell.flip::after{content:"✓";position:absolute;top:2px;right:6px;font-size:18px;font-weight:800;color:var(--accent)}
+.cell.reach{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold)}
+.cell.pickable{cursor:pointer;border-color:var(--red);box-shadow:0 0 0 2px var(--red);animation:wob .6s infinite alternate}
+@keyframes wob{from{transform:scale(1)}to{transform:scale(1.04)}}
+.cell.win{background:#fff8e1;border-color:var(--gold);box-shadow:0 0 0 2px var(--gold)}
+.board-label{font-size:13px;font-weight:800;margin-bottom:6px}
+.board-label small{color:var(--sub);font-weight:700}
+
+/* players */
+.players{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0 10px}
+.pl{background:var(--card);border:2px solid var(--line);border-radius:12px;padding:8px 10px;font-size:12px}
+.pl.me{border-color:var(--ink)}
+.pl .nm{font-weight:800;font-size:13px;display:flex;justify-content:space-between}
+.pl .tot{font-size:18px;font-weight:800}
+.pl .detail{color:var(--sub)}
+.pl .tactic{color:var(--accent);font-weight:800}
+.miniboard{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-top:6px}
+.miniboard div{background:#f3eef7;border:1px solid var(--line);border-radius:6px;text-align:center;font-size:13px;padding:3px 0}
+.miniboard div.flip{background:#e1bee7;border-color:var(--accent)}
+.phase{font-size:14px;font-weight:700;text-align:center;margin-bottom:8px;min-height:20px;line-height:1.6}
+.log{font-size:13px;color:var(--sub);line-height:1.7;min-height:20px}
+.log div{animation:fade .3s}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
+
+/* end */
+.rank{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+.rk{display:flex;align-items:center;gap:10px;background:var(--card);border:2px solid var(--line);border-radius:14px;padding:12px}
+.rk.me{border-color:var(--ink)}
+.rk .no{font-size:22px;font-weight:800;width:30px;text-align:center}
+.rk .nm{flex:1;font-weight:800}
+.rk .v{font-size:22px;font-weight:800}
+.result-msg{text-align:center;font-size:24px;font-weight:800;margin-top:16px}
+.round-msg{text-align:center;font-size:20px;font-weight:800;margin:12px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- START -->
+<section id="start">
+  <div class="title">株価<span>ビンゴ</span></div>
+  <p class="catch">9つの会社が並んだボードで、株のビンゴ！</p>
+  <div class="panel">
+    <h3>あそびかた</h3>
+    <ol>
+      <li>12社から9社が、あなたの3×3のボードに並びます（CPUも同じ）</li>
+      <li>「市場カードを引く」を押すと、市場カードが1枚めくれます。<b>会社カード</b>なら、ボードにあればそのマスがめくれます</li>
+      <li>タテ・ヨコ・ナナメの3マスがそろえば <b>ビンゴ！</b> 10点＋そろったラインの配当★の合計点</li>
+      <li>📈 <b>配当</b>：全員、めくれているマスの数だけ点（最大3点）／📉 <b>暴落</b>：全員、めくれたマスを1つ失います。失うマスはあなたが選べます</li>
+      <li id="roundRule">ラウンドは3回。合計点がいちばん多い人の勝ち</li>
+    </ol>
+    <table class="stats" id="coTable" style="margin-top:10px"></table>
+    <p style="font-size:13px;color:var(--sub);margin-top:8px">★は配当の大きさ。ビンゴしたラインの★の合計も点になります。</p>
+    <p id="deckNote" style="font-size:13px;color:var(--sub);margin-top:8px"></p>
+  </div>
+  <div class="panel">
+    <h3>モード</h3>
+    <div class="cnt" id="modeCnt"></div>
+    <p style="font-size:13px;color:var(--sub)">クイックは1ラウンドだけの短い勝負です。</p>
+  </div>
+  <div class="panel">
+    <h3>対戦するCPUの人数</h3>
+    <div class="cnt" id="cnt"></div>
+    <div class="cpu-intro" id="cpuIntro"></div>
+  </div>
+  <button class="big" onclick="newGame()">はじめる</button>
+  <p style="text-align:center;margin-top:14px"><a href="../" style="color:var(--sub);font-size:13px">← 試作ゲームラボに戻る</a></p>
+</section>
+
+<!-- TACTIC -->
+<section id="tactic" class="hidden">
+  <div class="title" style="font-size:28px">ラウンド <span id="tacRound">1</span> の作戦</div>
+  <p class="catch">このラウンドの作戦を1つ選んでください</p>
+  <div class="panel">
+    <div class="tac" id="tacList"></div>
+  </div>
+  <button class="big" onclick="startRound()">この作戦でいく</button>
+  <p style="text-align:center;margin-top:14px"><a href="../" style="color:var(--sub);font-size:13px">← 試作ゲームラボに戻る</a></p>
+</section>
+
+<!-- GAME -->
+<section id="game" class="hidden">
+  <div class="top">
+    <div class="logo"><a href="../" style="text-decoration:none;color:inherit" aria-label="ラボに戻る">⌂</a> 株価ビンゴ</div>
+    <div class="deckinfo" id="deckInfo"></div>
+  </div>
+
+  <div class="market" id="market">
+    <div class="card-emo">📊</div>
+    <div class="card-nm">市場はまだ開いていません</div>
+    <div class="card-sub">下のボタンで市場カードを引いてください</div>
+    <button class="drawbtn" id="drawBtn" onclick="drawCard()">市場カードを引く</button>
+  </div>
+
+  <div class="pick-hint" id="pickHint"></div>
+
+  <div class="board-label">あなたのボード <small id="myTac"></small></div>
+  <div class="board" id="myBoard"></div>
+
+  <div class="phase" id="phase"></div>
+  <div class="players" id="players"></div>
+  <div class="log" id="log"></div>
+</section>
+
+<!-- ROUND END -->
+<section id="roundEnd" class="hidden">
+  <div class="round-msg" id="roundMsg"></div>
+  <div class="panel" id="roundStats"></div>
+  <button class="big" id="nextRoundBtn" onclick="nextRound()">次のラウンドへ</button>
+  <p style="text-align:center;margin-top:14px"><a href="../" style="color:var(--sub);font-size:13px">← 試作ゲームラボに戻る</a></p>
+</section>
+
+<!-- END -->
+<section id="end" class="hidden">
+  <div class="result-msg" id="endMsg"></div>
+  <div class="rank" id="rank"></div>
+  <div class="panel" id="endStats"></div>
+  <button class="big" onclick="newGame()">もう一度あそぶ</button>
+  <p style="text-align:center;margin-top:12px"><a href="#" onclick="show('start');renderSetup();return false" style="color:var(--ink);font-size:14px;font-weight:700">人数を変える</a></p>
+  <p style="text-align:center;margin-top:14px"><a href="../" style="color:var(--sub);font-size:13px">← 試作ゲームラボに戻る</a></p>
+</section>
+
+</div>
+<script>
+const COMPANIES=[
+  {id:'sakura', name:'さくら電機',   emo:'🔌', sector:'電機',   star:2},
+  {id:'momo',   name:'ももパン',     emo:'🍞', sector:'食品',   star:1},
+  {id:'kuma',   name:'くま鉄道',     emo:'🚃', sector:'鉄道',   star:1},
+  {id:'hoshi',  name:'ほし薬品',     emo:'💊', sector:'医薬',   star:2},
+  {id:'kamome', name:'かもめ航空',   emo:'✈️', sector:'空運',   star:0},
+  {id:'himawari',name:'ひまわり電力',emo:'☀️', sector:'電力',   star:1},
+  {id:'ringo',  name:'りんご通信',   emo:'📱', sector:'通信',   star:2},
+  {id:'tanuki', name:'たぬき銀行',   emo:'🏦', sector:'銀行',   star:0},
+  {id:'suzume', name:'すずめ不動産', emo:'🏠', sector:'不動産', star:1},
+  {id:'sakuranbo',name:'さくらんぼ商事',emo:'🍒', sector:'商社', star:0},
+  {id:'donguri',name:'どんぐり玩具', emo:'🧸', sector:'玩具',   star:1},
+  {id:'umi',    name:'うみゲーム',   emo:'🎮', sector:'ゲーム', star:2},
+];
+const LINES=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+const TACTICS=[
+  {id:'focus', name:'集中投資', desc:'ビンゴしたラインの配当★が2倍になる', detail:'ビンゴねらい。★の多いラインをそろえよう'},
+  {id:'spread',name:'分散投資', desc:'📈配当カードのとき、さらに＋2点もらえる', detail:'コツコツ型。配当でじわじわ稼ぐ'},
+  {id:'short', name:'空売り',   desc:'📉暴落のとき、マスを失わずに＋2点もらえる', detail:'暴落をチャンスに変える。守りつつ稼ぐ'},
+];
+const CPUS=[
+  {name:'ウサギ',icon:'🐰',desc:'まっすぐ。ビンゴ一直線'},
+  {name:'カメ',icon:'🐢',desc:'じっくり。配当を大切にする'},
+  {name:'キツネ',icon:'🦊',desc:'ずる賢い。暴落でも得をする'},
+  {name:'フクロウ',icon:'🦉',desc:'計算派。ラインをよく見る'},
+];
+const ROUNDS=3, DECK_CO=12, DECK_HAITO=2, DECK_BORAKU=2;
+let numCpu=3, S=null, myTac='focus';
+let mode=localStorage.getItem('kabuka-bingo-mode')||'normal';
+if(mode!=='quick')mode='normal';
+function totalRounds(){return mode==='quick'?1:ROUNDS}
+function setMode(m){mode=m;try{localStorage.setItem('kabuka-bingo-mode',m)}catch(e){}renderSetup()}
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=a[i];a[i]=a[j];a[j]=t}return a}
+function show(id){['start','tactic','game','roundEnd','end'].forEach(s=>document.getElementById(s).classList.toggle('hidden',s!==id))}
+function addLog(s){S.log.unshift(s);if(S.log.length>16)S.log.length=16}
+function co(id){return COMPANIES.find(x=>x.id===id)}
+function coName(id){const c=co(id);return c?c.emo+c.name:id}
+function stars(n){return '★'.repeat(n)||'－'}
+function flippedCount(p){return p.board.filter(b=>b.flip).length}
+function lineOf(p){return LINES.find(L=>L.every(i=>p.board[i].flip))||null}
+function reachLines(p){return LINES.filter(L=>L.filter(i=>p.board[i].flip).length===2&&L.some(i=>!p.board[i].flip))}
+
+function renderSetup(){
+  document.getElementById('modeCnt').innerHTML=
+    `<button class="${mode==='normal'?'on':''}" onclick="setMode('normal')">通常（3ラウンド）</button>`+
+    `<button class="${mode==='quick'?'on':''}" onclick="setMode('quick')">クイック（1ラウンド）</button>`;
+  document.getElementById('roundRule').textContent=mode==='quick'
+    ?'クイックモード：ラウンドは1回だけ。そのラウンド終わりの合計点がいちばん多い人の勝ち'
+    :'ラウンドは3回。合計点がいちばん多い人の勝ち';
+  document.getElementById('cnt').innerHTML=[1,2,3].map(n=>`<button class="${n===numCpu?'on':''}" onclick="numCpu=${n};renderSetup()">${n}人</button>`).join('');
+  document.getElementById('cpuIntro').innerHTML=`<small style="color:var(--sub)">この4人から${numCpu}人がランダムで登場</small>`+CPUS.map(c=>`<div><span class="av">${c.icon}</span><span><b>${c.name}</b><small>${c.desc}</small></span></div>`).join('');
+  document.getElementById('coTable').innerHTML='<tr><th>会社</th><th>業種</th><th>配当★</th></tr>'+
+    COMPANIES.map(c=>`<tr><td>${c.emo}${c.name}</td><td>${c.sector}</td><td style="color:var(--gold);font-weight:800">${stars(c.star)}</td></tr>`).join('');
+  document.getElementById('deckNote').textContent=`会社カード12枚＋市場カード16枚（会社12・配当2・暴落2）＋作戦カード3枚の31枚で遊べます。`;
+}
+
+function newGame(){
+  const mk=(o)=>Object.assign({board:[],score:0,rounds:0,tac:null},o);
+  const players=[mk({name:'あなた',icon:'🙂',me:true})];
+  shuffle(CPUS).slice(0,numCpu).forEach(c=>players.push(mk({name:c.name,icon:c.icon})));
+  S={players,round:1,total:totalRounds(),log:[`第1ラウンド開始！作戦を選んでください。`],over:false,picking:false,deck:[],drawn:[]};
+  show('tactic');
+  renderTactic();
+}
+
+function renderTactic(){
+  document.getElementById('tacRound').textContent=S.round;
+  document.getElementById('tacList').innerHTML=TACTICS.map(t=>`<button class="${t.id===myTac?'on':''}" onclick="myTac='${t.id}';renderTactic()"><b>${t.name}</b> — ${t.desc}<small>${t.detail}</small></button>`).join('');
+}
+
+function startRound(){
+  const me=S.players[0];
+  me.tac=myTac;
+  S.players.slice(1).forEach(p=>{p.tac=TACTICS[Math.floor(Math.random()*TACTICS.length)].id});
+  // ボード：12社から9社をランダムに3×3へ
+  S.players.forEach(p=>{
+    p.board=shuffle(COMPANIES).slice(0,9).map(c=>({id:c.id,flip:false}));
+    p.winLine=null;
+  });
+  // 市場デッキ：会社12＋配当2＋暴落2
+  const deck=[];
+  COMPANIES.forEach(c=>deck.push({type:'co',id:c.id}));
+  for(let i=0;i<DECK_HAITO;i++)deck.push({type:'haito'});
+  for(let i=0;i<DECK_BORAKU;i++)deck.push({type:'boraku'});
+  S.deck=shuffle(deck);
+  S.drawn=[];
+  S.picking=false;
+  addLog(`第${S.round}ラウンド開始！あなたの作戦は「${TACTICS.find(t=>t.id===me.tac).name}」`);
+  show('game');
+  renderMarket(null);
+  render();
+}
+
+function tacName(id){const t=TACTICS.find(x=>x.id===id);return t?t.name:''}
+
+function drawCard(){
+  if(S.over||S.picking||S.deck.length===0)return;
+  const card=S.deck.pop();
+  S.drawn.push(card);
+  if(card.type==='co'){
+    const c=co(card.id);
+    let hitMe=false,hitCpu=0,already=false;
+    S.players.forEach(p=>{
+      const cell=p.board.find(b=>b.id===card.id);
+      if(cell&&!cell.flip){cell.flip=true;if(p.me)hitMe=true;else hitCpu++}
+      else if(cell)already=true;
+    });
+    addLog(`${c.emo}${c.name}の市場カード！${hitMe?'あなたのボードのマスがめくれた！':''}${hitCpu?`CPU${hitCpu}人のマスもめくれた`:''}${already&&!hitMe&&!hitCpu?'もうめくれているマスだった':''}${!hitMe&&!hitCpu&&!already?'だれのボードにもなかった…':''}`);
+    renderMarket(card);
+    afterDraw();
+  }else if(card.type==='haito'){
+    S.players.forEach(p=>{
+      let pts=Math.min(flippedCount(p),3);
+      if(p.tac==='spread')pts+=2;
+      p.score+=pts;
+      addLog(`${p.icon}${p.name}は📈配当で＋${pts}点${p.tac==='spread'?'（分散投資＋2）':''}`);
+    });
+    renderMarket(card);
+    afterDraw();
+  }else{
+    // 暴落：CPUは自動で1マス失う。あなたは選ぶ
+    S.players.slice(1).forEach(p=>{
+      if(p.tac==='short'){p.score+=2;addLog(`${p.icon}${p.name}は空売りで📉暴落をかわして＋2点！`);return}
+      const idx=cpuLoseIdx(p);
+      if(idx>=0){p.board[idx].flip=false;addLog(`${p.icon}${p.name}は📉暴落で${coName(p.board[idx].id)}のマスを失った`)}
+      else addLog(`${p.icon}${p.name}はめくれたマスがなく、📉暴落の影響なし`);
+    });
+    const me=S.players[0];
+    if(me.tac==='short'){me.score+=2;addLog(`あなたは空売りで📉暴落をかわして＋2点！`);renderMarket(card);afterDraw();return}
+    const flipped=me.board.map((b,i)=>b.flip?i:-1).filter(i=>i>=0);
+    renderMarket(card);
+    if(flipped.length===0){addLog(`あなたはめくれたマスがなく、📉暴落の影響なし`);afterDraw();return}
+    S.picking=true;
+    document.getElementById('pickHint').textContent='📉 暴落！失うマスを1つタップして選んでください';
+    render();
+  }
+}
+
+// CPUが暴落で失うマス：ラインの役に立っていない（他の2マスがめくれていないラインが多い）マスを選ぶ
+function cpuLoseIdx(p){
+  const flipped=p.board.map((b,i)=>b.flip?i:-1).filter(i=>i>=0);
+  if(!flipped.length)return -1;
+  let best=flipped[0],bestScore=-1;
+  flipped.forEach(i=>{
+    const sc=LINES.filter(L=>L.includes(i)&&L.every(j=>j===i||!p.board[j].flip)).length;
+    if(sc>bestScore){bestScore=sc;best=i}
+  });
+  return best;
+}
+
+function pickLose(i){
+  if(!S.picking)return;
+  const me=S.players[0];
+  if(!me.board[i].flip)return;
+  me.board[i].flip=false;
+  S.picking=false;
+  document.getElementById('pickHint').textContent='';
+  addLog(`あなたは📉暴落で${coName(me.board[i].id)}のマスを失った`);
+  afterDraw();
+}
+
+function afterDraw(){
+  render();
+  // ビンゴ判定
+  const winners=S.players.filter(p=>lineOf(p));
+  if(winners.length){
+    winners.forEach(p=>{
+      const L=lineOf(p);
+      const starSum=L.reduce((t,i)=>t+co(p.board[i].id).star,0);
+      let pts=10+starSum;
+      if(p.tac==='focus')pts=10+starSum*2;
+      p.score+=pts;
+      p.rounds++;
+      p.winLine=L.slice();
+      addLog(`🎉 ${p.icon}${p.name}がビンゴ！＋${pts}点${p.tac==='focus'?'（集中投資で★2倍）':''}（ラインの★合計${starSum}）`);
+    });
+    S.over=true;render();
+    setTimeout(()=>endRound(winners,true),900);
+    return;
+  }
+  if(S.deck.length===0){
+    // 山札切れ：めくれたマスが一番多い人が5点
+    const max=Math.max(...S.players.map(p=>flippedCount(p)));
+    const top=S.players.filter(p=>flippedCount(p)===max);
+    top.forEach(p=>{p.score+=5;addLog(`山札切れ！${p.icon}${p.name}がめくれたマス最多（${max}マス）で＋5点`)});
+    S.over=true;render();
+    setTimeout(()=>endRound(top,false),900);
+    return;
+  }
+  document.getElementById('drawBtn').disabled=false;
+}
+
+function endRound(winners,bingo){
+  S.over=true;
+  const names=winners.map(p=>`${p.icon}${p.name}`).join('・');
+  const msg=bingo
+    ?`第${S.round}ラウンド：${names}がビンゴ！`
+    :`第${S.round}ラウンド：山札切れ！${names}が最多マスで＋5点`;
+  document.getElementById('roundMsg').textContent=msg;
+  document.getElementById('roundStats').innerHTML='<h3>現在の合計点</h3><table class="stats"><tr><th>プレイヤー</th><th>ラウンド勝利</th><th>合計点</th></tr>'+
+    S.players.map(p=>`<tr><td>${p.icon} ${p.name}</td><td>${p.rounds}勝</td><td>${p.score}点</td></tr>`).join('')+'</table>'+
+    `<p style="font-size:13px;color:var(--sub);margin-top:8px">ラウンド${S.round}／${S.total}が終わりました。</p>`;
+  document.getElementById('nextRoundBtn').textContent=S.round<S.total?'次のラウンドへ':'最終結果を見る';
+  show('roundEnd');
+}
+
+function nextRound(){
+  if(S.round>=S.total){settle();return}
+  S.round++;
+  S.over=false;
+  show('tactic');
+  renderTactic();
+}
+
+function settle(){
+  const rank=S.players.map(p=>({p,tot:p.score})).sort((a,b)=>b.tot-a.tot||b.p.rounds-a.p.rounds);
+  const meTot=S.players[0].score;
+  const myRank=rank.filter(r=>r.tot>meTot||(r.tot===meTot&&r.p.rounds>S.players[0].rounds)).length+1;
+  const tied=rank.filter(r=>r.tot===meTot&&r.p.rounds===S.players[0].rounds).length>1;
+  const msg=myRank===1?(tied?'🏆 優勝！（同点）':'🏆 優勝！ビンゴの達人！'):(myRank===2?'🥈 2位！あと少し！':`🏁 ${myRank}位でフィニッシュ`);
+  document.getElementById('endMsg').textContent=msg;
+  document.getElementById('rank').innerHTML=rank.map(r=>{
+    const no=rank.filter(x=>x.tot>r.tot||(x.tot===r.tot&&x.p.rounds>r.p.rounds)).length+1;
+    return `<div class="rk ${r.p.me?'me':''}"><div class="no">${no}</div><div class="nm">${r.p.icon} ${r.p.name}</div><div class="v">${r.tot}<small style="font-size:12px">点</small></div></div>`;
+  }).join('');
+  document.getElementById('endStats').innerHTML='<h3>内訳</h3><table class="stats"><tr><th>プレイヤー</th><th>ラウンド勝利</th><th>合計点</th></tr>'+
+    S.players.map(p=>`<tr><td>${p.icon} ${p.name}</td><td>${p.rounds}勝</td><td>${p.score}点</td></tr>`).join('')+'</table>'+
+    `<p style="font-size:13px;color:var(--sub);margin-top:8px">実物版：会社カード12枚＋市場カード16枚＋作戦カード3枚の31枚で遊べます</p>`;
+  show('end');
+}
+
+function renderMarket(card){
+  const el=document.getElementById('market');
+  const btn=document.getElementById('drawBtn');
+  btn.disabled=false;
+  if(!card){
+    el.querySelector('.card-emo').textContent='📊';
+    el.querySelector('.card-nm').textContent='市場はまだ開いていません';
+    el.querySelector('.card-sub').textContent='下のボタンで市場カードを引いてください';
+    el.querySelector('.card-sub').className='card-sub';
+    return;
+  }
+  if(card.type==='co'){
+    const c=co(card.id);
+    el.querySelector('.card-emo').textContent=c.emo;
+    el.querySelector('.card-nm').textContent=c.name;
+    el.querySelector('.card-sub').textContent=`${c.sector}・配当${stars(c.star)}`;
+    el.querySelector('.card-sub').className='card-sub';
+  }else if(card.type==='haito'){
+    el.querySelector('.card-emo').textContent='📈';
+    el.querySelector('.card-nm').textContent='配当！';
+    el.querySelector('.card-sub').textContent='全員、めくれたマスの数だけ点（最大3点）';
+    el.querySelector('.card-sub').className='card-sub good';
+  }else{
+    el.querySelector('.card-emo').textContent='📉';
+    el.querySelector('.card-nm').textContent='暴落！';
+    el.querySelector('.card-sub').textContent='全員、めくれたマスを1つ失う（空売りなら＋2点）';
+    el.querySelector('.card-sub').className='card-sub bad';
+  }
+}
+
+function render(){
+  const me=S.players[0];
+  document.getElementById('deckInfo').textContent=`ラウンド ${S.round}/${S.total}・市場カード残り ${S.deck.length}枚`;
+  document.getElementById('myTac').textContent=`作戦：${tacName(me.tac)}`;
+  const winL=me.winLine||[];
+  const reach=reachLines(me);
+  document.getElementById('myBoard').innerHTML=me.board.map((b,i)=>{
+    const c=co(b.id);
+    const cls=['cell'];
+    if(b.flip)cls.push('flip');
+    if(winL.includes(i))cls.push('win');
+    else if(reach.some(L=>L.includes(i)&&!b.flip))cls.push('reach');
+    if(S.picking&&b.flip)cls.push('pickable');
+    return `<div class="${cls.join(' ')}" onclick="pickLose(${i})"><div class="emo">${c.emo}</div><div class="nm">${c.name}</div><div class="st">${stars(c.star)}</div></div>`;
+  }).join('');
+  document.getElementById('phase').textContent=S.picking?'暴落中…失うマスを選んでください':(S.deck.length===0?'市場カードがなくなりました':`めくれたマス：${flippedCount(me)}マス${reach.length?'・リーチ！あと1マス':''}`);
+  document.getElementById('players').innerHTML=S.players.map(p=>{
+    const reachN=reachLines(p).length;
+    const mini=p.board.map(b=>`<div class="${b.flip?'flip':''}">${co(b.id).emo}</div>`).join('');
+    return `<div class="pl ${p.me?'me':''}"><div class="nm"><span>${p.icon} ${p.name}</span><span class="tactic">${tacName(p.tac)}</span></div><div class="tot">${p.score}<small style="font-size:11px">点（${p.rounds}勝）</small></div><div class="detail">めくれたマス ${flippedCount(p)}／9${reachN&&!p.me?`・リーチ${reachN}本`:''}${reachN&&p.me?'・リーチ！':''}</div><div class="miniboard">${mini}</div></div>`;
+  }).join('');
+  document.getElementById('log').innerHTML=S.log.map(l=>`<div>${l}</div>`).join('');
+  document.getElementById('drawBtn').disabled=S.picking||S.over||S.deck.length===0;
+}
+renderSetup();
+</script>
+</body>
+</html>
