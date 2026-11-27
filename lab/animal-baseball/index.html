@@ -100,7 +100,7 @@ table.ro td,table.ro th{border-bottom:1px solid var(--line);padding:4px 5px;text
   </div>
 </header>
 <main>
-  <p class="note"><a href="../">← 試作ゲームラボに戻る</a> ・ アニマルベースボール v0.3<br>選手カードを出し合い、攻撃力−守備力の差で打者ごとのバッティング表を引いて結果が決まります。<span class="tag">仮</span> の付いたルールは調整中です。</p>
+  <p class="note"><a href="../">← 試作ゲームラボに戻る</a> ・ アニマルベースボール v0.4<br>選手カードを出し合い、攻撃力−守備力の差で打者ごとのバッティング表を引いて結果が決まります。<span class="tag">仮</span> の付いたルールは調整中です。</p>
   <section class="panel on" id="p-game"><div id="game"></div></section>
   <section class="panel" id="p-rule">
     <div class="box"><h2>1打席の流れ</h2>
@@ -126,6 +126,7 @@ table.ro td,table.ro th{border-bottom:1px solid var(--line);padding:4px 5px;text
         <li><b>好投</b>（守備）：守備力 +2</li>
         <li><b>盗塁</b>（攻撃）：一塁走者が二塁へ（二塁が空いているとき）</li>
         <li><b>盗塁阻止</b>（守備）：ゾーンに置いておくと、相手の盗塁を自動でアウトにする</li>
+        <li><b>スクイズ</b>（攻撃）：三塁走者がいて、アウトが2つ未満のとき使える。攻撃力合計が守備力合計以上なら成功：三塁走者が還って1点、打者はアウト、他の走者は1つ進む。負けると三塁走者がアウト、打者は一塁へ</li>
       </ul>
     </div>
     <div class="box"><h2>投手のスタミナと交代</h2>
@@ -202,7 +203,7 @@ function buildTeam(t,ti){
   bat.forEach(b=>deck.push(pc(b,'bat')));
   [...bat].sort((a,b)=>b.atk-a.atk).slice(0,4).forEach(b=>deck.push(pc(b,'bat')));
   [4,4,3].forEach((n,i)=>{for(let k=0;k<n;k++)deck.push(pc(pit[i],'pit'))});
-  [['強打',2],['好投',2],['盗塁',1],['盗塁阻止',1]].forEach(([s,n])=>{for(let k=0;k<n;k++)deck.push({uid:uid++,kind:'s',name:s})});
+  [['強打',2],['好投',2],['盗塁',1],['盗塁阻止',1],['スクイズ',1]].forEach(([s,n])=>{for(let k=0;k<n;k++)deck.push({uid:uid++,kind:'s',name:s})});
   return {name:t.name,short:t.short,col:t.col,bat,pit,pi:0,order:0,deck:shuffle(deck),hand:[],disc:[],zone:[]};
 }
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
@@ -247,15 +248,17 @@ function cpuExec(T,isOff){
   for(const c of T.zone){
     if(isOff&&c.name==='強打'&&(G.bases.some(Boolean)||G.inning>=G.N||Math.random()<.5))u.push(c);
     if(isOff&&c.name==='盗塁'&&canSteal()&&G.outs<2&&Math.random()<.6)u.push(c);
+    if(isOff&&c.name==='スクイズ'&&canSqueeze()){const mi=G.teams.indexOf(T);if(G.score[mi]-G.score[1-mi]<=1&&Math.random()<.8)u.push(c)}
     if(!isOff&&c.name==='好投'&&(G.bases.some(Boolean)||G.inning>=G.N||Math.random()<.5))u.push(c);
   }
   return u;
 }
 const canSteal=()=>G.bases[0]&&!G.bases[1];
+const canSqueeze=()=>!!G.bases[2]&&G.outs<2;
 const fat=p=>p.faced<p.sta?0:1;
 const relievers=T=>T.pit.filter((q,i)=>i!==T.pi&&!q.done);
 function relief(T,q){const old=T.pit[T.pi];old.done=true;T.pi=T.pit.indexOf(q);log(`${T.short}：投手交代 ${old.name} → ${q.name}`)}
-function usable(c,isOff){return isOff?(c.name==='強打'||(c.name==='盗塁'&&canSteal())):c.name==='好投'}
+function usable(c,isOff){return isOff?(c.name==='強打'||(c.name==='盗塁'&&canSteal())||(c.name==='スクイズ'&&canSqueeze())):c.name==='好投'}
 
 function act(a,arg){
   const O=off(),D=dfn(),Y=G.teams[G.you],yOff=Y===O;
@@ -314,7 +317,14 @@ function judge(){
     log(`${O.short}：${pre}`);
   }
   let result=G.outs>=3?null:TBL[b.tbl][idx],runs=0,conv='';
-  if(result){const r0=result;
+  const sqz=uo.includes('スクイズ')&&canSqueeze();
+  if(sqz){p.faced++;
+    if(diff>=0){result='スクイズ成功';runs=1;G.bases[2]=null;G.outs++;
+      for(let i=1;i>=0;i--)if(G.bases[i]){G.bases[i+1]=G.bases[i];G.bases[i]=null}}
+    else{result='スクイズ失敗';G.bases[2]=null;G.outs++;const B=G.bases;
+      if(B[0]){if(B[1])B[2]=B[1];B[1]=B[0]}B[0]=b}
+  }
+  else if(result){const r0=result;
     if(ab==='speed'&&r0==='併殺')result='安打';
     if(ab==='eye'&&r0==='三振')result='四球';
     if(ab==='pull'&&r0==='外F')result='二塁打';
@@ -441,7 +451,7 @@ function orderView(){
 }
 function teamsView(){
   $('#teams').innerHTML=TEAMS.map((t,ti)=>{const T=buildTeam(t,ti);return `<div class="box"><h2>${esc(t.name)}</h2><div class="scroll"><table class="ro"><tr><th>打順</th><th>選手</th><th>守</th><th>攻</th><th>守</th><th>型</th><th>能力</th>${[-4,-3,-2,-1,0,1,2,3,4].map(n=>`<th>${n>0?'+':''}${n}</th>`).join('')}</tr>${T.bat.map((b,i)=>`<tr><td>${i+1}</td><td>${esc(b.name)}（${esc(b.ani)}）</td><td>${b.pos}</td><td>${b.atk}</td><td>${b.def}</td><td>${TYPE[b.tbl]}</td><td>${ABIL[b.ab][0]}</td>${TBL[b.tbl].map(r=>`<td>${SHORT[r]}</td>`).join('')}</tr>`).join('')}</table></div>
-    <p class="note">投手：${T.pit.map((p,i)=>`${esc(p.name)}（${esc(p.ani)}）守${p.def}・9回で${STA[i]}人／3回で${staFor(i,3)}人で疲れる${i?'':'・先発'}`).join('／')}<br>山札30枚：野手カード13・投手カード11・作戦カード6</p></div>`}).join('')+`<div class="box"><h2>表の見かた</h2><p>四＝四球、安＝安打、二＝二塁打、三＝三塁打、本＝本塁打、犠＝犠打、振＝三振、内飛・外飛＝内野・外野フライ、凡＝凡打、併＝併殺。</p><p>${Object.values(ABIL).map(a=>`<b>${a[0]}</b>：${a[1]}`).join('<br>')}</p></div>`;
+    <p class="note">投手：${T.pit.map((p,i)=>`${esc(p.name)}（${esc(p.ani)}）守${p.def}・9回で${STA[i]}人／3回で${staFor(i,3)}人で疲れる${i?'':'・先発'}`).join('／')}<br>山札31枚：野手カード13・投手カード11・作戦カード7</p></div>`}).join('')+`<div class="box"><h2>表の見かた</h2><p>四＝四球、安＝安打、二＝二塁打、三＝三塁打、本＝本塁打、犠＝犠打、振＝三振、内飛・外飛＝内野・外野フライ、凡＝凡打、併＝併殺。</p><p>${Object.values(ABIL).map(a=>`<b>${a[0]}</b>：${a[1]}`).join('<br>')}</p></div>`;
 }
 document.addEventListener('click',e=>{
   const t=e.target.closest('.tab');if(t){document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',x===t));document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('on',p.id==='p-'+t.dataset.p));return}
