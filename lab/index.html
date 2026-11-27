@@ -182,7 +182,7 @@ const GAMES=[
   {
     id:'animal-baseball', name:'アニマルベースボール', icon:'🐻', color:'#1b4a30',
     desc:'動物チームのカード野球。選手カードを裏向きで出し合い、攻撃力−守備力の差で打者ごとのバッティング表を引いて結果が決まる。強打・好投・盗塁の作戦カードでCPUと1試合。',
-    players:'1人（CPU 1人）', time:'10〜20分', genre:'スポーツ', added:'2026-11-25', version:'0.3', updated:'2026-11-26', isNew:true
+    players:'1人（CPU 1人）', time:'10〜20分', genre:'スポーツ', added:'2026-11-25', version:'0.4', updated:'2026-11-27', isNew:true
   },
   {
     id:'michi-tsunagi', name:'みちつなぎ', icon:'🛤️', color:'#2e7d6b',
@@ -326,6 +326,7 @@ const GAMES=[
 ];
 // 最近の更新（新しい順）。ゲームを更新したら先頭に1件足し、GAMES の version / updated も上げる
 const UPDATES=[
+  {date:'2026-11-27', id:'animal-baseball', version:'0.4', text:'作戦カード「スクイズ」を追加。三塁走者がいる場面で、1点を狙うギャンブルができるように'},
   {date:'2026-11-27', id:'rikaku-chicken', version:'0.1', text:'新しく登場（株のゲーム・めくるたびに「せーの」で売るか決める、利確タイミングの読み合い）'},
   {date:'2026-11-26', id:'animal-baseball', version:'0.3', text:'通算成績（勝・敗・分と連勝数）を保存して開始画面に表示するように'},
   {date:'2026-11-26', id:'kabuka-bingo',    version:'0.2', text:'クイックモード（1ラウンド制）を追加。短い時間でも遊べるように（通常は3ラウンド、選択は保存）'},
