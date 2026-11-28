@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>配膳ロボットを誘導せよ</title>
+<!-- 試作ゲームラボ: 下のOGタグ・アイコン・「試作ゲームラボに戻る」リンクは消さないこと（作業ルールはリポジトリ直下の CLAUDE.md） -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="試作ゲームラボ">
+<meta property="og:title" content="配膳ロボットを誘導せよ｜試作ゲームラボ">
+<meta property="og:description" content="コマンドカードでプログラムを組んで、配膳ロボットを目的のテーブルまで誘導するレース。壁や他のテーブルにぶつかると停止、お客さんに当たると料理を落としてしまう。先に届けた人が料理の点数を獲得。">
+<meta property="og:url" content="https://game-lab-oj9t.onrender.com/haizen-robot/">
+<meta property="og:image" content="https://game-lab-oj9t.onrender.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<style>
+  :root{
+    --bg:#fdf6ec; --panel:#ffffff; --line:#e8d5b5; --text:#33302a; --sub:#8a7a5f;
+    --accent:#dd7a2e; --good:#3aa569; --warn:#b4552d;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:"Hiragino Maru Gothic ProN","Hiragino Kaku Gothic ProN","Noto Sans JP",system-ui,sans-serif;line-height:1.55}
+  .wrap{max-width:640px;margin:0 auto;padding:14px 12px 40px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+  h1{font-size:21px;margin:0}
+  .round{background:var(--accent);color:#fff;font-weight:bold;border-radius:999px;padding:4px 12px;font-size:14px;white-space:nowrap}
+  .panel{background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px}
+  .panel h2{font-size:16px;margin:0 0 8px;color:var(--accent)}
+  .msg{font-size:16px;font-weight:bold;margin:0 0 10px;text-align:center;min-height:1.5em}
+  .sub{font-size:13px;color:var(--sub)}
+  .hidden{display:none}
+  .btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px}
+  button{background:var(--accent);color:#fff;border:none;border-radius:999px;padding:10px 18px;font-size:15px;font-weight:bold;cursor:pointer}
+  button.sec{background:#fff;color:var(--accent);border:2px solid var(--accent)}
+  button:active{transform:scale(.96)}
+  button:disabled{opacity:.45;cursor:default}
+  .players{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+  .box{background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:8px}
+  .box .nm{font-weight:bold;font-size:14px;display:flex;justify-content:space-between}
+  .box .nm .sc{color:var(--accent)}
+  .box .det{font-size:12px;color:var(--sub);margin-top:4px}
+  .box.me{border-color:var(--accent)}
+  .board{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;max-width:420px;margin:0 auto}
+  .cell{aspect-ratio:1;border-radius:10px;background:#fff8ec;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:24px;position:relative}
+  .cell.kitchen{background:#e8f3ff;border-color:#9dbfe0}
+  .cell.table{background:#f3e2c7}
+  .cell.target{background:#ffe9a8;border-color:var(--accent);box-shadow:0 0 0 3px rgba(221,122,46,.35)}
+  .cell .dir{position:absolute;right:2px;bottom:0;font-size:12px;color:var(--accent);font-weight:bold}
+  .cell .who{position:absolute;left:3px;top:1px;font-size:10px;font-weight:bold}
+  .prog{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;min-height:52px;margin-top:6px}
+  .pcard{width:52px;height:52px;border-radius:10px;background:#fff;border:2px solid var(--accent);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:20px;cursor:pointer;user-select:none}
+  .pcard .lb{font-size:10px;color:var(--sub)}
+  .pcard.empty{border-style:dashed;border-color:var(--line);cursor:default;color:var(--sub);font-size:12px}
+  .hand{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:6px}
+  .hand .pcard{border-color:var(--line)}
+  .hand .pcard:hover{border-color:var(--accent)}
+  .hand .pcard.used{opacity:.3;pointer-events:none}
+  .log{font-size:13px;max-height:160px;overflow:auto}
+  .log div{padding:2px 0;border-bottom:1px dashed var(--line)}
+  table.res{width:100%;border-collapse:collapse;font-size:15px}
+  table.res th,table.res td{border-bottom:1px solid var(--line);padding:6px 4px;text-align:center}
+  table.res th:first-child,table.res td:first-child{text-align:left}
+  .big{font-size:19px;font-weight:bold;text-align:center;margin:8px 0}
+  .foot{font-size:12px;color:var(--sub);text-align:center;margin-top:14px}
+  .back{font-size:14px;text-align:center;margin-top:8px}
+  .back a{color:var(--accent)}
+  .rules ol,.rules ul{margin:6px 0;padding-left:22px}
+  .rules li{margin-bottom:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🤖 配膳ロボットを誘導せよ</h1>
+    <div class="round" id="roundTag">あそびかた</div>
+  </header>
+
+  <!-- ルール -->
+  <div id="rulesView" class="panel rules">
+    <h2>あそびかた</h2>
+    <ol>
+      <li>あなたは配膳ロボットの誘導係。料理をのせたロボットを、キッチンから<b>光っているテーブル</b>まで届けます。</li>
+      <li>手札のコマンドカード（⬆すすむ／⏫2マスすすむ／↩左をむく／↪右をむく）から、<b>最大6枚</b>のプログラムを組みます。全員が組み終わったら、ロボットが同時に走ります。</li>
+      <li>目的のテーブルに<b>ぶつかれば配膳成功</b>。壁や他のテーブルにぶつかると、その場で停止します。</li>
+      <li>お客さん🧑に当たると<b>料理を落として0点</b>。お客さんは料理ごとに場所が変わります。</li>
+      <li>一番早く届けた人が、料理の点数（2〜4点）を獲得。同じ速さなら全員に点数が入ります。</li>
+      <li><b>8品</b>配膳したら終わり。合計点が高い人の勝ち。</li>
+    </ol>
+    <p class="sub">実物版のイメージ：6×6マスのボード、コマンドカード、ロボットとお客さんのコマだけで遊べます。</p>
+    <div class="btns">
+      <button data-cpu="1">CPU 1人とあそぶ</button>
+      <button data-cpu="2">CPU 2人とあそぶ</button>
+      <button data-cpu="3">CPU 3人とあそぶ</button>
+    </div>
+  </div>
+
+  <!-- ゲーム -->
+  <div id="gameView" class="hidden">
+    <div class="players" id="playersBox"></div>
+    <div class="panel">
+      <p class="msg" id="msg"></p>
+      <div class="board" id="board"></div>
+      <p class="sub" id="hint" style="text-align:center"></p>
+      <div class="prog" id="prog"></div>
+      <div class="hand" id="hand"></div>
+      <div class="btns" id="actBtns"></div>
+    </div>
+    <div class="panel">
+      <h2>配膳ログ</h2>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+
+  <!-- 結果 -->
+  <div id="resultView" class="panel hidden">
+    <h2>結果</h2>
+    <div class="big" id="winner"></div>
+    <table class="res" id="resTable"></table>
+    <div class="btns">
+      <button id="againBtn">もう一度あそぶ</button>
+      <button class="sec" id="rulesBtn">ルールに戻る</button>
+    </div>
+  </div>
+
+  <p class="back"><a href="../">← 試作ゲームラボに戻る</a> ・ 配膳ロボットを誘導せよ v0.1</p>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const W=6,H=6,TOTAL=8,MAXP=6;
+const TABLES=[[2,0],[4,1],[1,2],[3,3],[5,4],[2,4]];
+const KITCHEN=[0,5];
+const DIRS=[[0,-1],[1,0],[0,1],[-1,0]];
+const ARROW=['▲','▶','▼','◀'];
+const DISHES=[['ラーメン','🍜'],['カレー','🍛'],['パスタ','🍝'],['すし','🍣'],['ハンバーグ','🍔'],['サラダ','🥗'],['ピザ','🍕'],['ケーキ','🍰']];
+const CMD={F:{e:'⬆',lb:'すすむ'},F2:{e:'⏫',lb:'2マスすすむ'},L:{e:'↩',lb:'左をむく'},R:{e:'↪',lb:'右をむく'}};
+const key=(x,y)=>x+','+y;
+const isTable=(x,y)=>TABLES.some(t=>t[0]===x&&t[1]===y);
+let S=null;
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function log(t){const d=document.createElement('div');d.textContent=t;$('log').prepend(d)}
+
+// BFS: shortest program (<=MAXP) from start state to entering target cell. obstacles: Set of keys (tables except target + customers)
+function bfsProgram(sx,sy,sd,tx,ty,blocked){
+  const start=key(sx,sy)+'|'+sd;
+  const q=[[sx,sy,sd,[]]];const seen=new Set([start]);
+  let best=null,bestDist=1e9;
+  while(q.length){
+    const [x,y,d,prog]=q.shift();
+    const dist=Math.abs(x-tx)+Math.abs(y-ty);
+    if(dist<bestDist){bestDist=dist;best=prog}
+    if(prog.length>=MAXP)continue;
+    for(const c of ['F','F2','L','R']){
+      let nx=x,ny=y,nd=d;
+      if(c==='L')nd=(d+3)%4; else if(c==='R')nd=(d+1)%4;
+      else if(c==='F2'){const ax=x+DIRS[d][0],ay=y+DIRS[d][1];
+        if(ax===tx&&ay===ty)return [...prog,'F2'];
+        if(ax<0||ay<0||ax>=W||ay>=H||blocked.has(key(ax,ay)))continue;
+        const bx=ax+DIRS[d][0],by=ay+DIRS[d][1];
+        if(bx===tx&&by===ty)return [...prog,'F2'];
+        if(bx<0||by<0||bx>=W||by>=H||blocked.has(key(bx,by)))continue;
+        nx=bx;ny=by;}
+      else{const nx2=x+DIRS[d][0],ny2=y+DIRS[d][1];
+        if(nx2===tx&&ny2===ty)return [...prog,'F'];
+        if(nx2<0||ny2<0||nx2>=W||ny2>=H||blocked.has(key(nx2,ny2)))continue;
+        nx=nx2;ny=ny2;}
+      const k=key(nx,ny)+'|'+nd;
+      if(seen.has(k))continue;seen.add(k);
+      q.push([nx,ny,nd,[...prog,c]]);
+    }
+  }
+  return best; // 未達の場合は一番近づけるプログラム
+}
+// 実行シミュレーション: returns {states:[{x,y,d}...], status:'delivered'|'bump'|'spill'|'stay'|'done', step:到達ステップ(-1=未達)}
+function simulate(prog,blocked,tx,ty){
+  let x=KITCHEN[0],y=KITCHEN[1],d=1;const states=[{x,y,d}];
+  if(!prog.length)return {states,status:'stay',step:-1};
+  for(let i=0;i<prog.length;i++){
+    const c=prog[i];
+    if(c==='L'){d=(d+3)%4;states.push({x,y,d});continue}
+    if(c==='R'){d=(d+1)%4;states.push({x,y,d});continue}
+    const sub=c==='F2'?2:1;let stopped=false;
+    for(let s=0;s<sub;s++){
+      const nx=x+DIRS[d][0],ny=y+DIRS[d][1];
+      if(nx===tx&&ny===ty){states.push({x,y,d});return {states,status:'delivered',step:i}}
+      if(nx<0||ny<0||nx>=W||ny>=H||isTable(nx,ny)){states.push({x,y,d});return {states,status:'bump',step:-1}}
+      if(blocked.has(key(nx,ny))&&!isTable(nx,ny)){states.push({x,y,d});return {states,status:'spill',step:-1}}
+      x=nx;y=ny;
+    }
+    states.push({x,y,d});
+  }
+  return {states,status:'done',step:-1};
+}
+function cpuProgram(p){
+  const blocked=new Set();
+  for(const t of TABLES)if(!(t[0]===S.tx&&t[1]===S.ty))blocked.add(key(t[0],t[1]));
+  for(const c of S.customers)blocked.add(key(c[0],c[1]));
+  let prog=bfsProgram(KITCHEN[0],KITCHEN[1],1,S.tx,S.ty,blocked)||[];
+  prog=prog.slice(0,MAXP);
+  if(prog.length&&Math.random()<p.err){ // たまに間違える
+    const i=Math.floor(Math.random()*prog.length);
+    prog[i]=['F','F2','L','R'][Math.floor(Math.random()*4)];
+  }
+  return prog;
+}
+function newDeck(){const d=[];for(let i=0;i<8;i++)d.push('F');for(let i=0;i<6;i++)d.push('F2');for(let i=0;i<5;i++){d.push('L');d.push('R')}return shuffle(d)}
+function freeCell(){ // お客さんの置き場所（テーブル・キッチン・他のお客さん以外）
+  while(true){const x=Math.floor(Math.random()*W),y=Math.floor(Math.random()*H);
+    if(isTable(x,y)||(x===KITCHEN[0]&&y===KITCHEN[1]))continue;
+    if(S&&S.customers.some(c=>c[0]===x&&c[1]===y))continue;
+    return [x,y];}
+}
+function startGame(cpuCount){
+  const errs=[0.35,0.2,0.05];
+  S={round:1,phase:'plan',players:[{name:'あなた',cpu:false,score:0,prog:[],hand:[]}],
+     customers:[],tx:0,ty:0,dish:null,anims:null,step:0,timer:null};
+  for(let i=0;i<cpuCount;i++)S.players.push({name:'CPU'+(i+1),cpu:true,err:errs[i],score:0,prog:[]});
+  $('rulesView').classList.add('hidden');$('resultView').classList.add('hidden');$('gameView').classList.remove('hidden');
+  $('log').innerHTML='';
+  S.customers=[freeCell(),freeCell()];
+  log('開店！ 配膳スタート');
+  nextDish();
+}
+function nextDish(){
+  if(S.round>TOTAL){finish();return}
+  // 届けられるテーブルから選ぶ
+  const blockedBase=new Set();for(const c of S.customers)blockedBase.add(key(c[0],c[1]));
+  const cand=TABLES.filter(t=>{const b=new Set(blockedBase);for(const o of TABLES)if(o!==t)b.add(key(o[0],o[1]));
+    const simBlocked=b;const prog=bfsProgram(KITCHEN[0],KITCHEN[1],1,t[0],t[1],simBlocked);
+    // 到達判定: simulateで確認
+    return prog&&simulate(prog,simBlocked,t[0],t[1]).status==='delivered';});
+  const t=cand[Math.floor(Math.random()*cand.length)]||TABLES[0];
+  S.tx=t[0];S.ty=t[1];
+  const d=DISHES[Math.floor(Math.random()*DISHES.length)];
+  S.dish={name:d[0],e:d[1],pts:2+Math.floor(Math.random()*3)};
+  for(const p of S.players){p.prog=[];p.result=null;
+    if(p.cpu)p.prog=cpuProgram(p);else p.hand=newDeck().slice(0,8);}
+  S.phase='plan';S.anims=null;
+  $('roundTag').textContent='料理 '+S.round+' / '+TOTAL;
+  render();
+}
+function render(){
+  if(!S)return;
+  // スコア
+  $('playersBox').innerHTML=S.players.map(p=>`<div class="box${p.cpu?'':' me'}"><div class="nm"><span>${p.cpu?'🤖':'🧑'} ${p.name}</span><span class="sc">${p.score}点</span></div><div class="det">${p.result?p.result:(S.phase==='plan'?(p.cpu?'プログラム作成済み':'プログラム作成中…'):'')}</div></div>`).join('');
+  // ボード
+  const robots={};
+  S.players.forEach((p,i)=>{const st=S.anims?S.anims[i].states[Math.min(S.step,S.anims[i].states.length-1)]:{x:KITCHEN[0],y:KITCHEN[1],d:1};
+    const k=key(st.x,st.y);(robots[k]=robots[k]||[]).push({i,d:st.d});});
+  let html='';
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+    let cls='cell',inner='';
+    if(x===KITCHEN[0]&&y===KITCHEN[1]){cls+=' kitchen';inner='🍳'}
+    if(isTable(x,y)){cls+=' table';inner='🍽️';
+      if(x===S.tx&&y===S.ty){cls+=' target';inner=S.dish.e}}
+    for(const c of S.customers)if(c[0]===x&&c[1]===y)inner='🧑';
+    const rs=robots[key(x,y)];
+    if(rs)inner=rs.map(r=>`<span><span class="who" style="color:${['#dd7a2e','#3a7bd5','#3aa569','#b03a8c'][r.i]}">${S.players[r.i].cpu?'C'+r.i:'あ'}</span>🤖<span class="dir">${ARROW[r.d]}</span></span>`).join('');
+    html+=`<div class="${cls}">${inner}</div>`;
+  }
+  $('board').innerHTML=html;
+  const me=S.players[0];
+  if(S.phase==='plan'){
+    $('msg').textContent=`${S.dish.e}${S.dish.name}（${S.dish.pts}点）を光っているテーブルへ！`;
+    $('hint').textContent='手札から最大6枚、順番にタップしてプログラムを組んでください（組み直しはプログラム側をタップ）';
+    $('prog').innerHTML=(me.prog.map((hi,i)=>{const c=me.hand[hi];return `<div class="pcard" data-prog="${i}">${CMD[c].e}<span class="lb">${CMD[c].lb}</span></div>`}).join(''))+(me.prog.length<MAXP?`<div class="pcard empty">あと${MAXP-me.prog.length}枚</div>`:'');
+    $('hand').innerHTML=me.hand.map((c,i)=>`<div class="pcard${me.prog.includes(i)?' used':''}" data-hand="${i}">${CMD[c].e}<span class="lb">${CMD[c].lb}</span></div>`).join('');
+    $('actBtns').innerHTML=`<button id="runBtn">配膳スタート！</button><button class="sec" id="clearBtn">組み直す</button>`;
+    $('runBtn').onclick=runAll;$('clearBtn').onclick=()=>{me.prog=[];render()};
+    document.querySelectorAll('[data-hand]').forEach(el=>el.onclick=()=>{const i=+el.dataset.hand;
+      if(me.prog.length<MAXP&&!me.prog.includes(i)){me.prog.push(i);render()}});
+    document.querySelectorAll('[data-prog]').forEach(el=>el.onclick=()=>{me.prog.splice(+el.dataset.prog,1);render()});
+  }else{
+    $('prog').innerHTML='';$('hand').innerHTML='';
+    $('actBtns').innerHTML=S.phase==='roundEnd'?`<button id="nextBtn">${S.round>=TOTAL?'結果を見る':'次の料理へ'}</button>`:'';
+    if(S.phase==='roundEnd')$('nextBtn').onclick=()=>{S.round++;
+      S.customers=[freeCell(),freeCell()];nextDish();};
+  }
+}
+function runAll(){
+  const me=S.players[0];
+  me.progCards=me.prog.map(i=>me.hand[i]);
+  const blocked=new Set();for(const c of S.customers)blocked.add(key(c[0],c[1]));
+  S.anims=S.players.map(p=>{
+    const prog=p.cpu?p.prog:me.progCards;
+    return simulate(prog,blocked,S.tx,S.ty);});
+  S.phase='run';S.step=0;render();
+  $('msg').textContent='配膳中…';
+  const maxLen=Math.max(...S.anims.map(a=>a.states.length));
+  S.timer=setInterval(()=>{
+    S.step++;
+    render();
+    if(S.step>=maxLen-1){clearInterval(S.timer);setTimeout(finishRound,500);}
+  },450);
+}
+function finishRound(){
+  const delivered=S.anims.map((a,i)=>({i,step:a.step})).filter(x=>x.step>=0);
+  let winners=[];
+  if(delivered.length){const best=Math.min(...delivered.map(x=>x.step));winners=delivered.filter(x=>x.step===best).map(x=>x.i);}
+  S.players.forEach((p,i)=>{
+    const a=S.anims[i];
+    if(winners.includes(i)){p.score+=S.dish.pts;p.result=`🏆 ${S.dish.pts}点獲得！`;
+      log(`${p.name}：${S.dish.name}を配膳成功！ ${S.dish.pts}点`);}
+    else if(a.status==='delivered'){p.result='届いたけれど一歩およばず';log(`${p.name}：配膳できたが、他が早かった`);}
+    else if(a.status==='spill'){p.result='💥 お客さんに当たって料理を落とした';log(`${p.name}：お客さんに当たって料理を落とした…`);}
+    else if(a.status==='bump'){p.result='💥 ぶつかって停止';log(`${p.name}：ぶつかって停止`);}
+    else if(a.status==='stay'){p.result='プログラムなし';log(`${p.name}：動かなかった`);}
+    else{p.result='届かなかった';log(`${p.name}：届かなかった`);}
+  });
+  if(!delivered.length)log('だれも届けられなかった…');
+  S.phase='roundEnd';$('msg').textContent=winners.length?`${winners.map(i=>S.players[i].name).join('・')}が配膳成功！`:'だれも届けられなかった';
+  $('hint').textContent='';
+  render();
+}
+function finish(){
+  S.phase='over';
+  $('gameView').classList.add('hidden');$('resultView').classList.remove('hidden');
+  $('roundTag').textContent='閉店';
+  const ps=[...S.players].sort((a,b)=>b.score-a.score);
+  const top=ps[0];
+  $('winner').textContent=top.score===ps[1]?.score?`同点！ ${ps.filter(p=>p.score===top.score).map(p=>p.name).join('・')}の勝ち`:`${top.name}の勝ち！`;
+  $('resTable').innerHTML='<tr><th>名前</th><th>合計点</th></tr>'+ps.map(p=>`<tr><td>${p.cpu?'🤖':'🧑'} ${p.name}</td><td>${p.score}点</td></tr>`).join('');
+}
+document.querySelectorAll('[data-cpu]').forEach(b=>b.onclick=()=>startGame(+b.dataset.cpu));
+$('againBtn').onclick=()=>{$('resultView').classList.add('hidden');$('rulesView').classList.remove('hidden');$('roundTag').textContent='あそびかた'};
+$('rulesBtn').onclick=()=>{$('resultView').classList.add('hidden');$('rulesView').classList.remove('hidden');$('roundTag').textContent='あそびかた'};
+</script>
+</body>
+</html>
