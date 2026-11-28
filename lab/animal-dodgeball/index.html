@@ -8,7 +8,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="試作ゲームラボ">
 <meta property="og:title" content="アニマルドッジボール｜試作ゲームラボ">
-<meta property="og:description" content="どうぶつ7匹ずつ（内野4・外野3）のドッジボール対決。投げる役と当てる相手を選んでサイコロで勝負。当てれば相手は外野へ、キャッチされてもその投げはセーフ（無効）。外野から当てれば内野に戻れる。">
+<meta property="og:description" content="どうぶつ7匹ずつ（内野4・外野3）のドッジボール対決。投げる役と当てる相手を選んでサイコロで勝負。狙われたらキャッチかよけるかを選ぶ。キャッチすればボールを奪え、よけても相手の攻撃は続く。外野から当てれば内野に戻れる。">
 <meta property="og:url" content="https://game-lab-oj9t.onrender.com/animal-dodgeball/">
 <meta property="og:image" content="https://game-lab-oj9t.onrender.com/og.png">
 <meta property="og:image:width" content="1200">
@@ -76,14 +76,16 @@
     <h2>あそびかた</h2>
     <ol>
       <li>どうぶつ<b>7匹ずつ</b>のドッジボール対決（<b>内野4匹・外野3匹</b>でスタート、本家スーパードッジボールと同じ7人制）。自分の番が来たら、投げる役（内野・外野どちらでもOK）と、当てる相手（相手の内野）を選びます。</li>
-      <li>選手は7タイプ。投げるのが得意なパワー型（投5）から、キャッチが得意な型（受4）までいます。カードの「投」「受」をチェック！</li>
-      <li>投げる役がサイコロを振って、<b>「投」の数以下</b>が出れば命中しそう！今度は相手がサイコロを振って、<b>「受」の数以下</b>でキャッチできます。</li>
-      <li>キャッチされると、<b>その投げはセーフ（無効）</b>で、誰もアウトになりません。当てれば<b>相手がアウト</b>。外野の選手が当てると、<b>内野に戻れます</b>。</li>
+      <li>選手は7タイプで、能力値は<b>「投」「キャッチ（キ）」「よける（よ）」</b>の3つ。投げるのが得意なパワー型（投5）から、よけるのが得意な型（よ5）までいます。カードの数値をチェック！</li>
+      <li>投げる役がサイコロを振って、<b>「投」の数以下</b>が出れば命中しそう！外れたら、ボールは相手チームへ移ります。</li>
+      <li>命中しそうな時は、狙われた選手が<b>「キャッチ」か「よける」</b>を選んでサイコロを振ります。<b>キャッチ成功</b>ならセーフで<b>ボールを奪えます</b>（相手の攻撃は終わり）。<b>キャッチ失敗</b>ならアウトで外野へ。</li>
+      <li><b>よける成功</b>ならセーフですが、<b>ボールは奪えません</b>。投げたチームがボールを持ったまま<b>続けて投げます</b>。<b>よけ失敗</b>ならアウトで外野へ。キャッチは数値が低めでもボールを奪える分お得、よけるは数値が高めでも一時しのぎ、という違いがあります。</li>
+      <li>当てれば<b>相手がアウト</b>。外野の選手が当てると、<b>内野に戻れます</b>。</li>
       <li>投げる役は、味方同士の<b>パスで自由に選べます</b>。キャッチした選手がそのまま投げても、パスして別の選手が投げてもOKです（実際のドッジボールと同じ）。</li>
-      <li>ボールは、キャッチされても、当たっても、外れても、<b>相手チームが拾って次に投げます</b>（本家スーパードッジボール式）。</li>
+      <li>ボールは、キャッチされても、当たっても、外れても、<b>相手チームが拾って次に投げます</b>（本家スーパードッジボール式）。例外は「よけた」時だけです。</li>
       <li>相手の<b>内野を0</b>にしたら勝ち。全<b>30投</b>終わったら、内野の残り数が多い方の勝ち。</li>
     </ol>
-    <p class="sub">実物版のイメージ：選手カード14枚、サイコロ1個、ボールコマ1個だけで遊べます。ボールコマをパスして、投げる役を自由に選べます。</p>
+    <p class="sub">実物版のイメージ：選手カード14枚（能力値3つを印刷するだけ・部品は増えません）、サイコロ1個、ボールコマ1個だけで遊べます。ボールコマをパスして、投げる役を自由に選べます。</p>
     <div class="btns">
       <button id="startBtn">ゲームスタート</button>
     </div>
@@ -96,6 +98,10 @@
       <div class="court cpu" id="cpuCourt"></div>
       <div class="court" id="youCourt"></div>
       <p class="sub" id="hint" style="text-align:center"></p>
+      <div class="btns hidden" id="defBtns">
+        <button id="catchBtn"></button>
+        <button id="dodgeBtn" class="sec"></button>
+      </div>
     </div>
     <div class="panel">
       <h2>試合ログ</h2>
@@ -114,7 +120,7 @@
     </div>
   </div>
 
-  <p class="back"><a href="../">← 試作ゲームラボに戻る</a> ・ アニマルドッジボール v0.7</p>
+  <p class="back"><a href="../">← 試作ゲームラボに戻る</a> ・ アニマルドッジボール v0.8</p>
 </div>
 <script>
 const $=id=>document.getElementById(id);
@@ -122,26 +128,27 @@ const MAXTHROW=30;
 let S=null;
 function log(t){const d=document.createElement('div');d.textContent=t;$('log').prepend(d)}
 function mkTeams(){
-  // 7タイプ（両チーム対称）：投5/受1, 投4/受1, 投4/受2, 投3/受2, 投3/受3, 投2/受3, 投2/受4
-  // 初期配置も対称：内野＝投5/受1・投4/受2・投3/受3・投2/受4、外野＝投4/受1・投3/受2・投2/受3
+  // 7タイプ（両チーム対称）：投/キャッチ/よける
+  // ライオン型5/1/3, くま型4/2/2, おおかみ型4/2/4, きつね型3/3/3, さる型3/3/4, うさぎ型2/2/5, ねこ型2/4/2
+  // 初期配置も対称：内野＝ライオン型・おおかみ型・さる型・ねこ型、外野＝くま型・きつね型・うさぎ型
   const teams={
     you:[
-      {name:'ライオン',e:'🦁',atk:5,cat:1,zone:'in'},
-      {name:'くま',e:'🐻',atk:4,cat:1,zone:'out'},
-      {name:'おおかみ',e:'🐺',atk:4,cat:2,zone:'in'},
-      {name:'きつね',e:'🦊',atk:3,cat:2,zone:'out'},
-      {name:'さる',e:'🐵',atk:3,cat:3,zone:'in'},
-      {name:'うさぎ',e:'🐰',atk:2,cat:3,zone:'out'},
-      {name:'ねこ',e:'🐱',atk:2,cat:4,zone:'in'}
+      {name:'ライオン',e:'🦁',atk:5,cat:1,dod:3,zone:'in'},
+      {name:'くま',e:'🐻',atk:4,cat:2,dod:2,zone:'out'},
+      {name:'おおかみ',e:'🐺',atk:4,cat:2,dod:4,zone:'in'},
+      {name:'きつね',e:'🦊',atk:3,cat:3,dod:3,zone:'out'},
+      {name:'さる',e:'🐵',atk:3,cat:3,dod:4,zone:'in'},
+      {name:'うさぎ',e:'🐰',atk:2,cat:2,dod:5,zone:'out'},
+      {name:'ねこ',e:'🐱',atk:2,cat:4,dod:2,zone:'in'}
     ],
     cpu:[
-      {name:'とら',e:'🐯',atk:5,cat:1,zone:'in'},
-      {name:'ぱんだ',e:'🐼',atk:4,cat:1,zone:'out'},
-      {name:'たぬき',e:'🦝',atk:4,cat:2,zone:'in'},
-      {name:'いぬ',e:'🐶',atk:3,cat:2,zone:'out'},
-      {name:'ぶた',e:'🐷',atk:3,cat:3,zone:'in'},
-      {name:'ハムスター',e:'🐹',atk:2,cat:3,zone:'out'},
-      {name:'ひよこ',e:'🐥',atk:2,cat:4,zone:'in'}
+      {name:'とら',e:'🐯',atk:5,cat:1,dod:3,zone:'in'},
+      {name:'ぱんだ',e:'🐼',atk:4,cat:2,dod:2,zone:'out'},
+      {name:'たぬき',e:'🦝',atk:4,cat:2,dod:4,zone:'in'},
+      {name:'いぬ',e:'🐶',atk:3,cat:3,dod:3,zone:'out'},
+      {name:'ぶた',e:'🐷',atk:3,cat:3,dod:4,zone:'in'},
+      {name:'ハムスター',e:'🐹',atk:2,cat:2,dod:5,zone:'out'},
+      {name:'ひよこ',e:'🐥',atk:2,cat:4,dod:2,zone:'in'}
     ]
   };
   return teams;
@@ -153,21 +160,35 @@ function checkEnd(){
   if(S.throws>=MAXTHROW){const a=inCount('you'),b=inCount('cpu');return a>b?'you':b>a?'cpu':'draw'}
   return null;
 }
-// 投げの解決（r1=投げの目, r2=キャッチの目）。状態を更新してイベント文字列を返す
-function doThrow(att,thr,def,tgt,r1,r2){
+// 守備の選択：キャッチ成功の方が価値が高い分を+1で見込み、キャッチ値がよけ値−1以上ならキャッチ
+function defChoice(a){return a.cat>=a.dod-1?'catch':'dodge'}
+// その選手が実際に守る時の成功値（選ぶ方の数値）
+function defVal(a){return defChoice(a)==='catch'?a.cat:a.dod}
+// 投げの解決（r1=投げの目, mode='catch'|'dodge'|null, r2=守備の目）。状態を更新して結果を返す
+// keepTurn=true の時だけ、投げたチームがボールを持ったまま続けて投げる（よける成功時）
+function doThrow(att,thr,def,tgt,r1,mode,r2){
   const ev=[];
   const hit=r1<=thr.atk;
-  if(!hit){ev.push(`${thr.e}${thr.name}の投げたボールは外れた（🎲${r1}）`);return {hit:false,caught:false,ev}}
-  const caught=r2<=tgt.cat;
-  if(caught){
-    ev.push(`${tgt.e}${tgt.name}がキャッチ！（🎲${r2}）`);
-    ev.push(`その投げはセーフ（無効）。誰もアウトにならない`);
-    return {hit:true,caught:true,ev};
+  if(!hit){ev.push(`${thr.e}${thr.name}の投げたボールは外れた（🎲${r1}）`);return {hit:false,caught:false,dodged:false,keepTurn:false,ev}}
+  if(mode==='dodge'){
+    if(r2<=tgt.dod){
+      ev.push(`${tgt.e}${tgt.name}がよけた！（🎲${r2}）`);
+      return {hit:true,caught:false,dodged:true,keepTurn:true,ev};
+    }
+    tgt.zone='out';
+    ev.push(`${thr.e}${thr.name}のボールが${tgt.e}${tgt.name}に命中！（よけ失敗 🎲${r2}）${tgt.name}は外野へ`);
+    if(thr.zone==='out'){thr.zone='in';ev.push(`${thr.e}${thr.name}は内野に復帰！`)}
+    return {hit:true,caught:false,dodged:false,keepTurn:false,ev};
+  }
+  // キャッチ
+  if(r2<=tgt.cat){
+    ev.push(`${tgt.e}${tgt.name}がキャッチ！（🎲${r2}）ボールを奪った`);
+    return {hit:true,caught:true,dodged:false,keepTurn:false,ev};
   }
   tgt.zone='out';
-  ev.push(`${thr.e}${thr.name}のボールが${tgt.e}${tgt.name}に命中！（🎲${r2}）${tgt.name}は外野へ`);
+  ev.push(`${thr.e}${thr.name}のボールが${tgt.e}${tgt.name}に命中！（キャッチ失敗 🎲${r2}）${tgt.name}は外野へ`);
   if(thr.zone==='out'){thr.zone='in';ev.push(`${thr.e}${thr.name}は内野に復帰！`)}
-  return {hit:true,caught:false,ev};
+  return {hit:true,caught:false,dodged:false,keepTurn:false,ev};
 }
 function startGame(){
   S={teams:mkTeams(),turn:'you',throws:0,phase:'pick',sel:null,over:false};
@@ -183,7 +204,7 @@ function animalHtml(k,a,i){
   if(mine&&k==='you'){cls+=' tap';attr=` data-thrower="${i}"`}
   if(mine&&k==='you'&&S.sel===a)cls+=' sel';
   if(mine&&k==='cpu'&&S.sel&&a.zone==='in'){cls+=' tgt';attr=` data-target="${i}"`}
-  return `<div class="${cls}"${attr}><div class="em">${a.e}</div><div class="an">${a.name}</div><div class="st">投${a.atk}・受${a.cat}${a.zone==='out'?'（外野）':''}</div></div>`;
+  return `<div class="${cls}"${attr}><div class="em">${a.e}</div><div class="an">${a.name}</div><div class="st">投${a.atk}・キ${a.cat}・よ${a.dod}${a.zone==='out'?'（外野）':''}</div></div>`;
 }
 function courtHtml(k,label){
   const t=S.teams[k];
@@ -210,24 +231,52 @@ function animateThrow(att,thr,def,tgt){
   S.phase='anim';S.sel=null;render();
   const r1=1+Math.floor(Math.random()*6);
   const hit=r1<=thr.atk;
-  const r2=hit?1+Math.floor(Math.random()*6):null;
-  const caught=hit&&r2<=tgt.cat;
   $('msg').textContent=`${thr.e}${thr.name}が投げた！ 🎲${r1} → ${hit?'命中しそう！':'外れた！'}`;
-  const step2=()=>{
-    if(hit)$('msg').textContent=`${tgt.e}${tgt.name}のキャッチ 🎲${r2} → ${caught?'キャッチ成功！':'キャッチ失敗！'}`;
-    setTimeout(()=>{
-      const res=doThrow(att,thr,def,tgt,r1,r2||1);
-      res.ev.forEach(log);
-      S.throws++;
-      const w=checkEnd();
-      if(w){finish(w);return}
-      S.turn=def;
-      log('🏐 ボールは相手チームが拾って、次は相手の投げです');
-      S.phase='pick';render();
-      if(S.turn==='cpu')setTimeout(cpuMove,900);
-    },hit?800:600);
-  };
-  setTimeout(step2,800);
+  setTimeout(()=>{
+    if(!hit){resolveThrow(att,thr,def,tgt,r1,null,null);return}
+    if(def==='you'){
+      // 人間が守備側：キャッチかよけるかをボタンで選ばせる
+      S.phase='defense';
+      $('msg').textContent=`${tgt.e}${tgt.name}が狙われた！ どう守る？`;
+      $('hint').textContent='キャッチ成功でボールを奪える。よけてもボールは相手のまま';
+      $('catchBtn').textContent=`🖐 キャッチ（🎲${tgt.cat}以下で成功）`;
+      $('dodgeBtn').textContent=`💨 よける（🎲${tgt.dod}以下で成功）`;
+      $('defBtns').classList.remove('hidden');
+      $('catchBtn').onclick=()=>{$('defBtns').classList.add('hidden');resolveDefense(att,thr,def,tgt,r1,'catch')};
+      $('dodgeBtn').onclick=()=>{$('defBtns').classList.add('hidden');resolveDefense(att,thr,def,tgt,r1,'dodge')};
+    }else{
+      // CPUが守備側：ルールに従って自動で選ぶ
+      setTimeout(()=>resolveDefense(att,thr,def,tgt,r1,defChoice(tgt)),700);
+    }
+  },800);
+}
+function resolveDefense(att,thr,def,tgt,r1,mode){
+  S.phase='anim';
+  const r2=1+Math.floor(Math.random()*6);
+  const val=mode==='catch'?tgt.cat:tgt.dod;
+  const ok=r2<=val;
+  $('msg').textContent=mode==='catch'
+    ?`${tgt.e}${tgt.name}がキャッチに挑戦！ 🎲${r2} → ${ok?'キャッチ成功！':'キャッチ失敗！'}`
+    :`${tgt.e}${tgt.name}がよける！ 🎲${r2} → ${ok?'よけた！':'当たった！'}`;
+  setTimeout(()=>resolveThrow(att,thr,def,tgt,r1,mode,r2),800);
+}
+function resolveThrow(att,thr,def,tgt,r1,mode,r2){
+  const res=doThrow(att,thr,def,tgt,r1,mode,r2);
+  res.ev.forEach(log);
+  S.throws++;
+  const w=checkEnd();
+  if(w){finish(w);return}
+  if(res.keepTurn){
+    // よける成功：ボールは投げたチームのまま、続けて投げる
+    log(`🏐 よけたのでボールは奪えず、${att==='you'?'あなた':'CPU'}が続けて投げます`);
+    S.phase='pick';render();
+    if(att==='cpu')setTimeout(cpuMove,900);
+  }else{
+    S.turn=def;
+    log('🏐 ボールは相手チームが拾って、次は相手の投げです');
+    S.phase='pick';render();
+    if(S.turn==='cpu')setTimeout(cpuMove,900);
+  }
 }
 function cpuMove(){
   if(!S||S.over)return;
@@ -238,7 +287,7 @@ function cpuMove(){
   else{const ins=team.filter(a=>a.zone==='in');thr=ins.reduce((a,b)=>b.atk>a.atk?b:a,ins[0]);}
   const targets=S.teams.you.filter(a=>a.zone==='in');
   let tgt;
-  if(Math.random()<0.75)tgt=targets.reduce((a,b)=>b.cat<a.cat?b:a,targets[0]);
+  if(Math.random()<0.75)tgt=targets.reduce((a,b)=>defVal(b)<defVal(a)?b:a,targets[0]);
   else tgt=targets[Math.floor(Math.random()*targets.length)];
   animateThrow('cpu',thr,'you',tgt);
 }
