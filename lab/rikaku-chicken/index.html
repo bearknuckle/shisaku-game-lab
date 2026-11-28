@@ -113,21 +113,23 @@
     <ul class="log" id="log"></ul>
   </div>
 
-  <p class="back"><a href="../">← 試作ゲームラボに戻る</a> ・ 利確チキンレース v0.2</p>
+  <p class="back"><a href="../">← 試作ゲームラボに戻る</a> ・ 利確チキンレース v0.3</p>
 </div>
 
 <div class="modal" id="rules">
   <div class="box">
     <h2>🐔 利確チキンレースのルール</h2>
     <ol>
-      <li>5つの会社の株で勝負。会社ごとに全員が1株ずつ持ってスタート（株価5）。</li>
+      <li>全員<b>30円</b>を持ってスタート。5つの会社の株で勝負。</li>
+      <li>会社ごとに、まず<b>株を買う</b>。1株5円で、所持金の範囲なら何株でも買える。<b>0株（見送り）もOK</b>。株数は全員同時に決めて、あとから公開される。</li>
       <li>株価カードを1枚めくる。<b>上げカード</b>なら株価が上がる。</li>
-      <li><b>悪材料カード</b>（決算ミス・不祥事・増資）は1枚目なら株価−2で「警戒」。<b>同じ悪材料が2枚目</b>に出たら<b>暴落</b>！まだ持っている人は0円。</li>
-      <li>めくるたびに、持っている人は「持つ」か「売る」かを<b>せーの</b>で同時に決める。売った人はその株価のお金をもらう。</li>
+      <li><b>悪材料カード</b>（決算ミス・不祥事・増資）は1枚目なら株価−2で「警戒」。<b>同じ悪材料が2枚目</b>に出たら<b>暴落</b>！持っている株は全部0円（買ったお金は戻らない）。</li>
+      <li>めくるたびに、株を持っている人は「持つ」か「売る」かを<b>せーの</b>で同時に決める。売った人は（株価×株数）のお金をもらう。</li>
       <li><b>売りが重なると値下がり</b>：同時に売った人数−1だけ株価が下がってから売れる（2人なら−1、3人なら−2）。</li>
       <li>全員売るか暴落したら次の会社へ。暴落したカードは1枚ゲームから取りのぞく。5社終わって、お金がいちばん多い人の勝ち。</li>
+      <li>お金が5円未満になったら、次の会社の前に5円まで補充される（最低1株は買える）。</li>
     </ol>
-    <p class="note">相手：🐯トラ（強気）・🦝タヌキ（ふつう）・🐢カメ（慎重）。山札の残りの枚数はいつでも見られます。</p>
+    <p class="note">相手：🐯トラ（強気）・🦝タヌキ（ふつう）・🐢カメ（慎重）。CPUは順位によって張り方を変える（最下位は大きく、首位は控えめ）。山札の残りの枚数はいつでも見られます。</p>
     <div class="row"><button class="btn" id="startBtn" onclick="closeRules()">はじめる</button></div>
   </div>
 </div>
@@ -144,7 +146,7 @@
 const COMPANIES=['ドーナツ電機','モフモフ製薬','カラアゲ運輸','ねこじゃらし銀行','ぽかぽか電力'];
 const BADS=[{id:'kessan',name:'決算ミス',icon:'📉'},{id:'fushoji',name:'不祥事',icon:'🙇'},{id:'zoushi',name:'増資',icon:'📄'}];
 const UPS=[1,1,1,2,2,2,3,3,3,4,4,5,5];
-const START_PRICE=5, ROUNDS=5;
+const START_PRICE=5, ROUNDS=5, START_MONEY=30;
 const PLAYERS=[
   {name:'あなた',icon:'🙂',me:true},
   {name:'トラ',icon:'🐯',k:0.65},
@@ -161,21 +163,61 @@ function buildDeck(){
 }
 function newGame(){
   document.getElementById('result').classList.add('hidden');
-  G={round:0,removed:{kessan:0,fushoji:0,zoushi:0},pl:PLAYERS.map(p=>({...p,money:0,state:'hold',got:0})),log:[]};
+  G={round:0,removed:{kessan:0,fushoji:0,zoushi:0},pl:PLAYERS.map(p=>({...p,money:START_MONEY,state:'buy',got:0,shares:0,buyShares:0})),log:[],buySel:0};
   document.getElementById('log').innerHTML='';
   startRound();
 }
 function startRound(){
-  G.price=START_PRICE; G.deck=buildDeck(); G.warn={}; G.card=null; G.phase='flip'; G.hist=[];
-  G.pl.forEach(p=>{p.state='hold';p.got=0;});
-  addLog(`【${COMPANIES[G.round]}】みんな1株ずつ持ってスタート（株価${START_PRICE}）`);
-  render('カードをめくりましょう。');
+  G.price=START_PRICE; G.deck=buildDeck(); G.warn={}; G.card=null; G.hist=[];
+  G.pl.forEach(p=>{
+    p.state='buy'; p.got=0; p.shares=0; p.buyShares=0;
+    if(p.money<START_PRICE)p.money=START_PRICE; // 救済：最低1株は買えるよう5円に補充
+  });
+  const me=G.pl[0];
+  G.buySel=Math.min(2,Math.floor(me.money/START_PRICE));
+  G.phase='buy';
+  addLog(`【${COMPANIES[G.round]}】まず株を買おう（1株${START_PRICE}円）`);
+  render(`${COMPANIES[G.round]}の株を何株買いますか？`);
 }
 function holders(){return G.pl.filter(p=>p.state==='hold');}
+function cpuBuyShares(p){
+  const afford=Math.floor(p.money/START_PRICE);
+  if(afford<=0)return 0;
+  let ratio=p.k<0.9?0.8:(p.k>1.2?0.3:0.5); // トラ（強気）0.8／タヌキ（ふつう）0.5／カメ（慎重）0.3
+  const sorted=[...G.pl].sort((a,b)=>b.money-a.money);
+  const top=sorted[0], last=sorted[sorted.length-1];
+  if(last!==top){
+    if(p===last)ratio+=0.35;      // 最下位は逆転狙いで大きく張る
+    else if(p===top)ratio-=0.15;  // 首位は守って控えめに張る
+  }
+  ratio*=0.8+Math.random()*0.4;   // ばらつき
+  ratio=Math.max(0.1,Math.min(1,ratio));
+  const n=Math.round(p.money*ratio/START_PRICE);
+  return Math.max(1,Math.min(afford,n)); // 買えるお金があるなら最低1株は買う
+}
+function buyAdj(d){
+  if(G.phase!=='buy')return;
+  const me=G.pl[0];
+  const afford=Math.floor(me.money/START_PRICE);
+  G.buySel=Math.max(0,Math.min(afford,G.buySel+d));
+  render(`${COMPANIES[G.round]}の株を何株買いますか？`);
+}
+function confirmBuy(){
+  if(G.phase!=='buy')return;
+  const buys=G.pl.map(p=>p.me?G.buySel:cpuBuyShares(p)); // 全員分を先に決める（同時購入）
+  G.pl.forEach((p,i)=>{
+    p.buyShares=buys[i]; p.shares=buys[i]; p.money-=buys[i]*START_PRICE;
+    p.state=buys[i]>0?'hold':'out';
+  });
+  addLog('購入：'+G.pl.map(p=>`${p.icon}${p.name} ${p.buyShares}株`).join('・'));
+  if(holders().length===0){addLog('だれも買わなかったので、この会社は終了');return endRound();}
+  G.phase='flip';
+  render('カードをめくりましょう。');
+}
 function flip(){
   if(G.deck.length===0){ // 山札切れ：全員その値段で売る
-    holders().forEach(p=>{p.state='sold';p.got=G.price;p.money+=G.price;});
-    addLog(`山札がなくなったので、残りの人は株価${G.price}で売却`);
+    holders().forEach(p=>{p.state='sold';p.got=G.price*p.shares;p.money+=p.got;});
+    addLog(`山札がなくなったので、残りの人は株価${G.price}×株数で売却`);
     return endRound();
   }
   const c=G.deck.pop(); G.card=c;
@@ -227,9 +269,9 @@ function decide(meSells){
   if(sellers.length){
     const drop=sellers.length-1;
     const sale=Math.max(1,G.price-drop);
-    sellers.forEach(p=>{p.state='sold';p.got=sale;p.money+=sale;});
+    sellers.forEach(p=>{p.state='sold';p.got=sale*p.shares;p.money+=p.got;});
     G.price=sale;
-    addLog(`せーの！ ${sellers.map(p=>p.icon+p.name).join('・')}が売却`+(drop?`（売りが重なって−${drop}）`:'')+` → ${sale}円で利確`);
+    addLog(`せーの！ ${sellers.map(p=>p.icon+p.name).join('・')}が売却`+(drop?`（売りが重なって−${drop}）`:'')+` → 1株${sale}円で利確`);
   }else addLog('せーの！ だれも売らなかった');
   if(holders().length===0)return endRound();
   G.phase='flip';
@@ -238,7 +280,10 @@ function decide(meSells){
 function endRound(){
   G.phase='end';
   const me=G.pl[0];
-  let m=me.state==='crash'?'暴落に巻き込まれた…0円。':`あなたは${me.got}円で利確。`;
+  let m;
+  if(me.state==='crash')m=`暴落に巻き込まれた…${me.buyShares}株が0円に。`;
+  else if(me.state==='out')m='あなたは見送りました。';
+  else m=`あなたは${me.got}円で利確。`;
   render(m);
 }
 function next(){
@@ -255,7 +300,7 @@ function finish(){
   document.getElementById('resTitle').textContent=meWin?(winners.length>1?'🤝 同点優勝！':'🏆 あなたの勝ち！'):`${winners.map(p=>p.icon+p.name).join('・')}の勝ち`;
   let h='<table class="res"><tr><th>順位</th><th>お金</th></tr>';
   rank.forEach((p,i)=>{h+=`<tr><td>${i+1}. ${p.icon}${p.name}</td><td>${p.money}円</td></tr>`;});
-  h+='</table><p class="note">粘るか、みんなより一歩早く売るか。売りが重なると値下がりするので、相手の性格を読むのがカギ。</p>';
+  h+='</table><p class="note">いくら張るか、粘るか、みんなより一歩早く売るか。遅れているときほど大きく張るのが逆転の目。売りが重なると値下がりするので、相手の性格を読むのがカギ。</p>';
   document.getElementById('resBody').innerHTML=h;
   render('ゲーム終了！');
   document.getElementById('result').classList.remove('hidden');
@@ -286,19 +331,32 @@ function render(msg){
   document.getElementById('histBad').textContent=BADS.filter(b=>badCnt[b.id]).map(b=>badCnt[b.id]>=2?`悪材料：${b.icon}${b.name} 2枚（暴落）`:`悪材料：${b.icon}${b.name} 1枚（もう1枚で暴落！）`).join('　');
   document.getElementById('players').innerHTML=G.pl.map(p=>{
     let st='',cls='';
-    if(p.state==='hold'){st='保有中';cls='hold';}
-    else if(p.state==='sold'){st=`${p.got}円で利確`;cls='sold';}
-    else {st='暴落 0円';cls='crash';}
+    if(p.state==='buy'){st='購入を考え中';}
+    else if(p.state==='hold'){st=`保有中（${p.shares}株）`;cls='hold';}
+    else if(p.state==='sold'){st=`${p.got}円で利確（${p.buyShares}株）`;cls='sold';}
+    else if(p.state==='out'){st='見送り（0株）';}
+    else {st=`暴落 0円（${p.buyShares}株）`;cls='crash';}
     const sub=p.me?'':`<span class="note">（${p.k<0.9?'強気':p.k>1.2?'慎重':'ふつう'}）</span>`;
-    return `<div class="pl ${p.me?'me':''}"><div class="nm">${p.icon}${p.name}${sub}</div><div class="st ${cls}">${st}</div><div class="tot">合計 ${p.money}円</div></div>`;
+    return `<div class="pl ${p.me?'me':''}"><div class="nm">${p.icon}${p.name}${sub}</div><div class="st ${cls}">${st}</div><div class="tot">所持金 ${p.money}円</div></div>`;
   }).join('');
   document.getElementById('msg').textContent=msg;
   const a=document.getElementById('actions'); a.innerHTML='';
   const me=G.pl[0];
   const add=(label,cls,fn)=>{const b=document.createElement('button');b.className='btn '+cls;b.textContent=label;b.onclick=fn;a.appendChild(b);};
-  if(G.phase==='flip')add('🃏 カードをめくる','',flip);
+  if(G.phase==='buy'){
+    const afford=Math.floor(me.money/START_PRICE);
+    a.innerHTML=`<div style="flex:1;display:flex;flex-direction:column;gap:8px">
+      <div class="row">
+        <button class="btn sub" onclick="buyAdj(-1)">−</button>
+        <button class="btn sub" disabled>${G.buySel}株（${G.buySel*START_PRICE}円）／ 最大${afford}株</button>
+        <button class="btn sub" onclick="buyAdj(1)">＋</button>
+      </div>
+      <button class="btn" onclick="confirmBuy()">この株数で決定（0株＝見送り）</button>
+    </div>`;
+  }
+  else if(G.phase==='flip')add('🃏 カードをめくる','',flip);
   else if(G.phase==='decide'){
-    if(me.state==='hold'){add('✊ 持つ','hold',()=>decide(false));add(`💰 売る（${G.price}円）`,'sell',()=>decide(true));}
+    if(me.state==='hold'){add('✊ 持つ','hold',()=>decide(false));add(`💰 売る（${G.price}円×${me.shares}株）`,'sell',()=>decide(true));}
     else add('▶ せーの（CPUが決める）','',()=>decide(false));
   }else if(G.phase==='end')add(G.round+1>=ROUNDS?'🏁 結果を見る':'▶ 次の会社へ','',next);
   else if(G.phase==='over')add('もう一度あそぶ','',newGame);

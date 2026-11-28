@@ -177,7 +177,7 @@ const GAMES=[
   {
     id:'rikaku-chicken', name:'利確チキンレース', icon:'🐔', color:'#d9822b',
     desc:'株価カードを1枚ずつめくり、めくるたびに全員で「せーの」で持つか売るかを決める。粘るほど値上がりするけれど、同じ悪材料（決算ミス・不祥事・増資）が2枚出たら暴落して0円。同時に売る人が多いほど値下がりするので、一歩早く売るか粘るかの読み合い。5社で一番お金を持っている人の勝ち。',
-    players:'1人（CPU 3人）', time:'5〜10分', genre:'株', added:'2026-11-27', version:'0.2', updated:'2026-11-27', isNew:true
+    players:'1人（CPU 3人）', time:'5〜10分', genre:'株', added:'2026-11-27', version:'0.3', updated:'2026-11-28', isNew:true
   },
 {
     id:'kabuka-bingo', name:'株価ビンゴ', icon:'📊', color:'#7b1fa2',
@@ -331,6 +331,7 @@ const GAMES=[
 ];
 // 最近の更新（新しい順）。ゲームを更新したら先頭に1件足し、GAMES の version / updated も上げる
 const UPDATES=[
+  {date:'2026-11-28', id:'rikaku-chicken', version:'0.3', text:'ゲームシステムを変更：全員1株固定をやめ、初期資金30円で会社ごとに買う株数を自分で決める方式に。暴落は0円のまま、張り方で逆転できるように'},
   {date:'2026-11-27', id:'rikaku-chicken', version:'0.2', text:'めくったカードの履歴を表示。悪材料の種類ごとの枚数（もう1枚で暴落！）も分かるように'},
   {date:'2026-11-27', id:'seeno-kabu',     version:'0.8', text:'最終結果の画面に「もう一度あそぶ（最初から）」ボタンを追加。同じ設定ですぐ再戦できるように'},
   {date:'2026-11-27', id:'onpu-karuta',    version:'0.7', text:'「ひとりで」モードの自己ベスト（お手つき最少）を保存して開始画面に表示するように'},
