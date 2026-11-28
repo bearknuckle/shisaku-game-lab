@@ -79,10 +79,11 @@
       <li>選手は7タイプ。投げるのが得意なパワー型（投5）から、キャッチが得意な型（受4）までいます。カードの「投」「受」をチェック！</li>
       <li>投げる役がサイコロを振って、<b>「投」の数以下</b>が出れば命中しそう！今度は相手がサイコロを振って、<b>「受」の数以下</b>でキャッチできます。</li>
       <li>キャッチされると、<b>その投げはセーフ（無効）</b>で、誰もアウトになりません。当てれば<b>相手がアウト</b>。外野の選手が当てると、<b>内野に戻れます</b>。</li>
+      <li>投げを<b>キャッチした選手は、次にそのまま投げます</b>（ボールを持っている人が投げる、実際のドッジボールと同じ流れ）。キャッチされると、次はキャッチした選手が投げる番になります。当たった時・外れた時は、拾ったチームが投げる役を自由に選べます。</li>
       <li>ボールは、キャッチされても、当たっても、外れても、<b>相手チームが拾って次に投げます</b>（本家スーパードッジボール式）。</li>
       <li>相手の<b>内野を0</b>にしたら勝ち。全<b>30投</b>終わったら、内野の残り数が多い方の勝ち。</li>
     </ol>
-    <p class="sub">実物版のイメージ：選手カード14枚、サイコロ1個、ボールコマ1個だけで遊べます。</p>
+    <p class="sub">実物版のイメージ：選手カード14枚、サイコロ1個、ボールコマ1個だけで遊べます。ボールコマを持っている選手がそのまま投げるので、実物でも「キャッチした人が投げる」が自然に再現できます。</p>
     <div class="btns">
       <button id="startBtn">ゲームスタート</button>
     </div>
@@ -113,7 +114,7 @@
     </div>
   </div>
 
-  <p class="back"><a href="../">← 試作ゲームラボに戻る</a> ・ アニマルドッジボール v0.5</p>
+  <p class="back"><a href="../">← 試作ゲームラボに戻る</a> ・ アニマルドッジボール v0.6</p>
 </div>
 <script>
 const $=id=>document.getElementById(id);
@@ -123,7 +124,7 @@ function log(t){const d=document.createElement('div');d.textContent=t;$('log').p
 function mkTeams(){
   // 7タイプ（両チーム対称）：投5/受1, 投4/受1, 投4/受2, 投3/受2, 投3/受3, 投2/受3, 投2/受4
   // 初期配置も対称：内野＝投5/受1・投4/受2・投3/受3・投2/受4、外野＝投4/受1・投3/受2・投2/受3
-  return {
+  const teams={
     you:[
       {name:'ライオン',e:'🦁',atk:5,cat:1,zone:'in'},
       {name:'くま',e:'🐻',atk:4,cat:1,zone:'out'},
@@ -143,6 +144,7 @@ function mkTeams(){
       {name:'ひよこ',e:'🐥',atk:2,cat:4,zone:'in'}
     ]
   };
+  return teams;
 }
 function inCount(k){return S.teams[k].filter(a=>a.zone==='in').length}
 function checkEnd(){
@@ -152,6 +154,7 @@ function checkEnd(){
   return null;
 }
 // 投げの解決（r1=投げの目, r2=キャッチの目）。状態を更新してイベント文字列を返す
+// キャッチされた場合は catcher（キャッチした選手＝標的）を返す。次の番ではその選手が投げる
 function doThrow(att,thr,def,tgt,r1,r2){
   const ev=[];
   const hit=r1<=thr.atk;
@@ -160,7 +163,8 @@ function doThrow(att,thr,def,tgt,r1,r2){
   if(caught){
     ev.push(`${tgt.e}${tgt.name}がキャッチ！（🎲${r2}）`);
     ev.push(`その投げはセーフ（無効）。誰もアウトにならない`);
-    return {hit:true,caught:true,ev};
+    ev.push(`🏐 キャッチした${tgt.e}${tgt.name}が次に投げます`);
+    return {hit:true,caught:true,ev,catcher:tgt};
   }
   tgt.zone='out';
   ev.push(`${thr.e}${thr.name}のボールが${tgt.e}${tgt.name}に命中！（🎲${r2}）${tgt.name}は外野へ`);
@@ -168,7 +172,7 @@ function doThrow(att,thr,def,tgt,r1,r2){
   return {hit:true,caught:false,ev};
 }
 function startGame(){
-  S={teams:mkTeams(),turn:'you',throws:0,phase:'pick',sel:null,over:false};
+  S={teams:mkTeams(),turn:'you',throws:0,phase:'pick',sel:null,over:false,forced:null};
   $('rulesView').classList.add('hidden');$('resultView').classList.add('hidden');$('gameView').classList.remove('hidden');
   $('log').innerHTML='';
   log('試合開始！ まずはあなたの投げから');
@@ -178,7 +182,9 @@ function animalHtml(k,a,i){
   const mine=S.turn==='you'&&S.phase==='pick';
   let cls='animal'+(a.zone==='out'?' out':'');
   let attr='';
-  if(mine&&k==='you'){cls+=' tap';attr=` data-thrower="${i}"`;if(S.sel===a)cls+=' sel'}
+  // 投げ手固定（キャッチした選手が投げる）の時は、投げ手をタップで変えられない
+  if(mine&&k==='you'&&!S.forced){cls+=' tap';attr=` data-thrower="${i}"`}
+  if(mine&&k==='you'&&S.sel===a)cls+=' sel';
   if(mine&&k==='cpu'&&S.sel&&a.zone==='in'){cls+=' tgt';attr=` data-target="${i}"`}
   return `<div class="${cls}"${attr}><div class="em">${a.e}</div><div class="an">${a.name}</div><div class="st">投${a.atk}・受${a.cat}${a.zone==='out'?'（外野）':''}</div></div>`;
 }
@@ -193,18 +199,25 @@ function courtHtml(k,label){
 }
 function render(){
   if(!S)return;
+  // 投げ手固定の番では、キャッチした選手を投げ手として先に選んだ状態にする
+  if(S.phase==='pick'&&S.turn==='you'&&S.forced)S.sel=S.forced;
   $('roundTag').textContent=`${S.throws+1}投目 / ${MAXTHROW}`;
   $('cpuCourt').innerHTML=courtHtml('cpu','🤖 CPUチーム');
   $('youCourt').innerHTML=courtHtml('you','🧑 あなたのチーム');
   if(S.phase==='pick'){
-    $('msg').textContent=S.turn==='you'?'あなたの投げです':'CPUの投げです';
-    $('hint').textContent=S.turn==='you'?(S.sel?'当てる相手（CPUの内野）をタップ':'投げる役をタップ（内野・外野どちらでもOK）'):'';
+    if(S.turn==='you'&&S.forced){
+      $('msg').textContent=`🏐 キャッチした${S.forced.e}${S.forced.name}が投げます`;
+      $('hint').textContent='当てる相手（CPUの内野）をタップ';
+    }else{
+      $('msg').textContent=S.turn==='you'?'あなたの投げです':'CPUの投げです';
+      $('hint').textContent=S.turn==='you'?(S.sel?'当てる相手（CPUの内野）をタップ':'投げる役をタップ（内野・外野どちらでもOK）'):'';
+    }
     document.querySelectorAll('[data-thrower]').forEach(el=>el.onclick=()=>{S.sel=S.teams.you[+el.dataset.thrower];render()});
     document.querySelectorAll('[data-target]').forEach(el=>el.onclick=()=>{animateThrow('you',S.sel,'cpu',S.teams.cpu[+el.dataset.target])});
   }else{$('hint').textContent=''}
 }
 function animateThrow(att,thr,def,tgt){
-  S.phase='anim';S.sel=null;render();
+  S.phase='anim';S.sel=null;S.forced=null;render();
   const r1=1+Math.floor(Math.random()*6);
   const hit=r1<=thr.atk;
   const r2=hit?1+Math.floor(Math.random()*6):null;
@@ -219,7 +232,9 @@ function animateThrow(att,thr,def,tgt){
       const w=checkEnd();
       if(w){finish(w);return}
       S.turn=def;
-      log('🏐 ボールは相手チームが拾って、次は相手の投げです');
+      // キャッチされたら、次はキャッチした選手が投げる（投げ手固定）。それ以外は自由選択
+      S.forced=res.caught?res.catcher:null;
+      if(!res.caught)log('🏐 ボールは相手チームが拾って、次は相手の投げです');
       S.phase='pick';render();
       if(S.turn==='cpu')setTimeout(cpuMove,900);
     },hit?800:600);
@@ -229,10 +244,13 @@ function animateThrow(att,thr,def,tgt){
 function cpuMove(){
   if(!S||S.over)return;
   const team=S.teams.cpu;
-  const outs=team.filter(a=>a.zone==='out'&&a.atk>=3);
   let thr;
-  if(outs.length&&Math.random()<0.5)thr=outs[0];
-  else{const ins=team.filter(a=>a.zone==='in');thr=ins.reduce((a,b)=>b.atk>a.atk?b:a,ins[0]);}
+  if(S.forced){thr=S.forced} // キャッチした選手が投げる（投げ手固定）
+  else{
+    const outs=team.filter(a=>a.zone==='out'&&a.atk>=3);
+    if(outs.length&&Math.random()<0.5)thr=outs.reduce((a,b)=>b.atk>a.atk?b:a,outs[0]);
+    else{const ins=team.filter(a=>a.zone==='in');thr=ins.reduce((a,b)=>b.atk>a.atk?b:a,ins[0]);}
+  }
   const targets=S.teams.you.filter(a=>a.zone==='in');
   let tgt;
   if(Math.random()<0.75)tgt=targets.reduce((a,b)=>b.cat<a.cat?b:a,targets[0]);
