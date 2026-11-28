@@ -125,8 +125,8 @@
     </div>
   </div>
 
-  <div class="foot">紙のおかずカード18まい（6しゅるい×3まい）と、おべんとう箱のボード2つで、2人でそのままあそべます</div>
-  <p class="back"><a href="../">← 試作ゲームラボに戻る</a> ・ おべんとうづくり v0.1</p>
+  <div class="foot">紙のおかずカード30まい（6しゅるい×5まい）と、おべんとう箱のボード2つで、2人でそのままあそべます</div>
+  <p class="back"><a href="../">← 試作ゲームラボに戻る</a> ・ おべんとうづくり v0.2</p>
 </div>
 <script>
 const KINDS=[
@@ -146,7 +146,7 @@ const $=id=>document.getElementById(id);
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function newDeck(){
   const d=[];let uid=0;
-  KINDS.forEach(k=>{for(let i=0;i<3;i++)d.push({uid:uid++,k:k.id});});
+  KINDS.forEach(k=>{for(let i=0;i<5;i++)d.push({uid:uid++,k:k.id});});
   return shuffle(d);
 }
 // 箱（9マス、null=空）のライン得点
@@ -251,6 +251,7 @@ function render(){
   }
 }
 function placeCard(cell){
+  if(!S.picked||S.youBox[cell])return;
   S.youBox[cell]=S.picked;
   const k=KIND[S.picked.k];
   log(`${S.round}かいめ：あなたは ${k.e}${k.n} を${cell+1}ばんめのマスにつめた`);
