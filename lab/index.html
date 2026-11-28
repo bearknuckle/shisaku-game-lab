@@ -184,7 +184,7 @@ const GAMES=[
   {
     id:'obentou-dukuri', name:'おべんとうづくり', icon:'🍱', color:'#e85d3d',
     desc:'3×3のおべんとう箱に、おかずカードを1まいずつつめていく。タテ・ヨコ・ナナメで同じ色や同じおかずをそろえると得点。6しゅるい全部そろえばボーナス。9かいめくって、CPUとてんすう勝負。',
-    players:'1人（CPU 1人）', time:'5〜10分', genre:'こども', added:'2026-11-27', version:'0.2', updated:'2026-11-28', isNew:true
+    players:'1人（CPU 1人）', time:'5〜10分', genre:'こども', added:'2026-11-27', version:'0.3', updated:'2026-11-28', isNew:true
   },
   {
     id:'rikaku-chicken', name:'利確チキンレース', icon:'🐔', color:'#d9822b',
@@ -343,6 +343,7 @@ const GAMES=[
 ];
 // 最近の更新（新しい順）。ゲームを更新したら先頭に1件足し、GAMES の version / updated も上げる
 const UPDATES=[
+  {date:'2026-11-28', id:'obentou-dukuri', version:'0.3', text:'カードを選んだ後、箱に置く前なら別のカードに選び直せるように。選んでいるカードの強調表示も追随します'},
   {date:'2026-11-28', id:'haizen-robot', version:'0.1', text:'新しく登場：コマンドカードでロボットを誘導して料理を運ぶレース'},
   {date:'2026-11-28', id:'obentou-dukuri', version:'0.2', text:'バグ修正：山札を18枚→30枚に増やし、最後まで遊べるように（従来は7ラウンド目で山札が尽きて止まっていました）。配置処理のガードも追加'},
   {date:'2026-11-28', id:'cocktail-shaker', version:'0.1', text:'新しく登場（お酒のゲーム・材料カードをドラフトしてカクテルレシピを完成させる、バーテンダーごっこ）'},

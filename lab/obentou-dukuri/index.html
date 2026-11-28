@@ -49,6 +49,7 @@
   .card.tap{cursor:pointer;border-color:var(--accent)}
   .card.tap:active{transform:scale(.95)}
   .card.used{opacity:.35}
+  .card.sel{border-width:3px;background:#ffe9e2;transform:scale(1.05)}
   .kinds{display:flex;gap:8px;justify-content:center;font-size:14px;flex-wrap:wrap;margin:6px 0}
   .kinds .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:2px;vertical-align:middle}
   .btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px}
@@ -126,7 +127,7 @@
   </div>
 
   <div class="foot">紙のおかずカード30まい（6しゅるい×5まい）と、おべんとう箱のボード2つで、2人でそのままあそべます</div>
-  <p class="back"><a href="../">← 試作ゲームラボに戻る</a> ・ おべんとうづくり v0.2</p>
+  <p class="back"><a href="../">← 試作ゲームラボに戻る</a> ・ おべんとうづくり v0.3</p>
 </div>
 <script>
 const KINDS=[
@@ -235,10 +236,11 @@ function render(){
     });
   }else if(S.phase==='place'){
     $('msg').textContent='おべんとう箱のすきなマスをタップ';
-    $('hint').textContent='つめたいマスをえらんでね';
+    $('hint').textContent='つめたいマスをえらんでね（ほかのカードをタップすると えらびなおせます）';
     S.pool.forEach(c=>{
-      const e=cardEl(c);
-      if(c===S.picked)e.classList.add('tap');
+      const e=cardEl(c,true);
+      if(c===S.picked)e.classList.add('sel');
+      e.onclick=()=>{if(S.picked!==c){S.picked=c;render();}};
       pool.appendChild(e);
     });
   }else if(S.phase==='cpu'){
