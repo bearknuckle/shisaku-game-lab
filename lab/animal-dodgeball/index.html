@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>アニマルドッジボール</title>
+<!-- 試作ゲームラボ: 下のOGタグ・アイコン・「試作ゲームラボに戻る」リンクは消さないこと（作業ルールはリポジトリ直下の CLAUDE.md） -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="試作ゲームラボ">
+<meta property="og:title" content="アニマルドッジボール｜試作ゲームラボ">
+<meta property="og:description" content="どうぶつ3匹ずつのドッジボール対決。投げる役と当てる相手を選んでサイコロで勝負。当てれば相手は外野へ、キャッチされると投げた方がアウト。外野から当てれば内野に戻れる。">
+<meta property="og:url" content="https://game-lab-oj9t.onrender.com/animal-dodgeball/">
+<meta property="og:image" content="https://game-lab-oj9t.onrender.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<style>
+  :root{
+    --bg:#eef7ee; --panel:#ffffff; --line:#bcdcc0; --text:#243528; --sub:#6b7f6e;
+    --accent:#359e57; --good:#3aa569; --warn:#b4552d; --cpu:#b03a8c;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:"Hiragino Maru Gothic ProN","Hiragino Kaku Gothic ProN","Noto Sans JP",system-ui,sans-serif;line-height:1.55}
+  .wrap{max-width:640px;margin:0 auto;padding:14px 12px 40px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+  h1{font-size:22px;margin:0}
+  .round{background:var(--accent);color:#fff;font-weight:bold;border-radius:999px;padding:4px 12px;font-size:14px;white-space:nowrap}
+  .panel{background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px}
+  .panel h2{font-size:16px;margin:0 0 8px;color:var(--accent)}
+  .msg{font-size:16px;font-weight:bold;margin:0 0 10px;text-align:center;min-height:1.5em}
+  .sub{font-size:13px;color:var(--sub)}
+  .hidden{display:none}
+  .btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px}
+  button{background:var(--accent);color:#fff;border:none;border-radius:999px;padding:10px 18px;font-size:15px;font-weight:bold;cursor:pointer}
+  button.sec{background:#fff;color:var(--accent);border:2px solid var(--accent)}
+  button:active{transform:scale(.96)}
+  button:disabled{opacity:.45;cursor:default}
+  .court{border:2px solid var(--line);border-radius:12px;padding:8px;margin-bottom:8px;background:#fbfefb}
+  .court.cpu{border-color:#e3b7d8}
+  .court .tname{font-weight:bold;font-size:14px;display:flex;justify-content:space-between}
+  .zone{font-size:11px;color:var(--sub);margin:6px 0 2px}
+  .row{display:flex;gap:8px;flex-wrap:wrap;min-height:74px}
+  .animal{width:86px;border:2px solid var(--line);border-radius:12px;padding:6px 4px;text-align:center;background:#fff;user-select:none}
+  .animal .em{font-size:30px;line-height:1.1}
+  .animal .an{font-size:13px;font-weight:bold}
+  .animal .st{font-size:11px;color:var(--sub)}
+  .animal.out{opacity:.75;background:#f4f4f4}
+  .animal.tap{cursor:pointer;border-color:var(--accent)}
+  .animal.tap:active{transform:scale(.95)}
+  .animal.sel{border-color:var(--accent);box-shadow:0 0 0 3px rgba(53,158,87,.35)}
+  .animal.tgt{cursor:pointer;border-color:var(--warn)}
+  .log{font-size:13px;max-height:160px;overflow:auto}
+  .log div{padding:2px 0;border-bottom:1px dashed var(--line)}
+  table.res{width:100%;border-collapse:collapse;font-size:15px}
+  table.res th,table.res td{border-bottom:1px solid var(--line);padding:6px 4px;text-align:center}
+  table.res th:first-child,table.res td:first-child{text-align:left}
+  .big{font-size:19px;font-weight:bold;text-align:center;margin:8px 0}
+  .foot{font-size:12px;color:var(--sub);text-align:center;margin-top:14px}
+  .back{font-size:14px;text-align:center;margin-top:8px}
+  .back a{color:var(--accent)}
+  .rules ol,.rules ul{margin:6px 0;padding-left:22px}
+  .rules li{margin-bottom:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🏐 アニマルドッジボール</h1>
+    <div class="round" id="roundTag">あそびかた</div>
+  </header>
+
+  <!-- ルール -->
+  <div id="rulesView" class="panel rules">
+    <h2>あそびかた</h2>
+    <ol>
+      <li>どうぶつ<b>3匹ずつ</b>のドッジボール対決。自分の番が来たら、投げる役（内野・外野どちらでもOK）と、当てる相手（相手の内野）を選びます。</li>
+      <li>投げる役がサイコロを振って、<b>「投」の数以下</b>が出れば命中しそう！今度は相手がサイコロを振って、<b>「受」の数以下</b>でキャッチできます。</li>
+      <li>キャッチされると、<b>投げた方がアウト</b>（内野→外野）。当てれば<b>相手がアウト</b>。外野の選手が当てると、<b>内野に戻れます</b>。</li>
+      <li>ボールは毎回、守る側のチームに移ります。交互に投げ合いましょう。</li>
+      <li>相手の<b>内野を0</b>にしたら勝ち。全<b>20投</b>終わったら、内野の残り数が多い方の勝ち。</li>
+    </ol>
+    <p class="sub">実物版のイメージ：選手カード6枚、サイコロ1個、ボールコマ1個だけで遊べます。</p>
+    <div class="btns">
+      <button id="startBtn">ゲームスタート</button>
+    </div>
+  </div>
+
+  <!-- ゲーム -->
+  <div id="gameView" class="hidden">
+    <div class="panel">
+      <p class="msg" id="msg"></p>
+      <div class="court cpu" id="cpuCourt"></div>
+      <div class="court" id="youCourt"></div>
+      <p class="sub" id="hint" style="text-align:center"></p>
+    </div>
+    <div class="panel">
+      <h2>試合ログ</h2>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+
+  <!-- 結果 -->
+  <div id="resultView" class="panel hidden">
+    <h2>結果</h2>
+    <div class="big" id="winner"></div>
+    <table class="res" id="resTable"></table>
+    <div class="btns">
+      <button id="againBtn">もう一度あそぶ</button>
+      <button class="sec" id="rulesBtn">ルールに戻る</button>
+    </div>
+  </div>
+
+  <p class="back"><a href="../">← 試作ゲームラボに戻る</a> ・ アニマルドッジボール v0.1</p>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const MAXTHROW=20;
+let S=null;
+function log(t){const d=document.createElement('div');d.textContent=t;$('log').prepend(d)}
+function mkTeams(){
+  return {
+    you:[{name:'うさぎ',e:'🐰',atk:2,cat:3,zone:'in'},{name:'くま',e:'🐻',atk:4,cat:1,zone:'in'},{name:'きつね',e:'🦊',atk:3,cat:2,zone:'in'}],
+    cpu:[{name:'ぱんだ',e:'🐼',atk:3,cat:2,zone:'in'},{name:'とら',e:'🐯',atk:4,cat:1,zone:'in'},{name:'いぬ',e:'🐶',atk:2,cat:3,zone:'in'}]
+  };
+}
+function inCount(k){return S.teams[k].filter(a=>a.zone==='in').length}
+function checkEnd(){
+  if(inCount('you')===0)return 'cpu';
+  if(inCount('cpu')===0)return 'you';
+  if(S.throws>=MAXTHROW){const a=inCount('you'),b=inCount('cpu');return a>b?'you':b>a?'cpu':'draw'}
+  return null;
+}
+// 投げの解決（r1=投げの目, r2=キャッチの目）。状態を更新してイベント文字列を返す
+function doThrow(att,thr,def,tgt,r1,r2){
+  const ev=[];
+  const hit=r1<=thr.atk;
+  if(!hit){ev.push(`${thr.e}${thr.name}の投げたボールは外れた（🎲${r1}）`);return {hit:false,caught:false,ev}}
+  const caught=r2<=tgt.cat;
+  if(caught){
+    ev.push(`${tgt.e}${tgt.name}がキャッチ！（🎲${r2}）`);
+    if(thr.zone==='in'){thr.zone='out';ev.push(`${thr.e}${thr.name}はアウトで外野へ`)}
+    else ev.push(`${thr.e}${thr.name}は外野のまま`);
+    return {hit:true,caught:true,ev};
+  }
+  tgt.zone='out';
+  ev.push(`${thr.e}${thr.name}のボールが${tgt.e}${tgt.name}に命中！（🎲${r2}）${tgt.name}は外野へ`);
+  if(thr.zone==='out'){thr.zone='in';ev.push(`${thr.e}${thr.name}は内野に復帰！`)}
+  return {hit:true,caught:false,ev};
+}
+function startGame(){
+  S={teams:mkTeams(),turn:'you',throws:0,phase:'pick',sel:null,over:false};
+  $('rulesView').classList.add('hidden');$('resultView').classList.add('hidden');$('gameView').classList.remove('hidden');
+  $('log').innerHTML='';
+  log('試合開始！ まずはあなたの投げから');
+  render();
+}
+function animalHtml(k,a,i){
+  const mine=S.turn==='you'&&S.phase==='pick';
+  let cls='animal'+(a.zone==='out'?' out':'');
+  let attr='';
+  if(mine&&k==='you'){cls+=' tap';attr=` data-thrower="${i}"`;if(S.sel===a)cls+=' sel'}
+  if(mine&&k==='cpu'&&S.sel&&a.zone==='in'){cls+=' tgt';attr=` data-target="${i}"`}
+  return `<div class="${cls}"${attr}><div class="em">${a.e}</div><div class="an">${a.name}</div><div class="st">投${a.atk}・受${a.cat}${a.zone==='out'?'（外野）':''}</div></div>`;
+}
+function courtHtml(k,label){
+  const t=S.teams[k];
+  const ins=t.map((a,i)=>a.zone==='in'?animalHtml(k,a,i):'').join('');
+  const outs=t.map((a,i)=>a.zone==='out'?animalHtml(k,a,i):'').join('');
+  const ball=S.turn===k?' 🏐':'';
+  return `<div class="tname"><span>${label}${ball}</span><span>内野 ${inCount(k)}匹</span></div>`+
+    `<div class="zone">内野</div><div class="row">${ins||'<span class="sub">（なし）</span>'}</div>`+
+    `<div class="zone">外野</div><div class="row">${outs||'<span class="sub">（なし）</span>'}</div>`;
+}
+function render(){
+  if(!S)return;
+  $('roundTag').textContent=`${S.throws+1}投目 / ${MAXTHROW}`;
+  $('cpuCourt').innerHTML=courtHtml('cpu','🤖 CPUチーム');
+  $('youCourt').innerHTML=courtHtml('you','🧑 あなたのチーム');
+  if(S.phase==='pick'){
+    $('msg').textContent=S.turn==='you'?'あなたの投げです':'CPUの投げです';
+    $('hint').textContent=S.turn==='you'?(S.sel?'当てる相手（CPUの内野）をタップ':'投げる役をタップ（内野・外野どちらでもOK）'):'';
+    document.querySelectorAll('[data-thrower]').forEach(el=>el.onclick=()=>{S.sel=S.teams.you[+el.dataset.thrower];render()});
+    document.querySelectorAll('[data-target]').forEach(el=>el.onclick=()=>{animateThrow('you',S.sel,'cpu',S.teams.cpu[+el.dataset.target])});
+  }else{$('hint').textContent=''}
+}
+function animateThrow(att,thr,def,tgt){
+  S.phase='anim';S.sel=null;render();
+  const r1=1+Math.floor(Math.random()*6);
+  const hit=r1<=thr.atk;
+  const r2=hit?1+Math.floor(Math.random()*6):null;
+  const caught=hit&&r2<=tgt.cat;
+  $('msg').textContent=`${thr.e}${thr.name}が投げた！ 🎲${r1} → ${hit?'命中しそう！':'外れた！'}`;
+  const step2=()=>{
+    if(hit)$('msg').textContent=`${tgt.e}${tgt.name}のキャッチ 🎲${r2} → ${caught?'キャッチ成功！':'キャッチ失敗！'}`;
+    setTimeout(()=>{
+      const res=doThrow(att,thr,def,tgt,r1,r2||1);
+      res.ev.forEach(log);
+      S.throws++;
+      const w=checkEnd();
+      if(w){finish(w);return}
+      S.turn=def;S.phase='pick';render();
+      if(S.turn==='cpu')setTimeout(cpuMove,900);
+    },hit?800:600);
+  };
+  setTimeout(step2,800);
+}
+function cpuMove(){
+  if(!S||S.over)return;
+  const team=S.teams.cpu;
+  const outs=team.filter(a=>a.zone==='out'&&a.atk>=3);
+  let thr;
+  if(outs.length&&Math.random()<0.5)thr=outs[0];
+  else{const ins=team.filter(a=>a.zone==='in');thr=ins.reduce((a,b)=>b.atk>a.atk?b:a,ins[0]);}
+  const targets=S.teams.you.filter(a=>a.zone==='in');
+  let tgt;
+  if(Math.random()<0.75)tgt=targets.reduce((a,b)=>b.cat<a.cat?b:a,targets[0]);
+  else tgt=targets[Math.floor(Math.random()*targets.length)];
+  animateThrow('cpu',thr,'you',tgt);
+}
+function finish(w){
+  S.over=true;S.phase='over';
+  $('gameView').classList.add('hidden');$('resultView').classList.remove('hidden');
+  $('roundTag').textContent='試合終了';
+  $('winner').textContent=w==='draw'?'引き分け！':w==='you'?'🏆 あなたのチームの勝ち！':'CPUチームの勝ち';
+  const rows=['you','cpu'].map(k=>`<tr><td>${k==='you'?'🧑 あなた':'🤖 CPU'}</td><td>内野 ${inCount(k)}匹</td></tr>`).join('');
+  $('resTable').innerHTML='<tr><th>チーム</th><th>結果</th></tr>'+rows;
+  log(w==='draw'?'引き分けで試合終了':(w==='you'?'あなたのチームの勝ち！':'CPUチームの勝ち'));
+}
+$('startBtn').onclick=startGame;
+$('againBtn').onclick=()=>{$('resultView').classList.add('hidden');$('rulesView').classList.remove('hidden');$('roundTag').textContent='あそびかた'};
+$('rulesBtn').onclick=()=>{$('resultView').classList.add('hidden');$('rulesView').classList.remove('hidden');$('roundTag').textContent='あそびかた'};
+</script>
+</body>
+</html>
