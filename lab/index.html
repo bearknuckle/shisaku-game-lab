@@ -173,7 +173,7 @@ const GAMES=[
     id:'animal-dodgeball', name:'アニマルドッジボール', icon:'🏐', color:'#359e57',
     desc:'どうぶつ3匹ずつのドッジボール対決。投げる役と当てる相手を選んでサイコロで勝負。キャッチされてもセーフ（無効）。ボールは毎回相手チームが拾って投げる本家スーパードッジボール式、外野から当てれば内野に戻れる。',
     players:'1人（CPU対戦）', time:'5〜10分', genre:'スポーツ',
-    added:'2026-11-28', version:'0.3', updated:'2026-11-28', isNew:true
+    added:'2026-11-28', version:'0.4', updated:'2026-11-28', isNew:true
   },
   {
     id:'haizen-robot', name:'配膳ロボットを誘導せよ', icon:'🤖', color:'#dd7a2e',
@@ -349,6 +349,7 @@ const GAMES=[
 ];
 // 最近の更新（新しい順）。ゲームを更新したら先頭に1件足し、GAMES の version / updated も上げる
 const UPDATES=[
+  {date:'2026-11-28', id:'animal-dodgeball', version:'0.4', text:'本家と同じ7匹制に変更（内野4匹・外野3匹でスタート）。選手は7タイプ（パワー型・キャッチ型など）に増えました'},
   {date:'2026-11-28', id:'cocktail-shaker', version:'0.2', text:'ショートモード（8ラウンド）を追加。通常（12ラウンド）と開始前に選べて、選択は保存されます'},
   {date:'2026-11-28', id:'haizen-robot', version:'0.2', text:'CPUのつよさ選択（はじめて／ふつう／つよい）を追加。選択は保存されます'},
   {date:'2026-11-28', id:'shinko-shiritori', version:'0.7', text:'自己ベスト（最長しりとり＝つながったコード数）の保存表示を追加。新記録のときは結果画面でお知らせします'},

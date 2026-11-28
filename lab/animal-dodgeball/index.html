@@ -8,7 +8,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="試作ゲームラボ">
 <meta property="og:title" content="アニマルドッジボール｜試作ゲームラボ">
-<meta property="og:description" content="どうぶつ3匹ずつのドッジボール対決。投げる役と当てる相手を選んでサイコロで勝負。当てれば相手は外野へ、キャッチされてもその投げはセーフ（無効）。外野から当てれば内野に戻れる。">
+<meta property="og:description" content="どうぶつ7匹ずつ（内野4・外野3）のドッジボール対決。投げる役と当てる相手を選んでサイコロで勝負。当てれば相手は外野へ、キャッチされてもその投げはセーフ（無効）。外野から当てれば内野に戻れる。">
 <meta property="og:url" content="https://game-lab-oj9t.onrender.com/animal-dodgeball/">
 <meta property="og:image" content="https://game-lab-oj9t.onrender.com/og.png">
 <meta property="og:image:width" content="1200">
@@ -42,8 +42,8 @@
   .court .tname{font-weight:bold;font-size:14px;display:flex;justify-content:space-between}
   .zone{font-size:11px;color:var(--sub);margin:6px 0 2px}
   .row{display:flex;gap:8px;flex-wrap:wrap;min-height:74px}
-  .animal{width:86px;border:2px solid var(--line);border-radius:12px;padding:6px 4px;text-align:center;background:#fff;user-select:none}
-  .animal .em{font-size:30px;line-height:1.1}
+  .animal{flex:1 1 62px;max-width:86px;border:2px solid var(--line);border-radius:12px;padding:6px 4px;text-align:center;background:#fff;user-select:none}
+  .animal .em{font-size:28px;line-height:1.1}
   .animal .an{font-size:13px;font-weight:bold}
   .animal .st{font-size:11px;color:var(--sub)}
   .animal.out{opacity:.75;background:#f4f4f4}
@@ -75,13 +75,14 @@
   <div id="rulesView" class="panel rules">
     <h2>あそびかた</h2>
     <ol>
-      <li>どうぶつ<b>3匹ずつ</b>のドッジボール対決。自分の番が来たら、投げる役（内野・外野どちらでもOK）と、当てる相手（相手の内野）を選びます。</li>
+      <li>どうぶつ<b>7匹ずつ</b>のドッジボール対決（<b>内野4匹・外野3匹</b>でスタート、本家スーパードッジボールと同じ7人制）。自分の番が来たら、投げる役（内野・外野どちらでもOK）と、当てる相手（相手の内野）を選びます。</li>
+      <li>選手は7タイプ。投げるのが得意なパワー型（投5）から、キャッチが得意な型（受4）までいます。カードの「投」「受」をチェック！</li>
       <li>投げる役がサイコロを振って、<b>「投」の数以下</b>が出れば命中しそう！今度は相手がサイコロを振って、<b>「受」の数以下</b>でキャッチできます。</li>
       <li>キャッチされると、<b>その投げはセーフ（無効）</b>で、誰もアウトになりません。当てれば<b>相手がアウト</b>。外野の選手が当てると、<b>内野に戻れます</b>。</li>
       <li>ボールは、キャッチされても、当たっても、外れても、<b>相手チームが拾って次に投げます</b>（本家スーパードッジボール式）。</li>
       <li>相手の<b>内野を0</b>にしたら勝ち。全<b>20投</b>終わったら、内野の残り数が多い方の勝ち。</li>
     </ol>
-    <p class="sub">実物版のイメージ：選手カード6枚、サイコロ1個、ボールコマ1個だけで遊べます。</p>
+    <p class="sub">実物版のイメージ：選手カード14枚、サイコロ1個、ボールコマ1個だけで遊べます。</p>
     <div class="btns">
       <button id="startBtn">ゲームスタート</button>
     </div>
@@ -112,7 +113,7 @@
     </div>
   </div>
 
-  <p class="back"><a href="../">← 試作ゲームラボに戻る</a> ・ アニマルドッジボール v0.3</p>
+  <p class="back"><a href="../">← 試作ゲームラボに戻る</a> ・ アニマルドッジボール v0.4</p>
 </div>
 <script>
 const $=id=>document.getElementById(id);
@@ -120,9 +121,27 @@ const MAXTHROW=20;
 let S=null;
 function log(t){const d=document.createElement('div');d.textContent=t;$('log').prepend(d)}
 function mkTeams(){
+  // 7タイプ（両チーム対称）：投5/受1, 投4/受1, 投4/受2, 投3/受2, 投3/受3, 投2/受3, 投2/受4
+  // 初期配置も対称：内野＝投5/受1・投4/受2・投3/受3・投2/受4、外野＝投4/受1・投3/受2・投2/受3
   return {
-    you:[{name:'うさぎ',e:'🐰',atk:2,cat:3,zone:'in'},{name:'くま',e:'🐻',atk:4,cat:1,zone:'in'},{name:'きつね',e:'🦊',atk:3,cat:2,zone:'in'}],
-    cpu:[{name:'ぱんだ',e:'🐼',atk:3,cat:2,zone:'in'},{name:'とら',e:'🐯',atk:4,cat:1,zone:'in'},{name:'いぬ',e:'🐶',atk:2,cat:3,zone:'in'}]
+    you:[
+      {name:'ライオン',e:'🦁',atk:5,cat:1,zone:'in'},
+      {name:'くま',e:'🐻',atk:4,cat:1,zone:'out'},
+      {name:'おおかみ',e:'🐺',atk:4,cat:2,zone:'in'},
+      {name:'きつね',e:'🦊',atk:3,cat:2,zone:'out'},
+      {name:'さる',e:'🐵',atk:3,cat:3,zone:'in'},
+      {name:'うさぎ',e:'🐰',atk:2,cat:3,zone:'out'},
+      {name:'ねこ',e:'🐱',atk:2,cat:4,zone:'in'}
+    ],
+    cpu:[
+      {name:'とら',e:'🐯',atk:5,cat:1,zone:'in'},
+      {name:'ぱんだ',e:'🐼',atk:4,cat:1,zone:'out'},
+      {name:'たぬき',e:'🦝',atk:4,cat:2,zone:'in'},
+      {name:'いぬ',e:'🐶',atk:3,cat:2,zone:'out'},
+      {name:'ぶた',e:'🐷',atk:3,cat:3,zone:'in'},
+      {name:'ハムスター',e:'🐹',atk:2,cat:3,zone:'out'},
+      {name:'ひよこ',e:'🐥',atk:2,cat:4,zone:'in'}
+    ]
   };
 }
 function inCount(k){return S.teams[k].filter(a=>a.zone==='in').length}
