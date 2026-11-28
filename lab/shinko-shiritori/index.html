@@ -102,6 +102,7 @@ td,th{border:1px solid var(--line);padding:4px 6px;text-align:left}
     <div class="row">対戦相手の数
       <select id="ncpu"><option value="1">1人</option><option value="2" selected>2人</option><option value="3">3人</option></select>
     </div>
+    <p id="bestLine" style="font-size:13px;color:var(--muted);margin:2px 0"></p>
     <button class="btn primary" id="startBtn">スタート（音が出ます）</button>
   </div>
 
@@ -242,6 +243,11 @@ function playSeq(arr,gap=.6){arr.forEach((d,i)=>playChord(d,i*gap,gap+.5))}
 let keyName='C';
 const S={players:[],deck:[],field:[],cur:0,phase:'setup',pending:null,log:[],sel:null,passes:0};
 const SONG_LEN=16;
+// 自己ベスト（最長しりとり＝場につないだコード数）を localStorage に保存
+const BEST_KEY='shinko-shiritori-best';
+function loadBest(){try{const v=parseInt(localStorage.getItem(BEST_KEY),10);return isNaN(v)?0:v}catch(e){return 0}}
+function saveBest(v){try{localStorage.setItem(BEST_KEY,String(v))}catch(e){}}
+function refreshBestLine(){const el=document.getElementById('bestLine');if(!el)return;const b=loadBest();el.textContent=b?`🎹 自己ベスト（最長しりとり）：${b}コード${b>=SONG_LEN?'（1曲完成！）':''}`:''}
 function barHead(){return S.field.length%4===0}
 function legal(prev,d){return barHead()?'free':rel(prev,d)}
 const CPU_NAMES=['うさぎ','ねこ','たぬき'];
@@ -359,10 +365,11 @@ function passCheck(){
 }
 function endSong(why){
   S.phase='over';
+  const len=S.field.length;const prevBest=loadBest();const isRec=len>prevBest;if(isRec)saveBest(len);const bestNow=Math.max(len,prevBest);refreshBestLine();
   const sc=p=>p.hand.length-p.chips;
   const rank=S.players.map((p,i)=>({p,i})).sort((a,b)=>sc(a.p)-sc(b.p)||b.p.chips-a.p.chips);
   const w=rank[0].p;const tie=rank[1]&&sc(rank[1].p)===sc(w)&&rank[1].p.chips===w.chips;
-  log(`<b>${why}</b><br>${rank.map(x=>`${x.p.name}：手札${x.p.hand.length}枚−🪙${x.p.chips}＝<b>${sc(x.p)}点</b>`).join('／')}<br><b>${tie?'引き分け':(w.human?'あなたの勝ち！🎉':w.name+'の勝ち')}</b>（手札の枚数−チップ＝点数。点数が少ない人の勝ち。同点ならチップが多い人）`);
+  log(`<b>${why}</b><br>${rank.map(x=>`${x.p.name}：手札${x.p.hand.length}枚−🪙${x.p.chips}＝<b>${sc(x.p)}点</b>`).join('／')}<br><b>${tie?'引き分け':(w.human?'あなたの勝ち！🎉':w.name+'の勝ち')}</b>（手札の枚数−チップ＝点数。点数が少ない人の勝ち。同点ならチップが多い人）<br>🎹 しりとりの長さ：${len}コード ／ 自己ベスト：${bestNow}コード${isRec?' <b>新記録！</b>':''}`);
   setTimeout(()=>playSeq(S.field,.45),300);
   render(tie?'引き分け':(w.human?'あなたの勝ち！':`${w.name}の勝ちです`));
 }
@@ -446,6 +453,7 @@ document.getElementById('closeRules').onclick=()=>document.getElementById('rules
 document.getElementById('rules').onclick=e=>{if(e.target.id==='rules')e.currentTarget.classList.remove('show')};
 document.getElementById('relTable').innerHTML='<tr><th>場</th><th>強いつながり</th><th>OK</th></tr>'+ROMAN.map((r,a)=>`<tr><td><b>${r}</b></td><td>${REL[a].s.map(x=>ROMAN[x]).join('・')}</td><td>${REL[a].o.map(x=>ROMAN[x]).join('・')}</td></tr>`).join('');
 document.getElementById('comboList').innerHTML=COMBOS.map(c=>`<div>${c.name}：${c.seq.map(x=>ROMAN[x]).join('→')}</div>`).join('');
+refreshBestLine();
 </script>
 </body>
 </html>

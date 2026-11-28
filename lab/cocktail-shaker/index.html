@@ -35,6 +35,8 @@
   .btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px}
   button{background:var(--accent);color:#fff;border:none;border-radius:999px;padding:10px 18px;font-size:15px;font-weight:bold;cursor:pointer}
   button.sec{background:#fff;color:var(--accent);border:2px solid var(--accent)}
+  button.modebtn{background:#fff;color:var(--accent);border:2px solid var(--accent)}
+  button.modebtn.on{background:var(--accent);color:#fff}
   button:active{transform:scale(.96)}
   button:disabled{opacity:.45;cursor:default}
   .players{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
@@ -90,7 +92,7 @@
       <li>場には材料カードが<b>5まい</b>。自分の番に<b>1まい</b>取って、材料を集めます。</li>
       <li>レシピに必要な材料が全部そろったら、<b>「提供する」</b>でカクテル完成！材料を使って、レシピの点数がもらえます。完成したら新しいレシピを1まい引きます。</li>
       <li>材料がいらないときは、レシピ1まいを<b>「交換」</b>する手もあります（その番は材料を取れません）。</li>
-      <li><b>12ラウンド</b>でおわり。完成したカクテルの合計点が高い人の勝ち。</li>
+      <li><b>ふつうは12ラウンド、ショートは8ラウンド</b>でおわり（下のボタンでえらべます）。完成したカクテルの合計点が高い人の勝ち。</li>
     </ol>
     <p><b>てんすう</b></p>
     <ul>
@@ -99,6 +101,11 @@
     </ul>
     <p class="sub">コツ：材料は早い者勝ち。ほかの人がほしい材料を先に取るのも作戦。完成しそうにないレシピは早めに交換しよう。</p>
     <p class="sub">お酒を飲まなくても遊べます。飲むときは20歳以上で、ほどほどに。</p>
+    <p class="sub" style="text-align:center;margin-bottom:0">モードをえらんでね（前回の設定を覚えています）</p>
+    <div class="btns" style="margin-top:6px">
+      <button class="modebtn" data-mode="normal">ふつう（12ラウンド）</button>
+      <button class="modebtn" data-mode="short">ショート（8ラウンド）</button>
+    </div>
     <div class="btns">
       <button data-cpu="1">CPU 1人とあそぶ</button>
       <button data-cpu="2">CPU 2人とあそぶ</button>
@@ -139,11 +146,20 @@
   </div>
 
   <div class="foot">レシピカード12まいと、材料カード68まい（17しゅるい×4まい）で、そのままあそべます。お酒を飲まなくても遊べます。飲むときは20歳以上で、ほどほどに。</div>
-  <p class="back"><a href="../">← 試作ゲームラボに戻る</a> ・ カクテル・シェイカー v0.1</p>
+  <p class="back"><a href="../">← 試作ゲームラボに戻る</a> ・ カクテル・シェイカー v0.2</p>
 </div>
 <script>
 const $=id=>document.getElementById(id);
-const ROUNDS=12, MARKET_N=5;
+const MARKET_N=5;
+const MODE_KEY='cocktail-shaker-mode';
+const MODE_ROUNDS={normal:12,short:8};
+let mode='normal';
+try{const m=localStorage.getItem(MODE_KEY);if(m==='short'||m==='normal')mode=m;}catch(e){}
+function paintMode(){document.querySelectorAll('.modebtn').forEach(b=>b.classList.toggle('on',b.dataset.mode===mode));}
+document.querySelectorAll('.modebtn').forEach(b=>{
+  b.onclick=()=>{mode=b.dataset.mode;try{localStorage.setItem(MODE_KEY,mode);}catch(e){}paintMode();};
+});
+paintMode();
 const ING={
   gin:{n:'ジン',e:'🍸',c:'ベース'},vodka:{n:'ウォッカ',e:'🧊',c:'ベース'},rum:{n:'ラム',e:'🥥',c:'ベース'},
   tequila:{n:'テキーラ',e:'🌵',c:'ベース'},whiskey:{n:'ウイスキー',e:'🥃',c:'ベース'},shochu:{n:'焼酎',e:'🍶',c:'ベース'},
@@ -191,18 +207,18 @@ function log(t){
   $('log').prepend(d);
 }
 function start(cpuCount){
-  S={deck:newDeck(),recipeDeck:shuffle(RECIPES.slice()),market:[],round:1,phase:'you',cpuCount,
+  S={deck:newDeck(),recipeDeck:shuffle(RECIPES.slice()),market:[],round:1,rounds:MODE_ROUNDS[mode],phase:'you',cpuCount,
      players:[{name:'🙂 あなた',cpu:false,hand:[],recipes:[],done:[],score:0}]};
   for(let i=0;i<cpuCount;i++)S.players.push({name:CPU_NAMES[i],cpu:true,hand:[],recipes:[],done:[],score:0});
   S.players.forEach(p=>{for(let i=0;i<2;i++){const r=drawRecipe();if(r)p.recipes.push(r);}});
   for(let i=0;i<MARKET_N;i++)S.market.push(S.deck.pop());
   $('rulesView').classList.add('hidden');$('resultView').classList.add('hidden');$('gameView').classList.remove('hidden');
   $('log').innerHTML='';
-  log('ゲームスタート！12ラウンドで一番たくさんカクテルを作った人の勝ち');
+  log(`ゲームスタート！${S.rounds}ラウンドで一番たくさんカクテルを作った人の勝ち`);
   render();
 }
 function render(){
-  $('roundTag').textContent=S.round>ROUNDS?'けっか':`${S.round} / ${ROUNDS} ラウンド`;
+  $('roundTag').textContent=S.round>S.rounds?'けっか':`${S.round} / ${S.rounds} ラウンド`;
   // players
   const pb=$('playersBox');pb.innerHTML='';
   S.players.forEach(p=>{
@@ -340,7 +356,7 @@ function runCpus(){
     if(r){
       serve(p,r);
       log(`${p.name}は「${r.n}」を提供！ +${r.pts}点`);
-    }else if(S.round>=7&&p.recipes.some(r=>missing(p,r).length===r.need.length)&&S.recipeDeck.length&&Math.random()<0.5){
+    }else if(S.round>=Math.round(S.rounds*7/12)&&p.recipes.some(r=>missing(p,r).length===r.need.length)&&S.recipeDeck.length&&Math.random()<0.5){
       const bad=p.recipes.find(r=>missing(p,r).length===r.need.length);
       p.recipes=p.recipes.filter(x=>x!==bad);
       const nr=drawRecipe();
@@ -354,7 +370,7 @@ function runCpus(){
   one();
 }
 function nextRound(){
-  if(S.round>=ROUNDS)return finish();
+  if(S.round>=S.rounds)return finish();
   S.round++;
   S.phase='you';
   render();

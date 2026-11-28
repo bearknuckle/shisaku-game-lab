@@ -69,6 +69,9 @@
   .back a{color:var(--accent)}
   .rules ol,.rules ul{margin:6px 0;padding-left:22px}
   .rules li{margin-bottom:4px}
+  .lvls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  button.lvl{background:#fff;color:var(--accent);border:2px solid var(--accent)}
+  button.lvl.on{background:var(--accent);color:#fff}
 </style>
 </head>
 <body>
@@ -88,8 +91,16 @@
       <li>お客さん🧑に当たると<b>料理を落として0点</b>。お客さんは料理ごとに場所が変わります。</li>
       <li>一番早く届けた人が、料理の点数（2〜4点）を獲得。同じ速さなら全員に点数が入ります。</li>
       <li><b>8品</b>配膳したら終わり。合計点が高い人の勝ち。</li>
+      <li>CPUの<b>つよさ</b>（はじめて／ふつう／つよい）が選べます。選んだつよさは次回もそのまま使えます。</li>
     </ol>
     <p class="sub">実物版のイメージ：6×6マスのボード、コマンドカード、ロボットとお客さんのコマだけで遊べます。</p>
+    <p class="sub" style="text-align:center;margin:12px 0 6px">CPUのつよさ</p>
+    <div class="lvls" id="lvlBox">
+      <button class="lvl" data-level="easy">はじめて</button>
+      <button class="lvl" data-level="normal">ふつう</button>
+      <button class="lvl" data-level="strong">つよい</button>
+    </div>
+    <p class="sub" id="lvlDesc" style="text-align:center;margin:6px 0 0"></p>
     <div class="btns">
       <button data-cpu="1">CPU 1人とあそぶ</button>
       <button data-cpu="2">CPU 2人とあそぶ</button>
@@ -125,7 +136,7 @@
     </div>
   </div>
 
-  <p class="back"><a href="../">← 試作ゲームラボに戻る</a> ・ 配膳ロボットを誘導せよ v0.1</p>
+  <p class="back"><a href="../">← 試作ゲームラボに戻る</a> ・ 配膳ロボットを誘導せよ v0.2</p>
 </div>
 <script>
 const $=id=>document.getElementById(id);
@@ -139,6 +150,15 @@ const CMD={F:{e:'⬆',lb:'すすむ'},F2:{e:'⏫',lb:'2マスすすむ'},L:{e:'�
 const key=(x,y)=>x+','+y;
 const isTable=(x,y)=>TABLES.some(t=>t[0]===x&&t[1]===y);
 let S=null;
+// CPUレベル（はじめて/ふつう/つよい）を localStorage に保存
+const LV_KEY='haizen-robot-level';
+const LV_DESC={easy:'CPUはプログラムをランダムに組みます。まずはここから',normal:'CPUは最短コースを狙いますが、たまに間違えます',strong:'CPUは最短コースを間違えずに狙います。歯ごたえあり'};
+let cpuLevel='normal';
+try{const v=localStorage.getItem(LV_KEY);if(v==='easy'||v==='normal'||v==='strong')cpuLevel=v}catch(e){}
+function renderLevel(){
+  document.querySelectorAll('[data-level]').forEach(b=>b.classList.toggle('on',b.dataset.level===cpuLevel));
+  const d=$('lvlDesc');if(d)d.textContent=LV_DESC[cpuLevel];
+}
 
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function log(t){const d=document.createElement('div');d.textContent=t;$('log').prepend(d)}
@@ -198,9 +218,15 @@ function cpuProgram(p){
   const blocked=new Set();
   for(const t of TABLES)if(!(t[0]===S.tx&&t[1]===S.ty))blocked.add(key(t[0],t[1]));
   for(const c of S.customers)blocked.add(key(c[0],c[1]));
+  if(cpuLevel==='easy'){ // はじめて: ほぼランダムなプログラム
+    const pool=['F','F','F','F2','L','R'];
+    const n=3+Math.floor(Math.random()*4);
+    const prog=[];for(let i=0;i<n;i++)prog.push(pool[Math.floor(Math.random()*pool.length)]);
+    return prog;
+  }
   let prog=bfsProgram(KITCHEN[0],KITCHEN[1],1,S.tx,S.ty,blocked)||[];
   prog=prog.slice(0,MAXP);
-  if(prog.length&&Math.random()<p.err){ // たまに間違える
+  if(cpuLevel==='normal'&&prog.length&&Math.random()<p.err){ // ふつう: たまに間違える（つよいは間違えない）
     const i=Math.floor(Math.random()*prog.length);
     prog[i]=['F','F2','L','R'][Math.floor(Math.random()*4)];
   }
@@ -325,6 +351,10 @@ function finish(){
   $('resTable').innerHTML='<tr><th>名前</th><th>合計点</th></tr>'+ps.map(p=>`<tr><td>${p.cpu?'🤖':'🧑'} ${p.name}</td><td>${p.score}点</td></tr>`).join('');
 }
 document.querySelectorAll('[data-cpu]').forEach(b=>b.onclick=()=>startGame(+b.dataset.cpu));
+document.querySelectorAll('[data-level]').forEach(b=>b.onclick=()=>{cpuLevel=b.dataset.level;
+  try{localStorage.setItem(LV_KEY,cpuLevel)}catch(e){}
+  renderLevel();});
+renderLevel();
 $('againBtn').onclick=()=>{$('resultView').classList.add('hidden');$('rulesView').classList.remove('hidden');$('roundTag').textContent='あそびかた'};
 $('rulesBtn').onclick=()=>{$('resultView').classList.add('hidden');$('rulesView').classList.remove('hidden');$('roundTag').textContent='あそびかた'};
 </script>

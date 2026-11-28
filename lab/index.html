@@ -179,12 +179,12 @@ const GAMES=[
     id:'haizen-robot', name:'配膳ロボットを誘導せよ', icon:'🤖', color:'#dd7a2e',
     desc:'コマンドカードでプログラムを組んで、配膳ロボットを目的のテーブルまで誘導するレース。ぶつかると停止、お客さんに当たると料理を落としてしまう。',
     players:'1人（CPU 1〜3人）', time:'5〜10分', genre:'ボドゲ',
-    added:'2026-11-28', version:'0.1', updated:'2026-11-28', isNew:true
+    added:'2026-11-28', version:'0.2', updated:'2026-11-28', isNew:true
   },
   {
     id:'cocktail-shaker', name:'カクテル・シェイカー', icon:'🍸', color:'#0e7490',
     desc:'バーテンダーになってカクテルを作るドラフトゲーム。場の材料カードを1枚ずつ取って、レシピに必要な材料をそろえよう。レシピがそろったら「提供」で得点。12ラウンドで一番たくさん作った人の勝ち。CPU 1〜3人と対戦。',
-    players:'1人（CPU 1〜3人）', time:'5〜10分', genre:'お酒', added:'2026-11-28', version:'0.1', updated:'2026-11-28', isNew:true,
+    players:'1人（CPU 1〜3人）', time:'5〜10分', genre:'お酒', added:'2026-11-28', version:'0.2', updated:'2026-11-28', isNew:true,
     note:'お酒を飲まなくても遊べます。飲むときは20歳以上で、ほどほどに'
   },
   {
@@ -319,7 +319,7 @@ const GAMES=[
   {
     id:'shinko-shiritori', name:'進行しりとり', icon:'🎹', color:'#2f8f5f',
     desc:'場のコードに「自然につながる」コードをつないでいく、しりとり型カードゲーム。はったりとダウトあり。遊びながらコード進行の流れが身につく。',
-    players:'1人（CPU 1〜3人）', time:'5〜10分', genre:'音楽', added:'2026-11-18', version:'0.6', updated:'2026-11-24', isNew:true
+    players:'1人（CPU 1〜3人）', time:'5〜10分', genre:'音楽', added:'2026-11-18', version:'0.7', updated:'2026-11-28', isNew:true
   },
   {
     id:'onechord', name:'ワンコード', icon:'🎵', color:'#4f8cff',
@@ -349,6 +349,9 @@ const GAMES=[
 ];
 // 最近の更新（新しい順）。ゲームを更新したら先頭に1件足し、GAMES の version / updated も上げる
 const UPDATES=[
+  {date:'2026-11-28', id:'cocktail-shaker', version:'0.2', text:'ショートモード（8ラウンド）を追加。通常（12ラウンド）と開始前に選べて、選択は保存されます'},
+  {date:'2026-11-28', id:'haizen-robot', version:'0.2', text:'CPUのつよさ選択（はじめて／ふつう／つよい）を追加。選択は保存されます'},
+  {date:'2026-11-28', id:'shinko-shiritori', version:'0.7', text:'自己ベスト（最長しりとり＝つながったコード数）の保存表示を追加。新記録のときは結果画面でお知らせします'},
   {date:'2026-11-28', id:'animal-dodgeball', version:'0.3', text:'本家スーパードッジボール式に変更：ボールはキャッチ・命中・外れのいずれでも相手チームが拾って次に投げます。先攻有利もほぼ解消（測定で49%対45%）'},
   {date:'2026-11-28', id:'animal-dodgeball', version:'0.2', text:'ルール変更：キャッチされても投げた人はアウトにならず、その投げはセーフ（無効）に。ボールが相手に移るのはキャッチされた時だけに変更'},
   {date:'2026-11-28', id:'animal-dodgeball', version:'0.1', text:'新しく登場：どうぶつ3匹ずつのドッジボール対決'},
