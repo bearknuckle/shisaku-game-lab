@@ -80,7 +80,7 @@
       <li>投げる役がサイコロを振って、<b>「投」の数以下</b>が出れば命中しそう！今度は相手がサイコロを振って、<b>「受」の数以下</b>でキャッチできます。</li>
       <li>キャッチされると、<b>その投げはセーフ（無効）</b>で、誰もアウトになりません。当てれば<b>相手がアウト</b>。外野の選手が当てると、<b>内野に戻れます</b>。</li>
       <li>ボールは、キャッチされても、当たっても、外れても、<b>相手チームが拾って次に投げます</b>（本家スーパードッジボール式）。</li>
-      <li>相手の<b>内野を0</b>にしたら勝ち。全<b>20投</b>終わったら、内野の残り数が多い方の勝ち。</li>
+      <li>相手の<b>内野を0</b>にしたら勝ち。全<b>30投</b>終わったら、内野の残り数が多い方の勝ち。</li>
     </ol>
     <p class="sub">実物版のイメージ：選手カード14枚、サイコロ1個、ボールコマ1個だけで遊べます。</p>
     <div class="btns">
@@ -113,11 +113,11 @@
     </div>
   </div>
 
-  <p class="back"><a href="../">← 試作ゲームラボに戻る</a> ・ アニマルドッジボール v0.4</p>
+  <p class="back"><a href="../">← 試作ゲームラボに戻る</a> ・ アニマルドッジボール v0.5</p>
 </div>
 <script>
 const $=id=>document.getElementById(id);
-const MAXTHROW=20;
+const MAXTHROW=30;
 let S=null;
 function log(t){const d=document.createElement('div');d.textContent=t;$('log').prepend(d)}
 function mkTeams(){
