@@ -8,7 +8,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="試作ゲームラボ">
 <meta property="og:title" content="アニマルドッジボール｜試作ゲームラボ">
-<meta property="og:description" content="どうぶつ3匹ずつのドッジボール対決。投げる役と当てる相手を選んでサイコロで勝負。当てれば相手は外野へ、キャッチされると投げた方がアウト。外野から当てれば内野に戻れる。">
+<meta property="og:description" content="どうぶつ3匹ずつのドッジボール対決。投げる役と当てる相手を選んでサイコロで勝負。当てれば相手は外野へ、キャッチされてもその投げはセーフ（無効）。外野から当てれば内野に戻れる。">
 <meta property="og:url" content="https://game-lab-oj9t.onrender.com/animal-dodgeball/">
 <meta property="og:image" content="https://game-lab-oj9t.onrender.com/og.png">
 <meta property="og:image:width" content="1200">
@@ -77,8 +77,8 @@
     <ol>
       <li>どうぶつ<b>3匹ずつ</b>のドッジボール対決。自分の番が来たら、投げる役（内野・外野どちらでもOK）と、当てる相手（相手の内野）を選びます。</li>
       <li>投げる役がサイコロを振って、<b>「投」の数以下</b>が出れば命中しそう！今度は相手がサイコロを振って、<b>「受」の数以下</b>でキャッチできます。</li>
-      <li>キャッチされると、<b>投げた方がアウト</b>（内野→外野）。当てれば<b>相手がアウト</b>。外野の選手が当てると、<b>内野に戻れます</b>。</li>
-      <li>ボールは毎回、守る側のチームに移ります。交互に投げ合いましょう。</li>
+      <li>キャッチされると、<b>その投げはセーフ（無効）</b>で、誰もアウトになりません。当てれば<b>相手がアウト</b>。外野の選手が当てると、<b>内野に戻れます</b>。</li>
+      <li>ボールは<b>キャッチされた時だけ</b>相手チームに移ります。当てても外しても、投げたチームがボールを保持して続けて投げます。</li>
       <li>相手の<b>内野を0</b>にしたら勝ち。全<b>20投</b>終わったら、内野の残り数が多い方の勝ち。</li>
     </ol>
     <p class="sub">実物版のイメージ：選手カード6枚、サイコロ1個、ボールコマ1個だけで遊べます。</p>
@@ -112,7 +112,7 @@
     </div>
   </div>
 
-  <p class="back"><a href="../">← 試作ゲームラボに戻る</a> ・ アニマルドッジボール v0.1</p>
+  <p class="back"><a href="../">← 試作ゲームラボに戻る</a> ・ アニマルドッジボール v0.2</p>
 </div>
 <script>
 const $=id=>document.getElementById(id);
@@ -140,8 +140,7 @@ function doThrow(att,thr,def,tgt,r1,r2){
   const caught=r2<=tgt.cat;
   if(caught){
     ev.push(`${tgt.e}${tgt.name}がキャッチ！（🎲${r2}）`);
-    if(thr.zone==='in'){thr.zone='out';ev.push(`${thr.e}${thr.name}はアウトで外野へ`)}
-    else ev.push(`${thr.e}${thr.name}は外野のまま`);
+    ev.push(`その投げはセーフ（無効）。誰もアウトにならない`);
     return {hit:true,caught:true,ev};
   }
   tgt.zone='out';
@@ -200,7 +199,9 @@ function animateThrow(att,thr,def,tgt){
       S.throws++;
       const w=checkEnd();
       if(w){finish(w);return}
-      S.turn=def;S.phase='pick';render();
+      S.turn=res.caught?def:att;
+      log(res.caught?'🏐 キャッチ！ ボールは相手チームに移ります':'🏐 ボールは投げたチームのまま。続けて投げます');
+      S.phase='pick';render();
       if(S.turn==='cpu')setTimeout(cpuMove,900);
     },hit?800:600);
   };

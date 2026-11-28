@@ -171,9 +171,9 @@ h2.cat{scroll-margin-top:70px}
 const GAMES=[
   {
     id:'animal-dodgeball', name:'アニマルドッジボール', icon:'🏐', color:'#359e57',
-    desc:'どうぶつ3匹ずつのドッジボール対決。投げる役と当てる相手を選んでサイコロで勝負。キャッチされると投げた方がアウト、外野から当てれば内野に戻れる。',
+    desc:'どうぶつ3匹ずつのドッジボール対決。投げる役と当てる相手を選んでサイコロで勝負。キャッチされてもセーフ（無効）。ボールはキャッチされた時だけ相手に移る、外野から当てれば内野に戻れる。',
     players:'1人（CPU対戦）', time:'5〜10分', genre:'スポーツ',
-    added:'2026-11-28', version:'0.1', updated:'2026-11-28', isNew:true
+    added:'2026-11-28', version:'0.2', updated:'2026-11-28', isNew:true
   },
   {
     id:'haizen-robot', name:'配膳ロボットを誘導せよ', icon:'🤖', color:'#dd7a2e',
@@ -349,6 +349,7 @@ const GAMES=[
 ];
 // 最近の更新（新しい順）。ゲームを更新したら先頭に1件足し、GAMES の version / updated も上げる
 const UPDATES=[
+  {date:'2026-11-28', id:'animal-dodgeball', version:'0.2', text:'ルール変更：キャッチされても投げた人はアウトにならず、その投げはセーフ（無効）に。ボールが相手に移るのはキャッチされた時だけに変更'},
   {date:'2026-11-28', id:'animal-dodgeball', version:'0.1', text:'新しく登場：どうぶつ3匹ずつのドッジボール対決'},
   {date:'2026-11-28', id:'obentou-dukuri', version:'0.3', text:'カードを選んだ後、箱に置く前なら別のカードに選び直せるように。選んでいるカードの強調表示も追随します'},
   {date:'2026-11-28', id:'haizen-robot', version:'0.1', text:'新しく登場：コマンドカードでロボットを誘導して料理を運ぶレース'},
